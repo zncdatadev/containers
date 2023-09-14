@@ -1,0 +1,21 @@
+apply plugin: 'base'
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public/' }
+    mavenLocal()
+    mavenCentral()
+}
+
+configurations {
+    toCopy
+}
+
+dependencies {
+    toCopy 'org.postgresql:postgresql:42.6.0'
+    toCopy 'org.alluxio:alluxio-shaded-client:2.9.3'
+}
+
+task download(type: Copy) {
+    from configurations.toCopy
+    into '/jars'
+}
