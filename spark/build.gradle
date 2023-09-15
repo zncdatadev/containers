@@ -1,0 +1,23 @@
+apply plugin: 'base'
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public/' }
+    mavenLocal()
+    mavenCentral()
+}
+
+configurations {
+    toCopy
+}
+
+dependencies {
+    toCopy 'org.alluxio:alluxio-shaded-client:2.9.3'
+    toCopy 'org.apache.spark:spark-hadoop-cloud_2.13:3.5.0'
+    toCopy 'io.fabric8:kubernetes-client:6.8.1'
+    toCopy 'org.bouncycastle:bcpkix-jdk18on:1.76'
+}
+
+task download(type: Copy) {
+    from configurations.toCopy
+    into '/jars'
+}
