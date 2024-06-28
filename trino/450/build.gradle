@@ -11,8 +11,6 @@ configurations {
 }
 
 dependencies {
-    toCopy 'org.postgresql:postgresql:42.6.0'
-    toCopy 'org.alluxio:alluxio-shaded-client:2.9.3'
 }
 
 task download(type: Copy) {
