@@ -1,0 +1,1 @@
+FROM bitnami/zookeeper:3.9.1-debian-12-r15
