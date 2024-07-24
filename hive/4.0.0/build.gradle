@@ -12,6 +12,8 @@ configurations {
 
 dependencies {
     toCopy 'org.postgresql:postgresql:42.6.0'
+    toCopy 'org.apache.hadoop:hadoop-aws:3.3.1'
+    toCopy 'org.apache.hadoop:hadoop-client:3.3.1'
 }
 
 task download(type: Copy) {
