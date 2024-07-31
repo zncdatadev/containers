@@ -22,16 +22,18 @@ Usage: krb5-setup [OPTIONS]
 Initialize krb5kdc and kadmin
 
 OPTIONS:
-    -h, --help                      Show this message
-    -p, --password <PASSWORD>       Password for the krb5kdc admin user
-    -r, --realm <REALM>             Realm name, default is EXAMPLE.COM
-    -d, --domain <DOMAIN>           Domain name, default is example.com. If the realm is EXAMPLE.COM, the domain is example.com
+    -h, --help                          Show this message
+    -p, --password <PASSWORD>           Password for the krb5kdc admin user, default is a random password
+        --kadmin-password <PASSWORD>    Password for the kadmin admin user, default value is "changeit"
+    -r, --realm <REALM>                 Realm name, default is EXAMPLE.COM
+    -d, --domain <DOMAIN>               Domain name, default is example.com. If the realm is EXAMPLE.COM, the domain is example.com
 
 "
 
 REALM="EXAMPLE.COM"
 DOMAIN=""
 PASSWORD=$(openssl rand -base64 12)
+KADMIN_PASSWORD="changeit"
 
 function main () {
     case $1 in
@@ -49,6 +51,10 @@ function main () {
             ;;
         -d|--domain)
             DOMAIN=$2
+            shift 2
+            ;;
+        --kadmin-password)
+            KADMIN_PASSWORD=$2
             shift 2
             ;;
         *)
@@ -127,8 +133,8 @@ EOF
     echo $PASSWORD > /tmp/krb5kdc_admin_password
 
     # add admin/admin principal
-    kadmin.local -q "addprinc -randkey admin/admin@$REALM"
-    kadmin.local -q "ktadd -k /var/kerberos/krb5kdc/kadm5.keytab admin/admin@$REALM"
+    kadmin.local -q "addprinc -pw $KADMIN_PASSWORD admin/admin@$REALM"
+    kadmin.local -q "ktadd -k /var/kerberos/krb5kdc/kadm5.keytab -norandkey admin/admin@$REALM"
     
     log warn "Add admin/admin@$REALM principal to /var/kerberos/krb5kdc/kadm5.keytab with random key"
 
