@@ -1,0 +1,198 @@
+#!/bin/bash
+
+# Copyright 2024 zncdatadev.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -e
+
+__usage="
+Usage: krb5-setup [OPTIONS]
+
+Initialize krb5kdc and kadmin
+
+OPTIONS:
+    -h, --help                          Show this message
+    -p, --password <PASSWORD>           Password for the krb5kdc admin user, default is a random password
+        --kadmin-password <PASSWORD>    Password for the kadmin admin user, default value is "changeit"
+    -r, --realm <REALM>                 Realm name, default is EXAMPLE.COM
+    -d, --domain <DOMAIN>               Domain name, default is example.com. If the realm is EXAMPLE.COM, the domain is example.com
+
+"
+
+REALM="EXAMPLE.COM"
+DOMAIN=""
+PASSWORD=$(openssl rand -base64 12)
+KADMIN_PASSWORD="changeit"
+
+function main () {
+    case $1 in
+        -h|--help)
+            echo "$__usage"
+            exit 0
+            ;;
+        -p|--password)
+            PASSWORD=$2
+            shift 2
+            ;;
+        -r|--realm)
+            REALM=$2
+            shift 2
+            ;;
+        -d|--domain)
+            DOMAIN=$2
+            shift 2
+            ;;
+        --kadmin-password)
+            KADMIN_PASSWORD=$2
+            shift 2
+            ;;
+        *)
+            ;;
+    esac
+
+    if [[ -z $DOMAIN ]]; then
+        DOMAIN=$(echo $REALM | tr '[:upper:]' '[:lower:]')
+    fi
+
+    echo "Realm: $REALM, Domain: $DOMAIN"
+
+    init_krb5
+}
+
+# Initialize krb5kdc
+function init_krb5kdc () {
+    log info "Saving krb5 configuration to /etc/krb5.conf"
+    cat > /etc/krb5.conf <<EOF
+# https://web.mit.edu/kerberos/krb5-latest/doc/admin/conf_files/krb5_conf.html
+# https://web.mit.edu/kerberos/krb5-latest/doc/admin/conf_files/krb5_conf.html#sample-krb5-conf-file
+# To opt out of the system crypto-policies configuration of krb5, remove the
+# symlink at /etc/krb5.conf.d/crypto-policies which will not be recreated.
+
+[logging]
+    default = FILE:/var/log/krb5libs.log
+    kdc = FILE:/var/log/krb5kdc.log
+    admin_server = FILE:/var/log/kadmin.log
+
+[libdefaults]
+    dns_lookup_realm = false
+    forwardable = true
+    rdns = false
+    default_realm = $REALM
+
+[realms]
+    $REALM = {
+        kdc = `hostname -f`
+        admin_server = `hostname -f`
+    }
+
+[domain_realm]
+    .$DOMAIN = $REALM
+    $DOMAIN = $REALM
+EOF
+    # save kdc configuration file to /var/kerberos/krb5kdc/kdc.conf
+    cat > /var/kerberos/krb5kdc/kdc.conf <<EOF
+# https://web.mit.edu/kerberos/krb5-latest/doc/admin/conf_files/kdc_conf.html#kdc-conf
+# https://web.mit.edu/kerberos/krb5-latest/doc/admin/conf_files/kdc_conf.html#sample-kdc-conf-file
+[kdcdefaults]
+    kdc_ports = 88
+    kdc_tcp_ports = 88
+    spake_preauth_kdc_challenge = edwards25519
+
+[realms]
+    $REALM = {
+        kadmind_port = 749
+        master_key_type = aes256-cts-hmac-sha384-192
+        acl_file = /var/kerberos/krb5kdc/kadm5.acl
+        dict_file = /usr/share/dict/words
+        default_principal_flags = +preauth
+        # https://web.mit.edu/kerberos/krb5-latest/doc/admin/conf_files/kdc_conf.html#encryption-types
+        supported_enctypes = aes256-cts-hmac-sha384-192:normal aes128-cts-hmac-sha256-128:normal aes256-cts-hmac-sha1-96:normal aes128-cts-hmac-sha1-96:normal camellia256-cts-cmac:normal camellia128-cts-cmac:normal arcfour-hmac-md5:normal
+    }
+EOF
+
+    cat > /var/kerberos/krb5kdc/kadm5.acl <<EOF
+# https://web.mit.edu/kerberos/krb5-latest/doc/admin/conf_files/kadm5_acl.html
+admin/admin@$REALM	*e
+*/admin@$REALM	*
+EOF
+
+    kdb5_util create -s -r $REALM -P $PASSWORD
+
+    log warn "krb5kdc admin password stored in /tmp/krb5kdc_admin_password"
+    echo $PASSWORD > /tmp/krb5kdc_admin_password
+
+    # add admin/admin principal
+    kadmin.local -q "addprinc -pw $KADMIN_PASSWORD admin/admin@$REALM"
+    kadmin.local -q "ktadd -k /var/kerberos/krb5kdc/kadm5.keytab -norandkey admin/admin@$REALM"
+    
+    log warn "Add admin/admin@$REALM principal to /var/kerberos/krb5kdc/kadm5.keytab with random key"
+
+    log info "krb5kdc and kadmin initialized"
+    
+    # enable krb5kdc and kadmin
+    systemctl enable krb5kdc kadmin
+}
+
+
+# Check if krb5kdc and kadmin are installed
+# If krb5kdc and kadmin are initialized, return 0
+function initialized () {
+    if [[ -f /var/kerberos/krb5kdc/principal ]] && [[ -f /var/kerberos/krb5kdc/principal.ok ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function init_krb5 () {
+    if initialized; then
+        log info "krb5kdc and kadmin are already initialized"
+        return 0
+    fi
+
+    init_krb5kdc
+}
+
+# Log function to support colored output
+function log() {
+    local color=""
+    local message=""
+
+    case $1 in
+        info)
+            color="\e[0m"  # White color
+            message="${@:2}"
+            ;;
+        warn)
+            color="\e[33m"  # Yellow color
+            message="${@:2}"
+            ;;
+        error)
+            color="\e[31m"  # Red color
+            message="${@:2}"
+            ;;
+        *)
+            echo "Invalid log level: $1"
+            return 1
+            ;;
+    esac
+
+    echo -e "${color}${message}\e[0m"
+}
+
+main $@
+
+exec /usr/sbin/init
+
+exit 10
