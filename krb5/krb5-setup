@@ -134,7 +134,7 @@ EOF
 
     # add admin/admin principal
     kadmin.local -q "addprinc -pw $KADMIN_PASSWORD admin/admin@$REALM"
-    kadmin.local -q "ktadd -k /var/kerberos/krb5kdc/kadm5.keytab -norandkey admin/admin@$REALM"
+    kadmin.local -q "ktadd -k /var/kerberos/krb5kdc/kadmin.keytab -norandkey admin/admin@$REALM"
     
     log warn "Add admin/admin@$REALM principal to /var/kerberos/krb5kdc/kadm5.keytab with random key"
 
