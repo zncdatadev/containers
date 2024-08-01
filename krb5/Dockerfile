@@ -46,4 +46,4 @@ VOLUME [ "/tmp", "/run", "/data" ]
 COPY krb5-setup /usr/local/sbin/init
 ENTRYPOINT [ "/usr/local/sbin/init" ]
 
-EXPOSE 88 464 88/udp 464/udp
+EXPOSE 88 88/udp 464 464/udp 749
