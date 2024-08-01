@@ -8,7 +8,7 @@ Unlike other containers, containers running as systemd services may not capture 
 
 Since the container manages multiple services using systemd, when running a systemd-based container, you may need to pass additional parameters to your runtime or use a specific runtime.
 
-Quick start:
+### quick start
 
 ```bash
 docker run --rm -it \
@@ -58,6 +58,20 @@ docker run --rm -it \
     quay.io/zncdatadev-test/krb5:dev \
       --help
 ```
+
+#### more info
+
+After running the container with minimal parameters, the initialization process will create some default values. Most files and configurations still follow the official Kerberos documentation. Here are some pre-configured contents:
+
+- kadmin configuration file location: `/etc/krb5.conf`
+- kdc configuration file location: `/var/kerberos/krb5kdc/kdc.conf`
+- kdc database location: `/var/lib/krb5kdc/principal`
+- kadmin keytab location: `/var/lib/krb5kdc/kadmin.keytab`
+- kdc default password: `$(openssl rand -base64 12)`
+- kdc default password storage location: `/tmp/krb5kdc_admin_password`. Please save it promptly after configuration. You can also provide a custom password when starting the container.
+- kadmin default password: `changeit`. Note that the default password is the string `changeit`. Please provide a custom password when starting the container if possible.
+- realm default value: `EXAMPLE.COM`. Please provide a custom realm when starting the container.
+- domain default value: By default, it is the lowercase form of the realm, such as `example.com`. Please provide a custom domain when starting the container.
 
 ### podman
 
