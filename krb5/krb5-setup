@@ -80,7 +80,7 @@ function init_krb5kdc () {
 # symlink at /etc/krb5.conf.d/crypto-policies which will not be recreated.
 
 [logging]
-    default = FILE:/var/log/krb5libs.log
+    default = FILE:/var/log/krb5lib.log
     kdc = FILE:/var/log/krb5kdc.log
     admin_server = FILE:/var/log/kadmin.log
 
@@ -119,6 +119,12 @@ EOF
         # https://web.mit.edu/kerberos/krb5-latest/doc/admin/conf_files/kdc_conf.html#encryption-types
         supported_enctypes = aes256-cts-hmac-sha384-192:normal aes128-cts-hmac-sha256-128:normal aes256-cts-hmac-sha1-96:normal aes128-cts-hmac-sha1-96:normal camellia256-cts-cmac:normal camellia128-cts-cmac:normal arcfour-hmac-md5:normal
     }
+[logging]
+    # By default, the KDC and kadmind will log output using
+    # syslog.  You can instead send log output to files like this:
+    kdc = FILE:/var/log/krb5kdc.log
+    admin_server = FILE:/var/log/kadmin.log
+    default = FILE:/var/log/krb5lib.log
 EOF
 
     cat > /var/kerberos/krb5kdc/kadm5.acl <<EOF
