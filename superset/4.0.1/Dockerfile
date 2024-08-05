@@ -1,1 +1,0 @@
-FROM apache/superset:4.0.1
