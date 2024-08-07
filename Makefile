@@ -36,23 +36,6 @@ JQ = $(shell which jq)
 endif
 endif
 
-.PHONY: yq
-YQ = ./bin/yq
-yq: ## Download yq locally if necessary.
-ifeq (,$(wildcard $(YQ)))
-ifeq (,$(shell which yq 2>/dev/null))
-	@{ \
-	set -e ;\
-	mkdir -p $(dir $(YQ)) ;\
-	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-	curl -sSLo $(YQ) https://github.com/mikefarah/yq/releases/latest/download/yq_$${OS}_$${ARCH} ;\
-	chmod +x $(YQ) ;\
-	}
-else
-YQ = $(shell which yq)
-endif
-endif
-
 ##@ infra
 
 .PHONY:
