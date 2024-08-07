@@ -62,7 +62,7 @@ function main () {
     esac
 
     if [[ -z ${DOMAIN} ]]; then
-        DOMAIN=$(echo "$REALM | tr '[:upper:]' '[:lower:]'")
+        DOMAIN=$(echo ${REALM} | tr '[:upper:]' '[:lower:]')
     fi
 
     echo "Realm: ${REALM}, Domain: ${DOMAIN}"
