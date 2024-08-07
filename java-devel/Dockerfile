@@ -43,12 +43,11 @@ ENV JAVA_VERSION=${PRODUCT_VERSION}
 ## Setup maven
 ENV MAVEN_VERSION=${MAVEN_VERSION}
 ENV MAVEN_HOME=/usr/share/maven
-RUN <<EOT
-    set -exu
-    curl -sSfL https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar xzf - -C /usr/share
-    ln -s /usr/share/apache-maven-${MAVEN_VERSION} ${MAVEN_HOME}
-    ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn
-EOT
+RUN  curl -sSfL \
+        https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+        | tar xzf - -C /usr/share && \
+    ln -s /usr/share/apache-maven-${MAVEN_VERSION} ${MAVEN_HOME} && \
+    ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn 
 
 # somke test
 # test: RUN mvn --version

@@ -11,7 +11,9 @@ body:
   - type: dropdown
     attributes:
       label: Duplicates
-      description: Please [search the history](https://github.com/zncdatadev/containers/issues) to see if an issue already exists for the same problem.
+      description: |
+        Please [search the history](https://github.com/zncdatadev/containers/issues) to see 
+        if an issue already exists for the same problem.
       options:
         - no check
         - I have searched the existing issues
@@ -27,4 +29,6 @@ body:
   - type: textarea
     attributes:
       label: Motivation 🔦
-      description: What are you trying to accomplish? How has the lack of this feature affected you? Providing context helps us come up with a solution that is more useful in the real world.
+      description: |
+        What are you trying to accomplish? How has the lack of this feature affected you? 
+        Providing context helps us come up with a solution that is more useful in the real world.

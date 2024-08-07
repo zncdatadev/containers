@@ -24,7 +24,7 @@ Initialize krb5kdc and kadmin
 OPTIONS:
     -h, --help                          Show this message
     -p, --password <PASSWORD>           Password for the krb5kdc admin user, default is a random password
-        --kadmin-password <PASSWORD>    Password for the kadmin admin user, default value is "changeit"
+        --kadmin-password <PASSWORD>    Password for the kadmin admin user, default value is 'changeit'
     -r, --realm <REALM>                 Realm name, default is EXAMPLE.COM
     -d, --domain <DOMAIN>               Domain name, default is example.com. If the realm is EXAMPLE.COM, the domain is example.com
 
@@ -61,11 +61,11 @@ function main () {
             ;;
     esac
 
-    if [[ -z $DOMAIN ]]; then
-        DOMAIN=$(echo $REALM | tr '[:upper:]' '[:lower:]')
+    if [[ -z ${DOMAIN} ]]; then
+        DOMAIN=$(echo ${REALM} | tr '[:upper:]' '[:lower:]')
     fi
 
-    echo "Realm: $REALM, Domain: $DOMAIN"
+    echo "Realm: ${REALM}, Domain: ${DOMAIN}"
 
     init_krb5
 }
@@ -88,17 +88,17 @@ function init_krb5kdc () {
     dns_lookup_realm = false
     forwardable = true
     rdns = false
-    default_realm = $REALM
+    default_realm = ${REALM}
 
 [realms]
-    $REALM = {
-        kdc = `hostname -f`
-        admin_server = `hostname -f`
+    ${REALM} = {
+        kdc = $(hostname -f)
+        admin_server = $(hostname -f)
     }
 
 [domain_realm]
-    .$DOMAIN = $REALM
-    $DOMAIN = $REALM
+    .${DOMAIN} = ${REALM}
+    ${DOMAIN} = ${REALM}
 EOF
     # save kdc configuration file to /var/kerberos/krb5kdc/kdc.conf
     cat > /var/kerberos/krb5kdc/kdc.conf <<EOF
@@ -110,7 +110,7 @@ EOF
     spake_preauth_kdc_challenge = edwards25519
 
 [realms]
-    $REALM = {
+    ${REALM} = {
         kadmind_port = 749
         master_key_type = aes256-cts-hmac-sha384-192
         acl_file = /var/kerberos/krb5kdc/kadm5.acl
@@ -129,20 +129,20 @@ EOF
 
     cat > /var/kerberos/krb5kdc/kadm5.acl <<EOF
 # https://web.mit.edu/kerberos/krb5-latest/doc/admin/conf_files/kadm5_acl.html
-admin/admin@$REALM	*e
-*/admin@$REALM	*
+admin/admin@${REALM}	*e
+*/admin@${REALM}	*
 EOF
 
-    kdb5_util create -s -r $REALM -P $PASSWORD
+    kdb5_util create -s -r ${REALM} -P ${PASSWORD}
 
     log warn "krb5kdc admin password stored in /tmp/krb5kdc_admin_password"
-    echo $PASSWORD > /tmp/krb5kdc_admin_password
+    echo ${PASSWORD} > /tmp/krb5kdc_admin_password
 
     # add admin/admin principal
-    kadmin.local -q "addprinc -pw $KADMIN_PASSWORD admin/admin@$REALM"
-    kadmin.local -q "ktadd -k /var/kerberos/krb5kdc/kadmin.keytab -norandkey admin/admin@$REALM"
+    kadmin.local -q "addprinc -pw ${KADMIN_PASSWORD} admin/admin@${REALM}"
+    kadmin.local -q "ktadd -k /var/kerberos/krb5kdc/kadmin.keytab -norandkey admin/admin@${REALM}"
     
-    log warn "Add admin/admin@$REALM principal to /var/kerberos/krb5kdc/kadm5.keytab with random key"
+    log warn "Add admin/admin@${REALM} principal to /var/kerberos/krb5kdc/kadm5.keytab with random key"
 
     log info "krb5kdc and kadmin initialized"
     
@@ -197,7 +197,7 @@ function log() {
     echo -e "${color}${message}\e[0m"
 }
 
-main $@
+main "$@"
 
 exec /usr/sbin/init
 

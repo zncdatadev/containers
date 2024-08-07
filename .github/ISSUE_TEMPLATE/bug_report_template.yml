@@ -6,12 +6,16 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report! Before you get started, please [search to see](https://github.com/zncdatadev/containers/issues) if an issue already exists for the bug you encountered
+        Thanks for taking the time to fill out this bug report! 
+        Before you get started, please [search to see](https://github.com/zncdatadev/containers/issues) 
+        if an issue already exists for the bug you encountered
   - type: textarea
     id: bug-description
     attributes:
       label: Describe the bug
-      description: Please provide a concise description of what the bug is, in clear English. If you intend to submit a PR for this issue, tell us in the description.
+      description: |
+        Please provide a concise description of what the bug is, in clear English. 
+        If you intend to submit a PR for this issue, tell us in the description.
       placeholder: Bug description
     validations:
       required: true
@@ -27,7 +31,9 @@ body:
     id: reproduction
     attributes:
       label: Reproduction
-      description: Please provide a minimal example, with code, that can be run to reproduce the issue. Do NOT provide screenshots of code, or link to external repos or applications. Use ``` to format code blocks.
+      description: |
+        Please provide a minimal example, with code, that can be run to reproduce the issue. 
+        Do NOT provide screenshots of code, or link to external repos or applications. Use ``` to format code blocks.
       placeholder: Reproduction
       value: |
         ```go
