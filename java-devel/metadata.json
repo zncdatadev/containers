@@ -7,36 +7,29 @@
         "name": "vector",
         "version": "0.39.0"
       },
-      "dependencies": [
-        {
-          "maven": "3.9.8"
-        }
-      ]
+      "dependencies": {
+        "maven": "3.9.8"
+      }
     },
     {
-      "product": "17",
+      "version": "17",
       "upstream": {
         "name": "vector",
         "version": "0.39.0"
       },
-      "dependencies": [
-        {
-          "maven": "3.9.8"
-        }
-      ]
-
+      "dependencies": {
+        "maven": "3.9.8"
+      }
     },
     {
-      "product": "21",
+      "version": "21",
       "upstream": {
         "name": "vector",
         "version": "0.39.0"
       },
-      "dependencies": [
-        {
-          "maven": "3.9.8"
-        }
-      ]
+      "dependencies": {
+        "maven": "3.9.8"
+      }
     }
   ]
 }
