@@ -1,0 +1,56 @@
+name: pr workflow
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  linter:
+    name: Markdown Lint
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Lint Code Base
+      uses: github/super-linter@v4
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        LINTER_RULES_PATH: /
+        MARKDOWN_CONFIG_FILE: .markdownlint.yml
+        EDITORCONFIG_FILE_NAME: .editorconfig
+  
+  # generate-test-matrix:
+  #   name: Generate test matrix
+  #   runs-on: ubuntu-22.04
+  #   needs: linter
+  #   steps:
+  #   - name: Checkout Code
+  #     uses: actions/checkout@v4
+  #     with:
+  #       fetch-depth: 0
+  #   - name: Get changed products
+  #     id: get_changed_products
+  #     run: |
+  #       for config in git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^[^/]+/config.json' 
+  
+  # test:
+  #   name: Test
+  #   runs-on: ubuntu-22.04
+  #   needs:
+  #     - generate-test-matrix
+  #   strategy:
+  #     matrix:
+  #       product: ${{ needs.generate-test-matrix.outputs.changed_products }}
+  #   steps:
+  #   - name: Checkout Code
+  #     uses: actions/checkout@v4
+  #     with:
+  #       fetch-depth: 0
+  #   - name: Run tests
+  #     run: |
+  #       echo "Running tests for ${{ matrix.product }}"

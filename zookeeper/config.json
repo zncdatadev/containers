@@ -1,0 +1,13 @@
+{
+  "name": "zookeeper",
+  "versions": [
+    {
+      "product": "3.8.4",
+      "java": "11"
+    },
+    {
+      "product": "3.9.2",
+      "java": "11"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "java-devel",
+  "properties": [
+    {
+      "version": "11",
+      "upstream": {
+        "name": "vector",
+        "version": "0.39.0"
+      },
+      "dependencies": [
+        {
+          "maven": "3.9.8"
+        }
+      ]
+    },
+    {
+      "product": "17",
+      "upstream": {
+        "name": "vector",
+        "version": "0.39.0"
+      },
+      "dependencies": [
+        {
+          "maven": "3.9.8"
+        }
+      ]
+
+    },
+    {
+      "product": "21",
+      "upstream": {
+        "name": "vector",
+        "version": "0.39.0"
+      },
+      "dependencies": [
+        {
+          "maven": "3.9.8"
+        }
+      ]
+    }
+  ]
+}

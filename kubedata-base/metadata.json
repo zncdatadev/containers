@@ -1,0 +1,8 @@
+{
+  "name": "kubedata-base",
+  "properties": [
+    {
+      "version": "0.0.1"
+    }
+  ]
+}
