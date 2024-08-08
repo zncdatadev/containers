@@ -26,6 +26,7 @@ jobs:
   prepare-commit-id:
     name: Prepare Commit ID
     runs-on: ubuntu-22.04
+    needs: markdown-lint
     outputs:
       BEFORE_COMMIT_SHA: ${{ steps.git_commit_id.outputs.BEFORE_COMMIT_SHA }}
       AFTER_COMMIT_SHA: ${{ steps.git_commit_id.outputs.AFTER_COMMIT_SHA }}
@@ -90,7 +91,7 @@ jobs:
         echo "BEFORE_COMMIT_SHA: $BEFORE_COMMIT_SHA, AFTER_COMMIT_SHA: $AFTER_COMMIT_SHA"
 
         # get updated product
-        python3 ./scripts/get_updated_product.py \
+        python3 .github/scripts/get_updated_product.py \
           --before-commit-sha $BEFORE_COMMIT_SHA \
           --after-commit-sha $AFTER_COMMIT_SHA
 
