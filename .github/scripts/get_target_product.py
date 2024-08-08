@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 PROJECT_METADATA_FILE_NAME = 'project.json'
 PROEUCT_METADATA_FILE_NAME = 'metadata.json'
-
+ENCODING = 'utf-8'
 
 @dataclasses.dataclass
 class ProjectMetadata:
@@ -46,7 +46,7 @@ class ProductProperty:
 @dataclasses.dataclass
 class ProductMetadata:
     name: str
-    priority: int   # 100-999 is a infrastructure, should build first; 1000-9999 is a product, should build after infrastructure.
+    priority: int
     properties: list[ProductProperty]
     
     def __repr__(self) -> str:
@@ -54,7 +54,7 @@ class ProductMetadata:
 
 
 def load_project_metadata(metadata_path: Path = Path(PROJECT_METADATA_FILE_NAME)) -> ProjectMetadata:
-    with open(metadata_path, 'r') as f:
+    with open(metadata_path, 'r', encoding='utf-8') as f:
         metadata = json.load(f)
 
     logger.debug(f'loaded project metadata from {metadata_path}: {metadata}')
@@ -68,7 +68,7 @@ def load_project_metadata(metadata_path: Path = Path(PROJECT_METADATA_FILE_NAME)
 def load_product_metadata(product_name: str, priority: int) -> ProductMetadata:
     metadata_path = Path(f'{product_name}/{PROEUCT_METADATA_FILE_NAME}')
     
-    with open(metadata_path, 'r') as f:
+    with open(metadata_path, 'r', encoding='utf-8') as f:
         metadata = json.load(f)
     logger.debug(f'loaded product metadata from {metadata_path}: {metadata}')
     
@@ -147,39 +147,46 @@ def get_product_metadata(product_names: list[str], priority: dict[str, int]) -> 
     return product_metadata
 
 
-def save_to_gh_output(name: str, product_metadata: list[ProductMetadata]) -> None:
-    gh_output_file = os.environ.get('GITHUB_OUTPUT', '.env')
-    
-    names = [product.name for product in product_metadata]
-    logger.info(f'save product names to {gh_output_file}: {names}')
-    
-    # append to the file
-    with open(gh_output_file, 'a') as f:
-        f.write(f'{name}={",".join(names)}\n')
-    logger.info(f'saved product names to {gh_output_file}')
-    
+def save_output(
+    data: dict[str, list[str]],
+    file: Path = Path('output.json')
+):
+    with open(file, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2)
+    logger.info(f'Saved data to the file: {file}')
 
 def run(
     before_sha: str | None = None,
     after_sha: str | None = None,
     metadata_path: str | None = None,
+    output_file: str = 'output.json',
 ):
+    logger.info(f'Start to get target product names')
+    
     metadata = load_project_metadata(Path(metadata_path))
+    
     changed_product_name = get_changed_product_name(project_metadata=metadata, before_sha=before_sha, after_sha=after_sha) 
     changed_product = get_product_metadata(changed_product_name, metadata.products_priority)
     changed_infra = get_product_metadata(changed_product_name, metadata.infra_priority)
     logger.info(f'Changed product: {changed_product}, Changed infra product: {changed_infra}')
-    save_to_gh_output('PRODUCTS', changed_product)
-    save_to_gh_output('INFRA', changed_infra)
+    
+    data={
+        'products': [product.name for product in changed_product], 
+        'infra': [product.name for product in changed_infra],
+    }
+    
+    save_output(data=data, file=Path(output_file)) 
+    logger.info(f'Saved product names to the output file: {output_file}')
+    
+    logger.info(f'Finished to get target product names')
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--before-sha', type=str, required=False, help='The SHA of the commit before the push')
-    parser.add_argument('--after-sha', type=str, required=False, help='The SHA of the commit after the push')
+    parser.add_argument('--before-sha', type=str, required=False, help='The SHA of the commit before the event, default is BEFORE_COMMIT_SHA in the environment')
+    parser.add_argument('--after-sha', type=str, required=False, help='The SHA of the commit after the push event, default is AFTER_COMMIT_SHA in the environment')
     parser.add_argument('--metadata-path', type=str, required=False, default='project.json', help='The path of the metadata file')
-    parser.add_argument('--product-env-name', type=str, required=False, default='PRODUCTS', help='The name of the environment variable to save the product names')
-    parser.add_argument('--infra-env-name', type=str, required=False, default='INFRA', help='The name of the environment variable to save the infrastructure product names')
+    parser.add_argument('--output-file', type=str, required=False, default='output.json', help='The path of the output file')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     
     args = parser.parse_args()
@@ -187,7 +194,13 @@ def main():
     if args.debug:
         logger.setLevel(logging.DEBUG)
     
-    logger.info(f'args: {args}')
+    logger.debug(f'args: {args}')
+        
+    if not args.before_sha:
+        args.before_sha = os.environ.get('BEFORE_COMMIT_SHA')
+    if not args.after_sha:
+        args.after_sha = os.environ.get('AFTER_COMMIT_SHA')
+    
     try:
         run(
             before_sha=args.before_sha,

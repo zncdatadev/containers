@@ -23,27 +23,128 @@ jobs:
         LINTER_RULES_PATH: /
         MARKDOWN_CONFIG_FILE: .markdownlint.yml
   
-  test-job:
-    name: Test Job
+  prepare-commit-id:
+    name: Prepare Commit ID
     runs-on: ubuntu-22.04
+    outputs:
+      BEFORE_COMMIT_SHA: ${{ steps.git_commit_id.outputs.BEFORE_COMMIT_SHA }}
+      AFTER_COMMIT_SHA: ${{ steps.git_commit_id.outputs.AFTER_COMMIT_SHA }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Set up Python
+    - name: Get Commit ID
+      id: git_commit_id
+      run: |
+        BEFORE_COMMIT_SHA=''
+        AFTER_COMMIT_SHA=''
+
+        GH_EVENT=${{ github.event_name }}
+
+        if [ $GH_EVENT == 'pull_request' ]; then
+          BEFORE_COMMIT_SHA=${{ github.event.pull_request.base.sha }}
+          AFTER_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
+        elif [ $GH_EVENT == 'push' ]; then
+          BEFORE_COMMIT_SHA=${{ github.event.before }}
+          AFTER_COMMIT_SHA=${{ github.sha }}
+        fi
+
+        # save to env
+        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA" >> $GITHUB_ENV
+        echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> $GITHUB_ENV
+
+        # save to output
+        echo "::set-output name=BEFORE_COMMIT_SHA::$BEFORE_COMMIT_SHA"
+        echo "::set-output name=AFTER_COMMIT_SHA::$AFTER_COMMIT_SHA"
+
+  prepare-updated-product:
+    name: Prepare Updated Product
+    runs-on: ubuntu-22.04
+    needs: prepare-commit-id
+    outputs:
+      PRODUCTS: ${{ steps.get_updated_product.outputs.PRODUCTS }}
+      INFRA: ${{ steps.get_updated_product.outputs.INFRA }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Setup python 3.11
       uses: actions/setup-python@v5
       with:
-        python-version: 3.11
-    - name: Run in pr
+        python-version: '3.11'
+    - name: Install jq
+      uses: dcarbone/install-jq-action@v2.1.0
+    - name: Check version
       run: |
-        python --version
-        echo before commit id: ${{ github.event.pull_request.base.sha }}
-        echo after commit id: ${{ github.event.pull_request.head.sha }}
+        python3  --version
+        jq --version
+    - name: Get Updated Product
+      id: get_updated_product
+      run: |
 
-        git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }}
 
+        BEFORE_COMMIT_SHA=${{ needs.prepare-commit-id.outputs.BEFORE_COMMIT_SHA }}
+        AFTER_COMMIT_SHA=${{ needs.prepare-commit-id.outputs.AFTER_COMMIT_SHA }}
+        echo "BEFORE_COMMIT_SHA: $BEFORE_COMMIT_SHA, AFTER_COMMIT_SHA: $AFTER_COMMIT_SHA"
 
-        echo before commit id: ${{ github.event.before }}
-        echo after commit id: ${{ github.sha }}
-        git diff --name-only ${{ github.event.before }} ${{ github.sha }}
+        # get updated product
+        python3 ./scripts/get_updated_product.py \
+          --before-commit-sha $BEFORE_COMMIT_SHA \
+          --after-commit-sha $AFTER_COMMIT_SHA
+
+        # check output.json file exists
+        if [ ! -f output.json ]; then
+          echo "output.json file not found"
+          exit 1
+        fi
+
+        # should be valid json
+        jq . output.json
+
+        # get `products`, `infra` from output.json and set as output
+        PRODUCTS=$(jq -c '.products' output.json)
+        INFRA=$(jq -c '.infra' output.json)
+        echo "PRODUCTS: $PRODUCTS, INFRA: $INFRA"
+        echo "::set-output name=PRODUCTS::$PRODUCTS"
+        echo "::set-output name=INFRA::$INFRA"
+
+  test-infra:
+    name: Test Infra
+    runs-on: ubuntu-22.04
+    needs: prepare-updated-product
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Cache Primes
+      id: cache-primes
+      uses: actions/cache@v4
+      with:
+        path: /tmp/docker-cache
+        key: ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-${{ github.run_id }}
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Install jq
+      uses: dcarbone/install-jq-action@v2.1.0
+    - name: Check version
+      run: |
+        jq --version
+        docker info
+    - name: Build Infra
+      run: |
+        INFRA=${{ needs.prepare-updated-product.outputs.INFRA }}  
+        echo "INFRA: $INFRA"
+
+        # build infra
+        for item in $(echo "${INFRA}" | jq -r '.[]'); do
+          echo "Building $item"
+
+          # build
+          make $item-build
+
+        done
