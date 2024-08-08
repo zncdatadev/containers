@@ -3,8 +3,6 @@ name: pr workflow
 on:
   pull_request:
   push:
-    branches:
-      - main
 
 jobs:
   markdown-lint:
@@ -37,9 +35,17 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: 3.11
-    - name: Run Python Script
+    - name: Run in pr
       run: |
         python --version
-        ls -alh
         echo before commit id: ${{ github.event.pull_request.base.sha }}
         echo after commit id: ${{ github.event.pull_request.head.sha }}
+
+        git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }}
+    - name: run in merged
+      if: github.event_name == 'push'
+      run: |
+        python --version
+        echo before commit id: ${{ github.event.before }}
+        echo after commit id: ${{ github.sha }}
+        git diff --name-only ${{ github.event.before }} ${{ github.sha }}
