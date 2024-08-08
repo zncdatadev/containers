@@ -56,8 +56,8 @@ jobs:
         echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> $GITHUB_ENV
 
         # save to output
-        echo "::set-output name=BEFORE_COMMIT_SHA::$BEFORE_COMMIT_SHA"
-        echo "::set-output name=AFTER_COMMIT_SHA::$AFTER_COMMIT_SHA"
+        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA" >> "$GITHUB_OUTPUT"
+        echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> "$GITHUB_OUTPUT"
 
   prepare_updated_product:
     name: Prepare Updated Product
@@ -105,8 +105,8 @@ jobs:
         jq . output.json
 
         # get `products`, `infra` from output.json and set as output
-        PRODUCTS=$(jq -c '.products | | tostring' output.json)
-        INFRA=$(jq -c '.infra | | tostring' output.json)
+        PRODUCTS=$(jq -c '.products | tostring' output.json)
+        INFRA=$(jq -c '.infra | tostring' output.json)
         echo "PRODUCTS: $PRODUCTS, INFRA: $INFRA"
         echo "PRODUCTS=$PRODUCTS" >> "$GITHUB_OUTPUT"
         echo "INFRA=$INFRA" >> "$GITHUB_OUTPUT"
