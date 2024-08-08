@@ -105,8 +105,8 @@ jobs:
         jq . output.json
 
         # get `products`, `infra` from output.json and set as output
-        PRODUCTS=$(jq -c '.products' output.json)
-        INFRA=$(jq -c '.infra' output.json)
+        PRODUCTS=$(jq -c '.products | | tostring' output.json)
+        INFRA=$(jq -c '.infra | | tostring' output.json)
         echo "PRODUCTS: $PRODUCTS, INFRA: $INFRA"
         echo "PRODUCTS=$PRODUCTS" >> "$GITHUB_OUTPUT"
         echo "INFRA=$INFRA" >> "$GITHUB_OUTPUT"
