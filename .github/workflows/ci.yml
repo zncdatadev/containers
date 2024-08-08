@@ -139,14 +139,12 @@ jobs:
     - name: Build Infra
       run: |
         set -ex
-        INFRA=${{ needs.prepare-updated-product.outputs.INFRA }}  
+        INFRA="${{ needs.prepare-updated-product.outputs.INFRA }}"
         echo "INFRA: $INFRA"
 
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
           echo "Building $item"
-
           # build
           make ${item}-build
-
         done
