@@ -41,7 +41,5 @@ jobs:
       run: |
         python --version
         ls -alh
-        echo before commit id: ${{ github.event.before }}
-        echo after commit id: ${{ github.event.after }}
-        echo commit id: ${{ github.sha }}
-        python .github/scripts/get_target_product.py
+        echo before commit id: ${{ github.event.pull_request.base.sha }}
+        echo after commit id: ${{ github.event.pull_request.head.sha }}
