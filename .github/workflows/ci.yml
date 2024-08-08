@@ -138,6 +138,7 @@ jobs:
         docker info
     - name: Build Infra
       run: |
+        set -ex
         INFRA=${{ needs.prepare-updated-product.outputs.INFRA }}  
         echo "INFRA: $INFRA"
 
@@ -146,6 +147,6 @@ jobs:
           echo "Building $item"
 
           # build
-          make $item-build
+          make ${item}-build
 
         done
