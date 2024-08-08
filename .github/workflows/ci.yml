@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
 
+env:
+  REGISTRY: quay.io/zncdatadev
+  STACK_VERSION: 0.0.0-dev
+
 jobs:
   markdown-lint:
     name: Markdown Lint
@@ -126,6 +130,8 @@ jobs:
       with:
         path: /tmp/docker-cache
         key: ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-${{ github.run_id }}
+        restore-keys: |
+          ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
@@ -145,6 +151,34 @@ jobs:
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
           echo "Building $item"
-          # build
-          make ${item}-build
+          cd $item
+          PRODUCT_NAME=$(jq -r '.name' metadata.json)
+          for property in $(jq -r '.properties[]' metadata.json): do
+            PRODUCT_VERSION=$(echo $property | jq -r '.version')
+            # check upstream exist
+            BASE_IMAGE=""
+            if echo $property | jq -e '.upstream?' > /dev/null; then
+              UPSTREAM_NAME=$(echo $property | jq -r '.upstream.name')
+              UPSTREAM_VERSION=$(echo $property | jq -r '.upstream.version')
+              UPSTREAM_STACK=$(echo $property | jq -r '.upstream.stack')
+              BASE_IMAGE="--build-arg BASE_IMAGE=$REGISTRY/$UPSTREAM_NAME:$UPSTREAM_VERSION-stack$UPSTREAM_STACK"
+            fi
+            # check dependencies exist
+            DEPENDENCIES=""
+            if echo $property | jq -e '.dependencies?' > /dev/null; then
+              DEPENDENCIES=$(echo $property | jq -r '.dependencies' | to_entries | map("--build-arg \(.key)_VERSION=\(.value)") | join(" "))
+            fi
+            # build image
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              --cache-from type=local,src=/tmp/docker-cache \
+              --cache-to type=local,dest=/tmp/docker-cache \
+              $BASE_IMAGE \
+              $DEPENDENCIES \
+              --tag $REGISTRY/$PRODUCT_NAME:$PRODUCT_VERSION-stack$STACK_VERSION \
+              --file Dockerfile \
+              $BASE_IMAGE \
+              $DEPENDENCIES \
+              .
+          done
         done
