@@ -177,8 +177,7 @@ jobs:
               $DEPENDENCIES \
               --tag $REGISTRY/$PRODUCT_NAME:$PRODUCT_VERSION-stack$STACK_VERSION \
               --file Dockerfile \
-              $BASE_IMAGE \
-              $DEPENDENCIES \
               .
           done
+          cd -
         done
