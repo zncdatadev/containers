@@ -153,7 +153,7 @@ jobs:
           echo "Building $item"
           cd $item
           PRODUCT_NAME=$(jq -r '.name' metadata.json)
-          for property in $(jq -r '.properties[]' metadata.json): do
+          for property in $(jq -r '.properties[]' metadata.json); do
             PRODUCT_VERSION=$(echo $property | jq -r '.version')
             # check upstream exist
             BASE_IMAGE=""
