@@ -91,7 +91,7 @@ jobs:
         echo "BEFORE_COMMIT_SHA: $BEFORE_COMMIT_SHA, AFTER_COMMIT_SHA: $AFTER_COMMIT_SHA"
 
         # get updated product
-        python3 .github/scripts/get_updated_product.py \
+        python3 .github/scripts/get_target_product.py \
           --before-commit-sha $BEFORE_COMMIT_SHA \
           --after-commit-sha $AFTER_COMMIT_SHA
 
