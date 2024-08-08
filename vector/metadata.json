@@ -2,7 +2,7 @@
   "name": "vector",
   "properties": [
     {
-      "verson": "0.39.0",
+      "version": "0.39.0",
       "upstream": {
         "name": "kubedata-base",
         "version": "0.0.1"
