@@ -23,7 +23,7 @@ jobs:
         LINTER_RULES_PATH: /
         MARKDOWN_CONFIG_FILE: .markdownlint.yml
   
-  prepare-commit-id:
+  prepare_commit_id:
     name: Prepare Commit ID
     runs-on: ubuntu-22.04
     # needs: markdown-lint
@@ -59,10 +59,10 @@ jobs:
         echo "::set-output name=BEFORE_COMMIT_SHA::$BEFORE_COMMIT_SHA"
         echo "::set-output name=AFTER_COMMIT_SHA::$AFTER_COMMIT_SHA"
 
-  prepare-updated-product:
+  prepare_updated_product:
     name: Prepare Updated Product
     runs-on: ubuntu-22.04
-    needs: prepare-commit-id
+    needs: prepare_commit_id
     outputs:
       PRODUCTS: ${{ steps.get_updated_product.outputs.PRODUCTS }}
       INFRA: ${{ steps.get_updated_product.outputs.INFRA }}
@@ -86,8 +86,8 @@ jobs:
       run: |
 
 
-        BEFORE_COMMIT_SHA=${{ needs.prepare-commit-id.outputs.BEFORE_COMMIT_SHA }}
-        AFTER_COMMIT_SHA=${{ needs.prepare-commit-id.outputs.AFTER_COMMIT_SHA }}
+        BEFORE_COMMIT_SHA=${{ needs.prepare_commit_id.outputs.BEFORE_COMMIT_SHA }}
+        AFTER_COMMIT_SHA=${{ needs.prepare_commit_id.outputs.AFTER_COMMIT_SHA }}
         echo "BEFORE_COMMIT_SHA: $BEFORE_COMMIT_SHA, AFTER_COMMIT_SHA: $AFTER_COMMIT_SHA"
 
         # get updated product
@@ -108,13 +108,13 @@ jobs:
         PRODUCTS=$(jq -c '.products' output.json)
         INFRA=$(jq -c '.infra' output.json)
         echo "PRODUCTS: $PRODUCTS, INFRA: $INFRA"
-        echo "::set-output name=PRODUCTS::$PRODUCTS"
-        echo "::set-output name=INFRA::$INFRA"
+        echo "PRODUCTS=$PRODUCTS" >> "$GITHUB_OUTPUT"
+        echo "INFRA=$INFRA" >> "$GITHUB_OUTPUT"
 
-  test-infra:
+  test_infra:
     name: Test Infra
     runs-on: ubuntu-22.04
-    needs: prepare-updated-product
+    needs: prepare_updated_product
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -139,7 +139,7 @@ jobs:
     - name: Build Infra
       run: |
         set -ex
-        INFRA="${{ needs.prepare-updated-product.outputs.INFRA }}"
+        INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA: $INFRA"
 
         # build infra
