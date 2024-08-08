@@ -24,3 +24,24 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         LINTER_RULES_PATH: /
         MARKDOWN_CONFIG_FILE: .markdownlint.yml
+  
+  test-job:
+    name: Test Job
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+    - name: Run Python Script
+      run: |
+        python --version
+        ls -alh
+        echo before commit id: ${{ github.event.before }}
+        echo after commit id: ${{ github.event.after }}
+        echo commit id: ${{ github.sha }}
+        python .github/scripts/get_target_product.py
