@@ -92,8 +92,8 @@ jobs:
 
         # get updated product
         python3 .github/scripts/get_target_product.py \
-          --before-commit-sha $BEFORE_COMMIT_SHA \
-          --after-commit-sha $AFTER_COMMIT_SHA
+          --before-sha $BEFORE_COMMIT_SHA \
+          --after-sha $AFTER_COMMIT_SHA
 
         # check output.json file exists
         if [ ! -f output.json ]; then
