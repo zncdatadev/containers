@@ -32,13 +32,13 @@ function builder () {
 
   local build_cmd="docker buildx build --tag $tag"
 
-  if [ -n "$dockerfile" ]; then
-    build_cmd="$build_cmd --file $dockerfile"
-  fi
-
   if [ "$push" = true ]; then
     build_cmd="$build_cmd --push"
     platform="$DEFAULT_PLATFORM"
+  fi
+
+  if [ -n "$dockerfile" ]; then
+    build_cmd="$build_cmd --file $dockerfile"
   fi
 
   if [ -n "$platform" ]; then
@@ -65,6 +65,9 @@ function builder () {
   echo "Building image..."
 
   eval $build_cmd
+
+  echo "Show image info..."
+  docker images
 }
 
 # Parse product metadata.json in product path
