@@ -177,6 +177,7 @@ jobs:
           done
         done
 
+        # eg: ["product1:1.0.0", "product2:2.0.0"]
         product_matrix_json=$(jq -c -n --arg product_matrix "${product_matrix[*]}" '$product_matrix | split(" ")')
 
         # save as compact json array to output
@@ -197,6 +198,21 @@ jobs:
     - name: Build Product
       run: |
         set -ex
+
+        . ./.scripts/lib.sh
+
         PRODUCT="${{ matrix.product }}"
         echo "PRODUCT from matrix: $PRODUCT"
         
+        product_name=$(echo $PRODUCT | cut -d':' -f1)
+        product_version=$(echo $PRODUCT | cut -d':' -f2)
+
+        metadata_file="${product_name}/metadata.json"
+
+        # build product
+        for property in $(jq -c '.properties[]' $metadata_file); do
+          version=$(echo $property | jq -r '.version')
+          if [ "$version" == "$product_version" ]; then
+            .scripts/build.sh product $product_name --product-version $product_version
+          fi
+        done

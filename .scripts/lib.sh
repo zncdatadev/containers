@@ -76,7 +76,8 @@ function builder () {
 
 # Parse product metadata.json in product path
 # Arguments:
-#   $1: product path
+#   $1: required  product path
+#   $2: optional  product version, if not set, return all versions
 # Returns:
 #   JSON: product metadata
 #    {
@@ -85,6 +86,8 @@ function builder () {
 #    }
 function build_product_with_metadata () {
   local product_path=$1
+  local filter_version=$2
+
   local metadata_file="$product_path/metadata.json"
   local product_name=$(jq -r '.name' $metadata_file)  
 
@@ -114,6 +117,12 @@ function build_product_with_metadata () {
     fi
     local build_args_json=$(printf '%s\n' "${build_args[@]}" | jq -R . | jq -s .)
     property_json=$(echo "$property_json" | jq --argjson build_args "$build_args_json" '. + {build_args: $build_args}')
+
+    if [ -n "$filter_version" ] && [ "$filter_version" == "$product_version" ]; then
+      result=($property_json)
+      break
+    fi
+
     result+=($property_json)
   done
 

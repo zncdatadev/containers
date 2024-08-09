@@ -106,12 +106,13 @@ Usage: command [OPTIONS] PATH
 Build the product image
 
 Options:
-  -h, --help                  Show this message
-  -f, --file string           Set the Dockerfile path, default is Dockerfile
-      --push                  Push the built image to the registry
-      --platform string       Set the platform for the image, default is linux/amd64,linux/arm64.
-      --progress string       Set the progress output type [auto, plain, tty], default is auto
-      --cache-dir string      Set the cache directory
+  -h, --help                      Show this message
+  -f, --file string               Set the Dockerfile path, default is Dockerfile
+      --product-version string    Set the product version
+      --push                      Push the built image to the registry
+      --platform string           Set the platform for the image, default is linux/amd64,linux/arm64.
+      --progress string           Set the progress output type [auto, plain, tty], default is auto
+      --cache-dir string          Set the cache directory
 "
 
   local context
@@ -120,6 +121,7 @@ Options:
   local platform=""
   local progress=""
   local cache_dir=""
+  local product_version=""
 
   while [ "$1" != "" ]; do
     case $1 in
@@ -141,6 +143,10 @@ Options:
       --cache-dir )
         shift
         cache_dir=$1
+        ;;
+      --product-version )
+        shift
+        product_version=$1
         ;;
       -h | --help )
         echo "$usage"
