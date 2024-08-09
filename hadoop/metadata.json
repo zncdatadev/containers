@@ -1,0 +1,21 @@
+{
+  "name": "hadoop",
+  "properties": [
+    {
+      "version": "3.4.0",
+      "upstream": {
+        "name": "java-base",
+        "version": "11",
+        "stack": "0.0.0-dev"
+      }
+    },
+    {
+      "version": "3.3.6",
+      "upstream": {
+        "name": "java-base",
+        "version": "11",
+        "stack": "0.0.0-dev"
+      }
+    }
+  ]
+}
