@@ -135,6 +135,8 @@ jobs:
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA from output: $INFRA"
         docker pull rockylinux/rockylinux:9
+        
+        ls -alh /var/lib/docker
 
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
@@ -185,3 +187,5 @@ jobs:
         echo "PRODUCT from matrix: $PRODUCT"
 
         docker images
+
+        ls -alh /var/lib/docker
