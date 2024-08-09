@@ -1,6 +1,9 @@
 {
   "products_priority": {
-    "zookeeper": 1000
+    "zookeeper": 1000,
+    "hdfs": 1000,
+    "hbase": 1000,
+    "hive": 2000
   },
   "infra_priority": {
     "kubedata-base": 100,

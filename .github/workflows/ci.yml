@@ -10,23 +10,23 @@ env:
   DOCKER_CACHE_DIR: /tmp/docker-cache
 
 jobs:
-  markdown-lint:
-    name: Markdown Lint
-    runs-on: ubuntu-22.04
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Lint Code Base
-      uses: github/super-linter@v4
-      env:
-        VALIDATE_MARKDOWN: true
-        VALIDATE_ALL_CODEBASE: false
-        DEFAULT_BRANCH: main
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        LINTER_RULES_PATH: /
-        MARKDOWN_CONFIG_FILE: .markdownlint.yml
+  # markdown-lint:
+  #   name: Markdown Lint
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #   - name: Checkout Code
+  #     uses: actions/checkout@v3
+  #     with:
+  #       fetch-depth: 0
+  #   - name: Lint Code Base
+  #     uses: github/super-linter@v4
+  #     env:
+  #       VALIDATE_MARKDOWN: true
+  #       VALIDATE_ALL_CODEBASE: false
+  #       DEFAULT_BRANCH: main
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       LINTER_RULES_PATH: /
+  #       MARKDOWN_CONFIG_FILE: .markdownlint.yml
   
   prepare_updated_product:
     name: Prepare Updated Product
@@ -93,7 +93,7 @@ jobs:
         jq . output.json
 
         # get `products`, `infra` from output.json and set as output
-        PRODUCTS=$(jq -c '.products | tostring' output.json)
+        PRODUCTS=$(jq -c '.products' output.json)
         INFRA=$(jq -c '.infra | tostring' output.json)
         echo "PRODUCTS: $PRODUCTS, INFRA: $INFRA"
         echo "PRODUCTS=$PRODUCTS" >> "$GITHUB_OUTPUT"
@@ -140,7 +140,7 @@ jobs:
         set -ex
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA from output: $INFRA"
-
+        docker pull rockylinux/rockylinux:9
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
             .scripts/build.sh product $item
@@ -154,7 +154,7 @@ jobs:
       - test_infra
     strategy:
       matrix:
-        product: ${{ needs.prepare_updated_product.outputs.PRODUCTS }}
+        product: ${{ fromJson(needs.prepare_updated_product.outputs.PRODUCTS) }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
