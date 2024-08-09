@@ -47,9 +47,9 @@ function builder () {
 
   # cache-from && cache-to exist
   if [ -n "$cache_from" ] && [ -n "$cache_to" ]; then
-    build_cmd="$build_cmd --cache-from type=local,src=$cache_from --cache-to type=local,src=$cache_to"
-  elif [ -n "$CACHE_DIR" ]; then
-    build_cmd="$build_cmd --cache-from type=local,src=$CACHE_DIR --cache-to type=local,src=$CACHE_DIR"
+    build_cmd="$build_cmd --cache-from type=local,src=$cache_from --cache-to type=local,dest=$cache_to"
+  elif [ -n "$DOCKER_CACHE_DIR" ]; then
+    build_cmd="$build_cmd --cache-from type=local,src=$DOCKER_CACHE_DIR --cache-to type=local,dest=$DOCKER_CACHE_DIR"
   fi
 
   if [ -n "$build_args" ]; then
