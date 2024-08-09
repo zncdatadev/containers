@@ -41,7 +41,7 @@ endif
 .PHONY:
 kubedata-base-build: ## Build kubedata-base image
 	set -ex ;\
-	pushd kubedata-base ;\
+	cd kubedata-base ;\
 	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
 	for property in $$($(JQ) -c '.properties[]' metadata.json); do \
 		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
@@ -49,12 +49,11 @@ kubedata-base-build: ## Build kubedata-base image
 			-t $(REGISTRY)/$${PRODUCT_NAME}:$${PRODUCT_VERSION}-stack$(BASE_STACK_VERSION) \
 			-f Dockerfile . ;\
 	done
-	popd
 
 .PHONY:
 kubedata-base-buildx: jq ## Build kubedata-base image with buildx
 	set -ex ;\
-	pushd kubedata-base ;\
+	cd kubedata-base ;\
 	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
 	for property in $$($(JQ) -c '.properties[]' metadata.json); do \
 		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
@@ -69,7 +68,7 @@ kubedata-base-buildx: jq ## Build kubedata-base image with buildx
 .PHONY:
 vector-build: ## Build Vector image
 	set -ex ;\
-	pushd vector ;\
+	cd vector ;\
 	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
 	for property in $$($(JQ) -c '.properties[]' metadata.json); do \
 		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
@@ -87,7 +86,7 @@ vector-build: ## Build Vector image
 .PHONY:
 java-base-build: ## Build Java base image
 	set -ex ;\
-	pushd java-base ;\
+	cd java-base ;\
 	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
 	for property in $$($(JQ) -c '.properties[]' metadata.json) ; do \
 		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
@@ -103,7 +102,7 @@ java-base-build: ## Build Java base image
 .PHONY:
 java-devel-build: ## Build Java development image
 	set -ex ;\
-	pushd java-devel ;\
+	cd java-devel ;\
 	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
 	for property in $$($(JQ) -c '.properties[]' metadata.json) ; do \
 		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
