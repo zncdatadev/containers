@@ -1,0 +1,21 @@
+{
+  "name": "hbase",
+  "properties": [
+    {
+      "version": "2.6.0",
+      "upstream": {
+        "name": "java-base",
+        "version": "11",
+        "stack": "0.0.0-dev"
+      }
+    },
+    {
+      "version": "3.5.3",
+      "upstream": {
+        "name": "java-base",
+        "version": "11",
+        "stack": "0.0.0-dev"
+      }
+    }
+  ]
+}
