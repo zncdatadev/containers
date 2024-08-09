@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -ex
 
@@ -20,7 +20,6 @@ STACK_VERSION=${STACK_VERSION:-"0.0.0-dev"}
 #   $9: context
 # Returns:
 function builder () {
-
   local tag=$1
   local dockerfile=$2
   local platform=$3
