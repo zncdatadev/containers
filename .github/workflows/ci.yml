@@ -67,9 +67,12 @@ jobs:
           BEFORE_COMMIT_SHA=${{ github.event.before }}
           AFTER_COMMIT_SHA=${{ github.sha }}
           # When push to a new branch, BEFORE_COMMIT_SHA is 0000000000000000000000000000000000000000, so we use previous commit
-          if [ $BEFORE_COMMIT_SHA == '0000000000000000000000000000000000000000' ]; then
-            BEFORE_COMMIT_SHA=$(git rev-list --max-parents=0 HEAD)
+          if [ $BEFORE_COMMIT_SHA == '0000000000000000000000000000000000000000' ] || ! git merge-base --is-ancestor $BEFORE_COMMIT_SHA $AFTER_COMMIT_SHA; then
+            echo "Push to a new branch or not a direct push to the branch, find the previous commit or the common ancestor"
+            DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+            BEFORE_COMMIT_SHA=$(git rev-parse origin/$DEFAULT_BRANCH)
           fi
+
         fi
 
         # save to env
@@ -187,6 +190,10 @@ jobs:
         
         # set product metadata as output
         echo "PRODUCT_METADATA=$product_metadata" >> "$GITHUB_OUTPUT"
+
+        pwd
+
+        ls -alh ./.github/workflows/
     - name: Build product
       uses: ./.github/workflows/build_image.yml
       with:
