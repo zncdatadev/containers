@@ -30,26 +30,26 @@ function builder () {
   local build_args=$8
   local context=$9
 
-  local build_cmd="docker buildx build --tag $tag"
+  local container_tool="docker"
+  local build_cmd="build --tag $tag"
 
+  # use buildx if push is true
   if [ "$push" = true ]; then
-    build_cmd="$build_cmd --push"
-    platform="$DEFAULT_PLATFORM"
+    container_tool="$container_tool buildx"
+    platform="${platform:-$DEFAULT_PLATFORM}"
+
+    build_cmd="$build_cmd --push --platform $platform"
+
+    # cache-from && cache-to exist
+    if [ -n "$cache_from" ] && [ -n "$cache_to" ]; then
+      build_cmd="$build_cmd --cache-from type=local,src=$cache_from --cache-to type=local,dest=$cache_to"
+    elif [ -n "$DOCKER_CACHE_DIR" ]; then
+      build_cmd="$build_cmd --cache-from type=local,src=$DOCKER_CACHE_DIR --cache-to type=local,dest=$DOCKER_CACHE_DIR"
+    fi
   fi
 
   if [ -n "$dockerfile" ]; then
     build_cmd="$build_cmd --file $dockerfile"
-  fi
-
-  if [ -n "$platform" ]; then
-    build_cmd="$build_cmd --platform $platform"
-  fi
-
-  # cache-from && cache-to exist
-  if [ -n "$cache_from" ] && [ -n "$cache_to" ]; then
-    build_cmd="$build_cmd --cache-from type=local,src=$cache_from --cache-to type=local,dest=$cache_to"
-  elif [ -n "$DOCKER_CACHE_DIR" ]; then
-    build_cmd="$build_cmd --cache-from type=local,src=$DOCKER_CACHE_DIR --cache-to type=local,dest=$DOCKER_CACHE_DIR"
   fi
 
   if [ -n "$build_args" ]; then
@@ -60,14 +60,12 @@ function builder () {
   fi
   
 
-  build_cmd="$build_cmd $context"
+  build_cmd="$container_tool $build_cmd $context"
 
   echo "Building image..."
 
   eval $build_cmd
 
-  echo "Show image info..."
-  docker images
 }
 
 # Parse product metadata.json in product path
