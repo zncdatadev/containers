@@ -66,6 +66,14 @@ function builder () {
 
   eval $build_cmd
 
+  # if push is false, show docker images to debug
+  if [ "$push" = false ]; then
+    echo "Show docker images"
+    docker images
+    echo "Inspect image"
+    docker inspect $tag
+  fi
+
 }
 
 # Parse product metadata.json in product path
