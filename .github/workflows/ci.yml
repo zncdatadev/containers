@@ -120,7 +120,7 @@ jobs:
       id: cache-docker
       uses: actions/cache@v4
       with:
-        path: /tmp/docker-cache
+        path: /var/lib/docker
         key: ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-${{ github.run_id }}
         restore-keys: |
           ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-
@@ -141,6 +141,7 @@ jobs:
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA from output: $INFRA"
         docker pull rockylinux/rockylinux:9
+
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
             .scripts/build.sh product $item
@@ -190,6 +191,8 @@ jobs:
     - name: Build Products
       run: |
         set -ex
+        PRODUCTS="${{ needs.prepare_updated_product.outputs.PRODUCTS }}"
+        echo "PRODUCTS from output: $PRODUCTS"
         PRODUCT="${{ matrix.product }}"
         echo "PRODUCT from matrix: $PRODUCT"
 
