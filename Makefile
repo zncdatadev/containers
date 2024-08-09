@@ -40,81 +40,28 @@ endif
 
 .PHONY:
 kubedata-base-build: ## Build kubedata-base image
-	set -ex ;\
-	cd kubedata-base ;\
-	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
-	for property in $$($(JQ) -c '.properties[]' metadata.json); do \
-		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
-		$(CONTAINER_TOOL) build \
-			-t $(REGISTRY)/$${PRODUCT_NAME}:$${PRODUCT_VERSION}-stack$(BASE_STACK_VERSION) \
-			-f Dockerfile . ;\
-	done
+	.scripts/build.sh product kubedata-base
 
 .PHONY:
 kubedata-base-buildx: jq ## Build kubedata-base image with buildx
-	set -ex ;\
-	cd kubedata-base ;\
-	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
-	for property in $$($(JQ) -c '.properties[]' metadata.json); do \
-		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
-		$(CONTAINER_TOOL) buildx build \
-			--push \
-			--platform $(PLATFORMS) \
-			-t $(REGISTRY)/$${PRODUCT_NAME}:$${PRODUCT_VERSION}-stack$(BASE_STACK_VERSION) \
-			-f Dockerfile . ;\
-	done
-
+	.scripts/build.sh product kubedata-base --push
 
 .PHONY:
 vector-build: ## Build Vector image
-	set -ex ;\
-	cd vector ;\
-	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
-	for property in $$($(JQ) -c '.properties[]' metadata.json); do \
-		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
-		UPSTREAM_NAME=$$(echo $$property | $(JQ) -r '.upstream.name') ;\
-		UPSTREAM_VERSION=$$(echo $$property | $(JQ) -r '.upstream.version') ;\
-		$(CONTAINER_TOOL) build \
-			--build-arg BASE_IMAGE=$(REGISTRY)/$${UPSTREAM_NAME}:$${UPSTREAM_VERSION}-stack$(BASE_STACK_VERSION) \
-			--build-arg PRODUCT_VERSION=$${PRODUCT_VERSION} \
-			-t $(REGISTRY)/$${PRODUCT_NAME}:$${PRODUCT_VERSION}-stack$(BASE_STACK_VERSION) \
-			-f Dockerfile . ;\
-	done
+	.scripts/build.sh product vector	
+
+.PHONY:
+vector-buildx: jq ## Build Vector image with buildx
+	.scripts/build.sh product vector --push
 
 ##@ develop environment
 
 .PHONY:
 java-base-build: ## Build Java base image
-	set -ex ;\
-	cd java-base ;\
-	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
-	for property in $$($(JQ) -c '.properties[]' metadata.json) ; do \
-		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
-		UPSTREAM_NAME=$$(echo $$property | $(JQ) -r '.upstream.name') ;\
-		UPSTREAM_VERSION=$$(echo $$property | $(JQ) -r '.upstream.version') ;\
-		$(CONTAINER_TOOL) build \
-			--build-arg BASE_IMAGE=$(REGISTRY)/$${UPSTREAM_NAME}:$${UPSTREAM_VERSION}-stack$(BASE_STACK_VERSION) \
-			--build-arg PRODUCT_VERSION=$${PRODUCT_VERSION} \
-			-t $(REGISTRY)/$${PRODUCT_NAME}:$${PRODUCT_VERSION}-stack$(BASE_STACK_VERSION) \
-			-f Dockerfile . ;\
-	done
+	.scripts/build.sh product java-base
 
 .PHONY:
 java-devel-build: ## Build Java development image
-	set -ex ;\
-	cd java-devel ;\
-	PRODUCT_NAME=$$($(JQ) -r '.name' metadata.json) ;\
-	for property in $$($(JQ) -c '.properties[]' metadata.json) ; do \
-		PRODUCT_VERSION=$$(echo $$property | $(JQ) -r '.version') ;\
-		UPSTREAM_NAME=$$(echo $$property | $(JQ) -r '.upstream.name') ;\
-		UPSTREAM_VERSION=$$(echo $$property | $(JQ) -r '.upstream.version') ;\
-		DEPENDENCIES=$$(echo $$property | $(JQ) -r '.dependencies | to_entries | map("--build-arg \(.key | ascii_upcase)_VERSION=\(.value)") | join(" ")') ;\
-		$(CONTAINER_TOOL) build \
-			--build-arg BASE_IMAGE=$(REGISTRY)/$${UPSTREAM_NAME}:$${UPSTREAM_VERSION}-stack$(BASE_STACK_VERSION) \
-			--build-arg PRODUCT_VERSION=$${PRODUCT_VERSION} \
-			$${DEPENDENCIES} \
-			-t $(REGISTRY)/$${PRODUCT_NAME}:$${PRODUCT_VERSION}-stack$(STACK_VERSION) \
-			-f Dockerfile . ;\
-	done
+	.scripts/build.sh product java-devel
 
 ##@ product
