@@ -1,6 +1,11 @@
 #!/bin/bash
 
-set -ex
+set -e
+
+# if CI_SCRIPT_DEBUG is set, then enable debug mode
+if [ -n "$CI_SCRIPT_DEBUG" ]; then
+  set -x
+fi
 
 DEFAULT_PLATFORM="linux/amd64,linux/arm64"
 REGISTRY=${REGISTRY:-"quay.io/zncdatadev"}
