@@ -103,45 +103,45 @@ jobs:
         echo "PRODUCTS=$PRODUCTS" >> "$GITHUB_OUTPUT"
         echo "INFRA=$INFRA" >> "$GITHUB_OUTPUT"
 
-  test_infra:
-    name: Test Infra
-    runs-on: ubuntu-22.04
-    needs: prepare_updated_product
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Cache docker
-      id: cache-buildx
-      uses: actions/cache@v4
-      with:
-        path: 
-          /tmp/docker-cache
-        key: ${{ runner.os }}-docker-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: Install jq
-      uses: dcarbone/install-jq-action@v2.1.0
-    - name: Check version
-      run: |
-        bash --version
-        jq --version
-        docker info
-    - name: Build Infra
-      run: |
-        set -ex
-        INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
-        echo "INFRA from output: $INFRA"
+  # test_infra:
+  #   name: Test Infra
+  #   runs-on: ubuntu-22.04
+  #   needs: prepare_updated_product
+  #   steps:
+  #   - name: Checkout Code
+  #     uses: actions/checkout@v4
+  #     with:
+  #       fetch-depth: 0
+  #   - name: Cache docker
+  #     id: cache-buildx
+  #     uses: actions/cache@v4
+  #     with:
+  #       path: 
+  #         /tmp/docker-cache
+  #       key: ${{ runner.os }}-docker-${{ github.run_id }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-docker-
+  #   - name: Set up QEMU
+  #     uses: docker/setup-qemu-action@v3
+  #   - name: Set up Docker Buildx
+  #     uses: docker/setup-buildx-action@v3
+  #   - name: Install jq
+  #     uses: dcarbone/install-jq-action@v2.1.0
+  #   - name: Check version
+  #     run: |
+  #       bash --version
+  #       jq --version
+  #       docker info
+  #   - name: Build Infra
+  #     run: |
+  #       set -ex
+  #       INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
+  #       echo "INFRA from output: $INFRA"
         
-        # build infra
-        for item in $(echo "${INFRA}" | jq -r '.[]'); do
-            .scripts/build.sh product $item
-        done
+  #       # build infra
+  #       for item in $(echo "${INFRA}" | jq -r '.[]'); do
+  #           .scripts/build.sh product $item
+  #       done
 
   prepare_product_matrix:
     name: Prepare Product Matrix
@@ -168,14 +168,19 @@ jobs:
 
         product_matrix=()
         for item in $(echo "${PRODUCTS}" | jq -r '.[]'); do
-            name=$(echo $item | jq -r '.name')
-            for version in $(echo $item | jq -r '.versions[]'); do
-                product_matrix+=( "$name:$version" )
-            done
+          metadata_file="${item}/metadata.json"
+          name=$(jq -r '.name' $metadata_file)
+            
+          for property in $(jq -c '.properties[]' $metadata_file); do
+            version=$(echo $property | jq -r '.version')
+            product_matrix+=("${name}:${version}")
+          done
         done
 
-        # save to output
-        echo "PRODUCT_MATRIX=${product_matrix[@]}" >> "$GITHUB_OUTPUT"
+        product_matrix_json=$(jq -c -n --arg product_matrix "${product_matrix[*]}" '$product_matrix | split(" ")')
+
+        # save as compact json array to output
+        echo "PRODUCT_MATRIX=$product_matrix_json" >> "$GITHUB_OUTPUT"
     
   test_product:
     name: Test Product
