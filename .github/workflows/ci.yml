@@ -140,6 +140,7 @@ jobs:
       uses: dcarbone/install-jq-action@v2.1.0
     - name: Check version
       run: |
+        bash --version
         jq --version
         docker info
     - name: Build Infra

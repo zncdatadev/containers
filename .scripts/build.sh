@@ -19,7 +19,7 @@ STACK_VERSION=${STACK_VERSION:-"0.0.0-dev"}
 #   $8: build-arg list
 #   $9: context
 # Returns:
-function builder() {
+function builder () {
 
   local tag=$1
   local dockerfile=$2
@@ -77,7 +77,7 @@ function builder() {
 #      "tag": "quay.io/zncdatadev/airflow:1.10.12",
 #      "build_args": ["PRODUCT_VERSION=1.10.12", "BASE_IMAGE=quay.io/zncdatadev/python:3.8.5-stack0.0.0-dev"],
 #    }
-function build_product_with_metadata() {
+function build_product_with_metadata () {
   local product_path=$1
   local metadata_file="$product_path/metadata.json"
   local product_name=$(jq -r '.name' $metadata_file)  
@@ -204,7 +204,7 @@ Options:
 }
 
 
-function build_product() {
+function build_product () {
   local usage="
 Usage: command [OPTIONS] PATH
 
@@ -283,7 +283,7 @@ Options:
 
 }
 
-function main() {
+function main () {
   local usage="
 Usage: build.sh COMMAND [OPTIONS] PATH
 
