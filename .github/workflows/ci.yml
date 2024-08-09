@@ -108,22 +108,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Cache buildx
+    - name: Cache docker
       id: cache-buildx
       uses: actions/cache@v4
       with:
-        path: /tmp/docker-cache
-        key: ${{ runner.os }}-buildx-${{ github.event.pull_request.number }}-${{ github.run_id }}
+        path: 
+          /tmp/docker-cache
+          /var/lib/docker
+        key: ${{ runner.os }}-docker-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-buildx-${{ github.event.pull_request.number }}-
-    - name: Cache docker data
-      id: cache-docker
-      uses: actions/cache@v4
-      with:
-        path: /var/lib/docker
-        key: ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-
+          ${{ runner.os }}-docker-
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
@@ -161,22 +155,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Cache buildx
+    - name: Cache docker
       id: cache-buildx
       uses: actions/cache@v4
       with:
-        path: /tmp/docker-cache
-        key: ${{ runner.os }}-buildx-${{ github.event.pull_request.number }}-${{ github.run_id }}
+        path: 
+          /tmp/docker-cache
+          /var/lib/docker
+        key: ${{ runner.os }}-docker-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-buildx-${{ github.event.pull_request.number }}-
-    - name: Cache docker data
-      id: cache-docker
-      uses: actions/cache@v4
-      with:
-        path: /var/lib/docker
-        key: ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-
+          ${{ runner.os }}-docker-
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx  
