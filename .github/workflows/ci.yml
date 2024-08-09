@@ -54,6 +54,7 @@ jobs:
     - name: Get Updated Product
       id: get_updated_product
       run: |
+        set -ex
         BEFORE_COMMIT_SHA=''
         AFTER_COMMIT_SHA=''
 
@@ -67,7 +68,7 @@ jobs:
           AFTER_COMMIT_SHA=${{ github.sha }}
           # When push to a new branch, BEFORE_COMMIT_SHA is 0000000000000000000000000000000000000000, so we use previous commit
           if [ $BEFORE_COMMIT_SHA == '0000000000000000000000000000000000000000' ]; then
-            BEFORE_COMMIT_SHA=$(git rev-parse HEAD^1)
+            BEFORE_COMMIT_SHA=$(git rev-list --max-parents=0 HEAD)
           fi
         fi
 
@@ -114,7 +115,6 @@ jobs:
       with:
         path: 
           /tmp/docker-cache
-          /var/lib/docker
         key: ${{ runner.os }}-docker-${{ github.run_id }}
         restore-keys: |
           ${{ runner.os }}-docker-
@@ -134,10 +134,7 @@ jobs:
         set -ex
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA from output: $INFRA"
-        docker pull rockylinux/rockylinux:9
         
-        ls -alh /var/lib/docker
-
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
             .scripts/build.sh product $item
@@ -148,7 +145,6 @@ jobs:
     runs-on: ubuntu-22.04
     needs: 
       - prepare_updated_product
-      - test_infra
     strategy:
       matrix:
         product: ${{ fromJson(needs.prepare_updated_product.outputs.PRODUCTS) }}
@@ -163,7 +159,6 @@ jobs:
       with:
         path: 
           /tmp/docker-cache
-          /var/lib/docker
         key: ${{ runner.os }}-docker-${{ github.run_id }}
         restore-keys: |
           ${{ runner.os }}-docker-
@@ -178,14 +173,22 @@ jobs:
         bash --version
         jq --version
         docker info
-    - name: Build Products
+    - name: Get Product Metadata
+      id: get_product_metadata
       run: |
         set -ex
-        PRODUCTS="${{ needs.prepare_updated_product.outputs.PRODUCTS }}"
-        echo "PRODUCTS from output: $PRODUCTS"
+
+        . ./.scripts/lib.sh
+
         PRODUCT="${{ matrix.product }}"
         echo "PRODUCT from matrix: $PRODUCT"
-
-        docker images
-
-        ls -alh /var/lib/docker
+        
+        product_metadata=$(build_product_with_metadata $PRODUCT | jq -c '.')
+        
+        # set product metadata as output
+        echo "PRODUCT_METADATA=$product_metadata" >> "$GITHUB_OUTPUT"
+    - name: Build product
+      uses: ./.github/workflows/build_image.yml
+      with:
+        tag: ${{ matrix.product }}
+        metadata: ${{ steps.get_product_metadata.outputs.PRODUCT_METADATA }}
