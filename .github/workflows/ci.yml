@@ -173,7 +173,7 @@ jobs:
       id: cache-docker
       uses: actions/cache@v4
       with:
-        path: /tmp/docker-cache
+        path: /var/lib/docker
         key: ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-${{ github.run_id }}
         restore-keys: |
           ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-
