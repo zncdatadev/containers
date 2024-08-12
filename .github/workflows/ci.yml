@@ -243,6 +243,7 @@ jobs:
     - name: Deploy Infra
       run: |
         set -ex
+        export CI_SCRIPT_DEBUG=TRUE
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA from output: $INFRA"
         
