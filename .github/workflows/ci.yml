@@ -10,7 +10,7 @@ env:
   DOCKER_CACHE_DIR: /tmp/docker-cache
 
 jobs:
-  markdown-lint:
+  linter_code_base:
     name: Markdown Lint
     runs-on: ubuntu-22.04
     steps:
@@ -28,47 +28,14 @@ jobs:
         LINTER_RULES_PATH: /
         MARKDOWN_CONFIG_FILE: .markdownlint.yml
   
-  prepare_commit_id:
-    name: Prepare Commit ID
-    runs-on: ubuntu-22.04
-    # needs: markdown-lint
-    outputs:
-      BEFORE_COMMIT_SHA: ${{ steps.git_commit_id.outputs.BEFORE_COMMIT_SHA }}
-      AFTER_COMMIT_SHA: ${{ steps.git_commit_id.outputs.AFTER_COMMIT_SHA }}
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Get Commit ID
-      id: git_commit_id
-      run: |
-        BEFORE_COMMIT_SHA=''
-        AFTER_COMMIT_SHA=''
-
-        GH_EVENT=${{ github.event_name }}
-
-        if [ $GH_EVENT == 'pull_request' ]; then
-          BEFORE_COMMIT_SHA=${{ github.event.pull_request.base.sha }}
-          AFTER_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
-        elif [ $GH_EVENT == 'push' ]; then
-          BEFORE_COMMIT_SHA=${{ github.event.before }}
-          AFTER_COMMIT_SHA=${{ github.sha }}
-        fi
-
-        # save to env
-        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA" >> $GITHUB_ENV
-        echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> $GITHUB_ENV
-
-        # save to output
-        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA" >> "$GITHUB_OUTPUT"
-        echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> "$GITHUB_OUTPUT"
-
   prepare_updated_product:
     name: Prepare Updated Product
     runs-on: ubuntu-22.04
-    needs: prepare_commit_id
+    needs: 
+      - linter_code_base
     outputs:
+      BEFORE_COMMIT_SHA: ${{ steps.get_updated_product.outputs.BEFORE_COMMIT_SHA }}
+      AFTER_COMMIT_SHA: ${{ steps.get_updated_product.outputs.AFTER_COMMIT_SHA }}
       PRODUCTS: ${{ steps.get_updated_product.outputs.PRODUCTS }}
       INFRA: ${{ steps.get_updated_product.outputs.INFRA }}
     steps:
@@ -89,11 +56,33 @@ jobs:
     - name: Get Updated Product
       id: get_updated_product
       run: |
+        set -ex
+        BEFORE_COMMIT_SHA=''
+        AFTER_COMMIT_SHA=''
 
+        GH_EVENT=${{ github.event_name }}
 
-        BEFORE_COMMIT_SHA=${{ needs.prepare_commit_id.outputs.BEFORE_COMMIT_SHA }}
-        AFTER_COMMIT_SHA=${{ needs.prepare_commit_id.outputs.AFTER_COMMIT_SHA }}
-        echo "BEFORE_COMMIT_SHA: $BEFORE_COMMIT_SHA, AFTER_COMMIT_SHA: $AFTER_COMMIT_SHA"
+        if [ $GH_EVENT == 'pull_request' ]; then
+          BEFORE_COMMIT_SHA=${{ github.event.pull_request.base.sha }}
+          AFTER_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
+        elif [ $GH_EVENT == 'push' ]; then
+          BEFORE_COMMIT_SHA=${{ github.event.before }}
+          AFTER_COMMIT_SHA=${{ github.sha }}
+          # When push to a new branch, BEFORE_COMMIT_SHA is 0000000000000000000000000000000000000000, so we use previous commit
+          if [ $BEFORE_COMMIT_SHA == '0000000000000000000000000000000000000000' ] || ! git merge-base --is-ancestor $BEFORE_COMMIT_SHA $AFTER_COMMIT_SHA; then
+            echo "Push to a new branch or not a direct push to the branch, find the previous commit or the common ancestor"
+            DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+            BEFORE_COMMIT_SHA=$(git rev-parse origin/$DEFAULT_BRANCH)
+          fi
+
+        fi
+
+        # save to env
+        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA" >> $GITHUB_ENV
+        echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> $GITHUB_ENV
+        # save to output
+        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA" >> "$GITHUB_OUTPUT"
+        echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> "$GITHUB_OUTPUT"
 
         # get updated product
         python3 .github/scripts/get_target_product.py \
@@ -119,20 +108,22 @@ jobs:
   test_infra:
     name: Test Infra
     runs-on: ubuntu-22.04
-    needs: prepare_updated_product
+    needs: 
+      - prepare_updated_product
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Cache Primes
-      id: cache-primes
+    - name: Cache docker
+      id: cache-buildx
       uses: actions/cache@v4
       with:
-        path: /tmp/docker-cache
-        key: ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-${{ github.run_id }}
+        path: 
+          /tmp/docker-cache
+        key: ${{ runner.os }}-docker-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-docker-${{ github.event.pull_request.number }}-
+          ${{ runner.os }}-docker-
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
@@ -148,9 +139,83 @@ jobs:
       run: |
         set -ex
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
-        echo "INFRA: $INFRA"
-
+        echo "INFRA from output: $INFRA"
+        
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
             .scripts/build.sh product $item
+        done
+
+  prepare_product_matrix:
+    name: Prepare Product Matrix
+    runs-on: ubuntu-22.04
+    needs: prepare_updated_product
+    outputs:
+      PRODUCT_MATRIX: ${{ steps.get_product_matrix.outputs.PRODUCT_MATRIX }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Install jq
+      uses: dcarbone/install-jq-action@v2.1.0
+    - name: Check version
+      run: |
+        jq --version
+    - name: Get Product Matrix
+      id: get_product_matrix
+      run: |
+        set -ex
+        PRODUCTS="${{ needs.prepare_updated_product.outputs.PRODUCTS }}"
+        echo "PRODUCTS from output: $PRODUCTS"
+
+        product_matrix=()
+        for item in $(echo "${PRODUCTS}" | jq -r '.[]'); do
+          metadata_file="${item}/metadata.json"
+          name=$(jq -r '.name' $metadata_file)
+            
+          for property in $(jq -c '.properties[]' $metadata_file); do
+            version=$(echo $property | jq -r '.version')
+            product_matrix+=("${name}:${version}")
+          done
+        done
+
+        # eg: ["product1:1.0.0", "product2:2.0.0"]
+        product_matrix_json=$(jq -c -n --arg product_matrix "${product_matrix[*]}" '$product_matrix | split(" ")')
+
+        # save as compact json array to output
+        echo "PRODUCT_MATRIX=$product_matrix_json" >> "$GITHUB_OUTPUT"
+    
+  test_product:
+    name: Test Product
+    runs-on: ubuntu-22.04
+    needs: prepare_product_matrix
+    strategy:
+      matrix:
+        product: ${{fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX)}}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Build Product
+      run: |
+        set -ex
+
+        . ./.scripts/lib.sh
+
+        PRODUCT="${{ matrix.product }}"
+        echo "PRODUCT from matrix: $PRODUCT"
+        
+        product_name=$(echo $PRODUCT | cut -d':' -f1)
+        product_version=$(echo $PRODUCT | cut -d':' -f2)
+
+        metadata_file="${product_name}/metadata.json"
+
+        # build product
+        for property in $(jq -c '.properties[]' $metadata_file); do
+          version=$(echo $property | jq -r '.version')
+          if [ "$version" == "$product_version" ]; then
+            .scripts/build.sh product $product_name --product-version $product_version
+          fi
         done
