@@ -216,6 +216,65 @@ jobs:
         for property in $(jq -c '.properties[]' $metadata_file); do
           version=$(echo $property | jq -r '.version')
           if [ "$version" == "$product_version" ]; then
-            .scripts/build.sh product $product_name --product-version $product_version
+            .scripts/build.sh product --product-version $product_version $product_name
+          fi
+        done
+
+  deploy_infra:
+    name: Deploy Infra
+    runs-on: ubuntu-22.04
+    needs: 
+      - prepare_updated_product
+      - test_infra
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Deploy Infra
+      run: |
+        set -ex
+        INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
+        echo "INFRA from output: $INFRA"
+        
+        # deploy infra
+        for item in $(echo "${INFRA}" | jq -r '.[]'); do
+            .scripts/build.sh product --push --progress plain $item 
+        done
+
+  deploy_product:
+    name: Deploy Product
+    runs-on: ubuntu-22.04
+    needs: 
+      - prepare_product_matrix
+      - test_product
+      - deploy_infra
+    strategy:
+      matrix:
+        product: ${{fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX)}}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Deploy Product
+      run: |
+        set -ex
+
+        . ./.scripts/lib.sh
+
+        PRODUCT="${{ matrix.product }}"
+        echo "PRODUCT from matrix: $PRODUCT"
+        
+        product_name=$(echo $PRODUCT | cut -d':' -f1)
+        product_version=$(echo $PRODUCT | cut -d':' -f2)
+
+        metadata_file="${product_name}/metadata.json"
+
+        # deploy product
+        for property in $(jq -c '.properties[]' $metadata_file); do
+          version=$(echo $property | jq -r '.version')
+          if [ "$version" == "$product_version" ]; then
+            .scripts/build.sh product --push --progress plain --product-version $product_version $product_name
           fi
         done
