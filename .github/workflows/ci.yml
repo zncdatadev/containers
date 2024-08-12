@@ -8,6 +8,7 @@ env:
   REGISTRY: quay.io/zncdatadev
   STACK_VERSION: 0.0.0-dev
   DOCKER_CACHE_DIR: /tmp/docker-cache
+  CI_SCRIPT_DEBUG: true
 
 jobs:
   linter_code_base:
@@ -216,6 +217,103 @@ jobs:
         for property in $(jq -c '.properties[]' $metadata_file); do
           version=$(echo $property | jq -r '.version')
           if [ "$version" == "$product_version" ]; then
-            .scripts/build.sh product $product_name --product-version $product_version
+            .scripts/build.sh product --product-version $product_version $product_name
+          fi
+        done
+
+  deploy_infra:
+    name: Deploy Infra
+    runs-on: ubuntu-22.04
+    needs: 
+      - prepare_updated_product
+      - test_infra
+    if: github.event_name == 'push' && github.repository_owner == 'zncdatadev'
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Cache docker
+      id: cache-buildx
+      uses: actions/cache@v4
+      with:
+        path: 
+          /tmp/docker-cache
+        key: ${{ runner.os }}-docker-${{ github.run_id }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
+    - name: Deploy Infra
+      run: |
+        set -ex
+        INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
+        echo "INFRA from output: $INFRA"
+        # deploy infra
+        for item in $(echo "${INFRA}" | jq -r '.[]'); do
+            .scripts/build.sh product --push --progress plain $item 
+        done
+
+  deploy_product:
+    name: Deploy Product
+    runs-on: ubuntu-22.04
+    needs: 
+      - prepare_product_matrix
+      - test_product
+      - deploy_infra
+    strategy:
+      matrix:
+        product: ${{fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX)}}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Cache docker
+      id: cache-buildx
+      uses: actions/cache@v4
+      with:
+        path: 
+          /tmp/docker-cache
+        key: ${{ runner.os }}-docker-${{ github.run_id }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
+    - name: Deploy Product
+      run: |
+        set -ex
+
+        . ./.scripts/lib.sh
+
+        PRODUCT="${{ matrix.product }}"
+        echo "PRODUCT from matrix: $PRODUCT"
+        
+        product_name=$(echo $PRODUCT | cut -d':' -f1)
+        product_version=$(echo $PRODUCT | cut -d':' -f2)
+
+        metadata_file="${product_name}/metadata.json"
+
+        # deploy product
+        for property in $(jq -c '.properties[]' $metadata_file); do
+          version=$(echo $property | jq -r '.version')
+          if [ "$version" == "$product_version" ]; then
+            .scripts/build.sh product --push --progress plain --product-version $product_version $product_name
           fi
         done
