@@ -1,10 +1,26 @@
-FROM rockylinux/rockylinux:9-ubi
+# syntax=docker/dockerfile:1.8
 
-RUN dnf -y install --setopt=install_weak_deps=False \
-    wget \
-    xz \
-    && dnf clean all
+FROM registry.access.redhat.com/ubi9-minimal
 
+COPY dnf.conf /etc/dnf/dnf.conf
+
+RUN <<EOF
+
+    microdnf update -y
+    microdnf install tar gzip
+    groupadd -g 1001 --system kubedata
+    useradd \
+        --no-log-init \
+        --gid 1001 \
+        --uid 1001 \
+        --create-home \
+        --home-dir /kubedata \
+        kubedata
+
+    microdnf clean all
+EOF
+
+ENV PATH=$PATH:/kubedata
 
 # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
 # https://specs.opencontainers.org/image-spec/annotations/#pre-defined-annotation-keys

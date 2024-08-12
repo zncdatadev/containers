@@ -39,7 +39,7 @@ endif
 ##@ infra
 
 .PHONY:
-kubedata-base-build: ## Build kubedata-base image
+kubedata-base-build: jq ## Build kubedata-base image
 	.scripts/build.sh product kubedata-base
 
 .PHONY:
@@ -57,11 +57,19 @@ vector-buildx: jq ## Build Vector image with buildx
 ##@ develop environment
 
 .PHONY:
-java-base-build: ## Build Java base image
+java-base-build: jq ## Build Java base image
 	.scripts/build.sh product java-base
 
 .PHONY:
-java-devel-build: ## Build Java development image
+java-devel-build: jq ## Build Java development image
 	.scripts/build.sh product java-devel
 
 ##@ product
+
+.PHONY:
+zookeeper-build: jq ## Build Zookeeper image
+	.scripts/build.sh product zookeeper
+
+.PHONY:
+zookeeper-buildx: jq ## Build Zookeeper image with buildx
+	.scripts/build.sh product zookeeper --push
