@@ -8,6 +8,7 @@ env:
   REGISTRY: quay.io/zncdatadev
   STACK_VERSION: 0.0.0-dev
   DOCKER_CACHE_DIR: /tmp/docker-cache
+  CI_SCRIPT_DEBUG: true
 
 jobs:
   # linter_code_base:
@@ -240,13 +241,15 @@ jobs:
         key: ${{ runner.os }}-docker-${{ github.run_id }}
         restore-keys: |
           ${{ runner.os }}-docker-
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
     - name: Deploy Infra
       run: |
         set -ex
-        export CI_SCRIPT_DEBUG=TRUE
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA from output: $INFRA"
-        
         # deploy infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
             .scripts/build.sh product --push --progress plain $item 
