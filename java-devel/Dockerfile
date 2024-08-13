@@ -28,15 +28,15 @@ RUN <<EOF
         which \
         xz \
         zlib-devel \
-        unzip zip
+        unzip \
+        zip
 
     microdnf clean all
 EOF
 
 ## Setup java
 RUN <<EOF
-    microdnf install \
-        java-${PRODUCT_VERSION}-openjdk-devel
+    microdnf install java-${PRODUCT_VERSION}-openjdk-devel
     microdnf clean all
 EOF
 
