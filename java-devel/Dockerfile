@@ -18,7 +18,6 @@ RUN <<EOF
         gettext \
         git \
         hostname \
-        java-"${PRODUCT_VERSION}"-openjdk-devel \
         krb5-devel \
         libcurl-devel \
         make \
@@ -31,18 +30,16 @@ RUN <<EOF
         unzip zip
 
     microdnf clean all
-
 EOF
 
 ## Setup java
 RUN <<EOF
-    set -exu
     microdnf install \
         java-${PRODUCT_VERSION}-openjdk-devel
     microdnf clean all
 EOF
 
-# debug: RUN java -version
+# test: RUN java -version
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-${PRODUCT_VERSION}
 ENV JAVA_VERSION=${PRODUCT_VERSION}

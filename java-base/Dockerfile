@@ -5,14 +5,16 @@ FROM ${BASE_IMAGE:-quay.io/zncdatadev/kubedata-base:0.0.1-stack0.0.0-dev}
 ARG PRODUCT_VERSION
 
 RUN <<EOF
-    microdnf install \
-        java-${PRODUCT_VERSION}-openjdk-headless \
-        tzdata-java \
-        krb5-workstation
-
+    microdnf install tzdata-java krb5-workstation
     microdnf clean all
-
 EOF
+
+RUN <<EOF
+    microdnf install java-${PRODUCT_VERSION}-openjdk-headless
+    microdnf clean all
+EOF
+
+# test: RUN java -version
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-${PRODUCT_VERSION}
 ENV JAVA_VERSION=${PRODUCT_VERSION}
