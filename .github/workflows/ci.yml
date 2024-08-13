@@ -189,9 +189,10 @@ jobs:
     name: Test Product
     runs-on: ubuntu-22.04
     needs: prepare_product_matrix
+    if: ${{ needs.prepare_product_matrix.outputs.PRODUCT_MATRIX != '[]' }}
     strategy:
       matrix:
-        product: ${{fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX)}}
+        product: ${{ fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX) }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -263,10 +264,11 @@ jobs:
   deploy_product:
     name: Deploy Product
     runs-on: ubuntu-22.04
+    if: ${{ github.event_name == 'push' && github.repository_owner == 'zncdatadev' }}
     needs: 
       - prepare_product_matrix
       - test_product
-      - deploy_infra
+      - deploy_infra  # already deploy condition
     strategy:
       matrix:
         product: ${{fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX)}}
