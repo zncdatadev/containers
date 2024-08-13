@@ -22,7 +22,6 @@ RUN <<EOF
         krb5-devel \
         libcurl-devel \
         make \
-        maven \
         openssl-devel \
         tar \
         wget \
