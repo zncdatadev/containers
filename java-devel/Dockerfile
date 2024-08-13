@@ -22,6 +22,7 @@ RUN <<EOF
         libcurl-devel \
         make \
         openssl-devel \
+        patch \
         tar \
         wget \
         which \
@@ -39,7 +40,7 @@ RUN <<EOF
     microdnf clean all
 EOF
 
-# test: RUN java -version
+# debug: RUN java -version
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-${PRODUCT_VERSION}
 ENV JAVA_VERSION=${PRODUCT_VERSION}
