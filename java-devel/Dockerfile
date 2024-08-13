@@ -8,38 +8,38 @@ ARG PRODUCT_VERSION
 ARG MAVEN_VERSION
 
 RUN <<EOF
-
     microdnf install hostname \
-        which \
-        git \
-        tzdata-java \
-        gcc \
-        make \
         cmake \
-        gettext \
         cyrus-sasl-devel \
-        fuse3-devel \
+        diffutils \
+        fuse-devel \
+        gcc \
+        gcc-c++ \
+        gettext \
+        git \
+        hostname \
         krb5-devel \
+        libcurl-devel \
+        make \
         openssl-devel \
-        zlib-devel \
-        unzip \
-        zip \
+        tar \
+        wget \
+        which \
         xz \
-        diffutils
+        zlib-devel \
+        unzip zip
 
     microdnf clean all
-
 EOF
 
 ## Setup java
 RUN <<EOF
-    set -exu
     microdnf install \
         java-${PRODUCT_VERSION}-openjdk-devel
     microdnf clean all
 EOF
 
-# debug: RUN java -version
+# test: RUN java -version
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-${PRODUCT_VERSION}
 ENV JAVA_VERSION=${PRODUCT_VERSION}
@@ -49,7 +49,6 @@ ENV MAVEN_VERSION=${MAVEN_VERSION}
 ENV MAVEN_HOME=/usr/share/maven
 
 RUN <<EOF
-
     curl -sSfL \
         https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
         | tar xzf - -C /usr/share && \

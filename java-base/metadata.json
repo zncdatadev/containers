@@ -2,6 +2,14 @@
   "name": "java-base",
   "properties": [
     {
+      "version": "1.8.0",
+      "upstream": {
+        "name": "vector",
+        "version": "0.39.0",
+        "stack": "0.0.0-dev"
+      }
+    },
+    {
       "version": "11",
       "upstream": {
         "name": "vector",
