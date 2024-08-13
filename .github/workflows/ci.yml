@@ -32,8 +32,6 @@ jobs:
   prepare_updated_product:
     name: Prepare Updated Product
     runs-on: ubuntu-22.04
-    needs: 
-      - linter_code_base
     outputs:
       BEFORE_COMMIT_SHA: ${{ steps.get_updated_product.outputs.BEFORE_COMMIT_SHA }}
       AFTER_COMMIT_SHA: ${{ steps.get_updated_product.outputs.AFTER_COMMIT_SHA }}
