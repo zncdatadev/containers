@@ -4,7 +4,7 @@
     {
       "version": "0.39.0",
       "upstream": {
-        "name": "kubedata-base",
+        "name": "kubedoop-base",
         "version": "0.0.1",
         "stack": "0.0.0-dev"
       }

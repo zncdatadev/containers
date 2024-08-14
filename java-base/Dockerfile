@@ -1,6 +1,6 @@
 ARG BASE_IMAGE
 
-FROM ${BASE_IMAGE:-quay.io/zncdatadev/kubedata-base:0.0.1-stack0.0.0-dev}
+FROM ${BASE_IMAGE:-quay.io/zncdatadev/kubedoop-base:0.0.1-stack0.0.0-dev}
 
 ARG PRODUCT_VERSION
 

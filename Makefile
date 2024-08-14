@@ -15,10 +15,12 @@ CONTAINER_TOOL ?= docker
 
 PLATFORMS ?= linux/arm64,linux/amd64
 
+LOCAL_BIN = ./bin
+
 ##@ install
 
 .PHONY: jq
-JQ = ./bin/jq
+JQ = $(LOCAL_BIN)/jq
 jq: ## Download jq locally if necessary.
 ifeq (,$(wildcard $(JQ)))
 ifeq (,$(shell which jq 2>/dev/null))
@@ -39,12 +41,12 @@ endif
 ##@ infra
 
 .PHONY:
-kubedata-base-build: jq ## Build kubedata-base image
-	.scripts/build.sh product kubedata-base
+kubedoop-base-build: jq ## Build kubedoop-base image
+	.scripts/build.sh product kubedoop-base
 
 .PHONY:
-kubedata-base-buildx: jq ## Build kubedata-base image with buildx
-	.scripts/build.sh product kubedata-base --push
+kubedoop-base-buildx: jq ## Build kubedoop-base image with buildx
+	.scripts/build.sh product kubedoop-base --push
 
 .PHONY:
 vector-build: ## Build Vector image
