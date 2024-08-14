@@ -1,6 +1,5 @@
 REGISTRY ?= quay.io/zncdatadev
-STACK_VERSION ?= 0.0.0-dev
-BASE_STACK_VERSION ?= 0.0.0-dev
+PLATFORM_VERSION ?= 0.0.0-dev
 
 .PHONY: help
 help: ## Display this help.

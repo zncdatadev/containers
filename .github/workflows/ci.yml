@@ -6,7 +6,6 @@ on:
 
 env:
   REGISTRY: quay.io/zncdatadev
-  STACK_VERSION: 0.0.0-dev
   DOCKER_CACHE_DIR: /tmp/docker-cache
   CI_SCRIPT_DEBUG: true
 

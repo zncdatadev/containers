@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 
 # Note: supported python3.11+
 
@@ -34,7 +34,6 @@ class ProjectMetadata:
 class ProductUpstream:
     name: str 
     version: str
-    stack: str | None 
 
 
 @dataclasses.dataclass
@@ -82,9 +81,8 @@ def load_product_metadata(product_name: str, priority: int) -> ProductMetadata:
         if upstream_dict:
             upstream_name = upstream_dict['name']
             upstream_version = upstream_dict['version']
-            upstream_stack = upstream_dict.get('stack')   # optional
             product_property = ProductProperty(
-                upstream=ProductUpstream(name=upstream_name, version=upstream_version, stack=upstream_stack),
+                upstream=ProductUpstream(name=upstream_name, version=upstream_version),
                 dependencies=dependencies
             )
         properties.append(product_property)
