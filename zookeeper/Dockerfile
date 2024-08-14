@@ -31,16 +31,17 @@ FROM ${BASE_IMAGE}
 
 ARG PRODUCT_VERSION
 
-WORKDIR /kubedata/stack/
+WORKDIR /kubedoop
 
-COPY --chown=kubedata:kubedata --from=builder /build/apache-zookeeper-${PRODUCT_VERSION}-bin apache-zookeeper-${PRODUCT_VERSION}-bin
+COPY --chown=kubedoop:kubedoop --from=builder /build/apache-zookeeper-${PRODUCT_VERSION}-bin apache-zookeeper-${PRODUCT_VERSION}-bin
 
-RUN ls -l /kubedata/stack/
+# debug: RUN ls -l /kubedoop
 
-ENV ZOOKEEPER_HOME=/kubedata/stack/zookeeper
+ENV ZOOKEEPER_HOME=/kubedoop/zookeeper
 ENV PATH=$ZOOKEEPER_HOME/bin:$PATH
 
-WORKDIR /kubedata/stack/zookeeper
+WORKDIR /kubedoop/zookeeper
 
-# CMD bin/zkServer.sh start-foreground config/zoo_sample.cfg
+USER kubedoop
+
 CMD ["bin/zkServer.sh", "start-foreground", "config/zoo_sample.cfg"]

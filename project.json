@@ -3,7 +3,7 @@
     "zookeeper": 1000
   },
   "infra_priority": {
-    "kubedata-base": 100,
+    "kubedoop-base": 100,
     "vector": 200,
     "java-base": 300,
     "java-devel": 300
