@@ -5,8 +5,7 @@
       "version": "1.8.0",
       "upstream": {
         "name": "vector",
-        "version": "0.39.0",
-        "stack": "0.0.0-dev"
+        "version": "0.39.0"
       },
       "dependencies": {
         "maven": "3.9.8"
@@ -16,8 +15,7 @@
       "version": "11",
       "upstream": {
         "name": "vector",
-        "version": "0.39.0",
-        "stack": "0.0.0-dev"
+        "version": "0.39.0"
       },
       "dependencies": {
         "maven": "3.9.8"
@@ -27,8 +25,7 @@
       "version": "17",
       "upstream": {
         "name": "vector",
-        "version": "0.39.0",
-        "stack": "0.0.0-dev"
+        "version": "0.39.0"
       },
       "dependencies": {
         "maven": "3.9.8"
@@ -38,8 +35,7 @@
       "version": "21",
       "upstream": {
         "name": "vector",
-        "version": "0.39.0",
-        "stack": "0.0.0-dev"
+        "version": "0.39.0"
       },
       "dependencies": {
         "maven": "3.9.8"

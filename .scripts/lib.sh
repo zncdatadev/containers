@@ -2,8 +2,9 @@
 
 DEFAULT_PLATFORM="linux/amd64,linux/arm64"
 REGISTRY=${REGISTRY:-"quay.io/zncdatadev"}
-STACK_VERSION=${STACK_VERSION:-"0.0.0-dev"}
-
+PLATFORM_VERSION=${PLATFORM_VERSION:-"0.0.0-dev"}
+PLATFORM_NAME=${PLATFORM_NAME:-"kubedoop"}
+PLATFORM_TAG="$PLATFORM_NAME$PLATFORM_VERSION"
 
 # Build docker image
 # Arguments:
@@ -81,8 +82,8 @@ function builder () {
 # Returns:
 #   JSON: product metadata
 #    {
-#      "tag": "quay.io/zncdatadev/airflow:1.10.12",
-#      "build_args": ["PRODUCT_VERSION=1.10.12", "BASE_IMAGE=quay.io/zncdatadev/python:3.8.5-stack0.0.0-dev"],
+#      "tag": "quay.io/zncdatadev/airflow:1.10.12-kubedoop5.3.1",
+#      "build_args": ["PRODUCT_VERSION=1.10.12", "BASE_IMAGE=quay.io/zncdatadev/python:3.8.5-kubedoop0.0.0-dev"],
 #    }
 function build_product_with_metadata () {
   local product_path=$1
@@ -97,7 +98,7 @@ function build_product_with_metadata () {
     
     local product_version=$(echo $property | jq -r '.version')
     local build_args=("PRODUCT_VERSION=$product_version")
-    local tag="$REGISTRY/$product_name:$product_version-stack$STACK_VERSION"
+    local tag="$REGISTRY/$product_name:$product_version-$PLATFORM_TAG"
 
     # Create a json object with tag
     local property_json=$(jq -n --arg tag "$tag" '{tag: $tag}')
@@ -106,8 +107,7 @@ function build_product_with_metadata () {
     if echo $property | jq -e '.upstream?' > /dev/null; then
       local upstream_name=$(echo $property | jq -r '.upstream.name')
       local upstream_version=$(echo $property | jq -r '.upstream.version')
-      local upstream_stack=$(echo $property | jq -r '.upstream.stack')
-      base_image="BASE_IMAGE=$REGISTRY/$upstream_name:$upstream_version-stack$upstream_stack"
+      base_image="BASE_IMAGE=$REGISTRY/$upstream_name:$upstream_version-$PLATFORM_TAG"
       build_args+=($base_image)
     fi
 

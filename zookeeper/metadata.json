@@ -5,16 +5,14 @@
       "version": "3.8.4",
       "upstream": {
         "name": "java-base",
-        "version": "11",
-        "stack": "0.0.0-dev"
+        "version": "11"
       }
     },
     {
       "version": "3.9.2",
       "upstream": {
         "name": "java-base",
-        "version": "11",
-        "stack": "0.0.0-dev"
+        "version": "11"
       }
     }
   ]

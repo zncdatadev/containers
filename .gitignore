@@ -322,5 +322,5 @@ fabric.properties
 *.vsix
 .idea
 
-Output.json
+output.json
 test.sh
