@@ -112,8 +112,12 @@ function build_product_with_metadata () {
     fi
 
     if echo $property | jq -e '.dependencies?' >> /dev/null; then
-      local deps=$(echo $property | jq -r '.dependencies | to_entries | map("\(.key | ascii_upcase)_VERSION=\(.value)") | join(" ")')
-      build_args+=($deps)
+      dependencies=$(echo $property | jq -r '.dependencies')
+      for key in $(echo $dependencies | yq -r 'keys[]'); do
+        value=$(echo $dependencies | yq -r ".[\"$key\"]")
+        key_fmt=$(echo $key | tr '[:lower:]' '[:upper:]' | tr '-' '_' | awk '{print $0"_VERSION"}')
+        build_args+=("$key_fmt=$value")
+      done
     fi
     local build_args_json=$(printf '%s\n' "${build_args[@]}" | jq -R . | jq -s .)
     property_json=$(echo "$property_json" | jq --argjson build_args "$build_args_json" '. + {build_args: $build_args}')

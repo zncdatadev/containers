@@ -169,7 +169,7 @@ Options:
     exit 1
   fi
 
-  local result=$(build_product_with_metadata "$context")
+  local result=$(build_product_with_metadata "$context" "$product_version")
 
   for item in $(echo $result | jq -c '.[]'); do
     local tag=$(echo $item | jq -r '.tag')
