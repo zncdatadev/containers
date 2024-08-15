@@ -58,6 +58,10 @@ function builder () {
     done
   fi
   
+  # if progress is auth, plain, tty, or json, set it
+  if [ "$progress" == "auth" ] || [ "$progress" == "plain" ] || [ "$progress" == "tty" ] || [ "$progress" == "json" ]; then
+    build_cmd="$build_cmd --progress $progress"
+  fi
 
   build_cmd="$container_tool $build_cmd $context"
 
