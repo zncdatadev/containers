@@ -1,6 +1,9 @@
-ARG BASE_IMAGE
+# syntax=docker/dockerfile:1
 
-FROM ${BASE_IMAGE:-quay.io/zncdatadev/kubedoop-base:0.0.1-kubedoop0.0.0-dev}
+ARG VECTOR_VERSION
+
+## stage: final
+FROM quay.io/zncdatadev/vector:${VECTOR_VERSION}-kubedoop0.0.0-dev
 
 ARG PRODUCT_VERSION
 
@@ -10,6 +13,7 @@ RUN <<EOF
 EOF
 
 RUN <<EOF
+    microdnf update
     microdnf install java-${PRODUCT_VERSION}-openjdk-headless
     microdnf clean all
 EOF
