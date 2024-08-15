@@ -4,10 +4,12 @@
 
 import argparse
 import dataclasses
+import glob
 import json
 import logging
 import os
 from pathlib import Path
+import re
 import sys
 import subprocess
 
@@ -22,6 +24,9 @@ logger = logging.getLogger(__name__)
 PROJECT_METADATA_FILE_NAME = 'project.json'
 PROEUCT_METADATA_FILE_NAME = 'metadata.json'
 ENCODING = 'utf-8'
+
+not_glob_pattern = re.compile(r'^[^*?\[\]]*$')
+
 
 @dataclasses.dataclass
 class ProjectMetadata:
@@ -102,32 +107,60 @@ def get_changed_product_name(
     if before_sha and after_sha:
         cmds.extend([before_sha, after_sha])
     
+    logger.debug(f'Executing git diff command: {cmds}')
     result = subprocess.run(cmds, capture_output=True, text=True)
     if result.returncode != 0:
         logger.error(f'Failed to run command: {cmds}, result: {result.stderr}')
         sys.exit(1)
     
-    logger.debug(f'git diff result: {result.stdout}')
+    logger.debug(f'Execute git diff result: {result.stdout}')
     diff_files = result.stdout.strip().split('\n')
-    logger.debug(f'diff_files: {diff_files}')
+    logger.debug(f'Git diff all files: {diff_files}')
     
-    changed_product_name: list[str] = []
+    changed_product_name: set[str] = set()
     
-    all_product_names = list(project_metadata.products_priority.keys()) + list(project_metadata.infra_priority.keys())
+    all_product_names = set(list(project_metadata.products_priority.keys()) + list(project_metadata.infra_priority.keys()))
 
-    for file in diff_files:
-        if file in project_metadata.global_paths:
-            logger.info(f'Found global path: {file}, all products should be built')
-            changed_product_name = all_product_names
-            break
-        path = Path(file).parent
-        if path.name in all_product_names:
-            changed_product_name.append(path.name)
-        else:
-            logger.debug(f'ignore path: {path}')
+    # check if the product name is a glob pattern, if not, convert it to a glob pattern
+    # Usually, products_priority and infra_priority are project name, it is not a glob pattern,
+    # but we need to check the full path of changed files  with glob pattern, to match which product should be built
+    # so we need to convert the product name to a glob pattern
+    all_product_patterns: dict[str, str] = {}
+    for product_name in all_product_names:
+        product_path = Path(product_name)
+        if not_glob_pattern.match(product_name):
+            if product_path.exists() and product_path.is_dir():
+                all_product_patterns.setdefault(product_name, f'{product_name}/**/*')
+            else:
+                logger.warning(f'Invalid product name: {product_name} or not exists')
+    
+    global_paths = project_metadata.global_paths
+    logger.debug(f'All product names: {all_product_names}, global paths: {global_paths}')
+
+    for changed_file in diff_files:
+        added = False   # debug flag
+        for global_path in global_paths:
+            # use glob to match the full path of changed files,
+            # if the changed file is in the global path, all products should be built
+            matches = glob.glob(global_path, recursive=True)
+            if changed_file in matches:
+                logger.info(f'Found global path: {global_path}, all products should be built')
+                changed_product_name = all_product_names
+                break
+        for product, product_pattern in all_product_patterns.items():
+            # use glob to match the full path of changed files
+            # if the changed file is in the product path, the product should be built
+            matches = glob.glob(product_pattern, recursive=True)
+            if changed_file in matches:
+                changed_product_name.add(product)
+                logger.info(f'Found changed product: {changed_file}')
+                added = True
+                break
+        if not added:
+            logger.debug(f'Ignore path: {changed_file}, not matched with any product pattern')
 
     logger.info(f'Changed product names: {changed_product_name}')
-    return changed_product_name
+    return list(changed_product_name)
 
 
 def get_product_metadata(product_names: list[str], priority: dict[str, int]) -> list[ProductMetadata]:

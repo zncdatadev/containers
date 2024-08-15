@@ -10,7 +10,7 @@
   },
   "global_path": [
     ".github/workflows/ci.yml",
-    ".github/scripts",
-    ".scripts"
+    ".github/scripts/*",
+    ".scripts/*"
   ]
 }
