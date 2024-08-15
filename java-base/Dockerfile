@@ -8,6 +8,7 @@ FROM quay.io/zncdatadev/vector:${VECTOR_VERSION}-kubedoop0.0.0-dev
 ARG PRODUCT_VERSION
 
 RUN <<EOF
+    microdnf update
     microdnf install tzdata-java krb5-workstation
     microdnf clean all
 EOF
@@ -18,7 +19,8 @@ RUN <<EOF
     microdnf clean all
 EOF
 
-# test: RUN java -version
+# smoke test
+RUN java -version
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-${PRODUCT_VERSION}
 ENV JAVA_VERSION=${PRODUCT_VERSION}

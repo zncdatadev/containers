@@ -4,25 +4,25 @@
     {
       "version": "1.8.0",
       "dependencies": {
-        "version": "0.39.0"
+        "vector": "0.39.0"
       }
     },
     {
       "version": "11",
       "dependencies": {
-        "version": "0.39.0"
+        "vector": "0.39.0"
       }
     },
     {
       "version": "17",
       "dependencies": {
-        "version": "0.39.0"
+        "vector": "0.39.0"
       }
     },
     {
       "version": "21",
       "dependencies": {
-        "version": "0.39.0"
+        "vector": "0.39.0"
       }
     }
   ]
