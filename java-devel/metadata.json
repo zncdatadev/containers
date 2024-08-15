@@ -3,42 +3,30 @@
   "properties": [
     {
       "version": "1.8.0",
-      "upstream": {
-        "name": "vector",
-        "version": "0.39.0"
-      },
       "dependencies": {
-        "maven": "3.9.8"
+        "vector": "0.39.0",
+        "maven": "3.6.3"
       }
     },
     {
       "version": "11",
-      "upstream": {
-        "name": "vector",
-        "version": "0.39.0"
-      },
       "dependencies": {
-        "maven": "3.9.8"
+        "vector": "0.39.0",
+        "maven": "3.6.3"
       }
     },
     {
       "version": "17",
-      "upstream": {
-        "name": "vector",
-        "version": "0.39.0"
-      },
       "dependencies": {
-        "maven": "3.9.8"
+        "vector": "0.39.0",
+        "maven": "3.6.3"
       }
     },
     {
       "version": "21",
-      "upstream": {
-        "name": "vector",
-        "version": "0.39.0"
-      },
       "dependencies": {
-        "maven": "3.9.8"
+        "vector": "0.39.0",
+        "maven": "3.6.3"
       }
     }
   ]
