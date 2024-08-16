@@ -2,18 +2,21 @@
   "name": "hadoop",
   "properties": [
     {
-      "version": "3.4.0",
-      "upstream": {
-        "name": "java-base",
-        "version": "11"
+      "version": "3.3.6",
+      "dependencies": {
+        "java-devel": "11",
+        "java-base": "11",
+        "protobuf": "3.7.1",
+        "jmx-exporter": "1.0.1"
       }
     },
     {
-      "version": "3.3.6",
-      "upstream": {
-        "name": "java-base",
-        "version": "11",
-        "stack": "0.0.0-dev"
+      "version": "3.4.0",
+      "dependencies": {
+        "java-devel": "11",
+        "java-base": "11",
+        "protobuf": "3.7.1",
+        "jmx-exporter": "1.0.1"
       }
     }
   ]

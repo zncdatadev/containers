@@ -74,3 +74,11 @@ zookeeper-build: jq ## Build Zookeeper image
 .PHONY:
 zookeeper-buildx: jq ## Build Zookeeper image with buildx
 	.scripts/build.sh product zookeeper --push
+
+.PHONY:
+hadoop-build: jq ## Build Hadoop image
+	.scripts/build.sh product hadoop
+
+.PHONY:
+hadoop-buildx: jq ## Build Hadoop image with buildx
+	.scripts/build.sh product hadoop --push
