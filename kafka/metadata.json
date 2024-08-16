@@ -1,0 +1,15 @@
+{
+  "name": "kafka",
+  "properties": [
+    {
+      "version": "3.7.1",
+      "dependencies": {
+        "java-base": "11",
+        "java-devel": "11",
+        "scala": "2.13",
+        "kcat": "1.7.0",
+        "jmx-exporter": "1.0.1"
+      }
+    }
+  ]
+}
