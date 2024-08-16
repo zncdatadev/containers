@@ -39,7 +39,7 @@ RUN <<EOF
     curl -sSfL \
         https://archive.apache.org/dist/kafka/${PRODUCT_VERSION}/kafka-${PRODUCT_VERSION}-src.tgz \
         | tar xzf - --strip-components=1
-    ./gradlew clean releaseTarGz -x test
+    ./gradlew clean releaseTarGz -x test --no-daemon
     tar -xzf core/build/distributions/kafka_${SCALA_VERSION}-${PRODUCT_VERSION}.tgz -C /kubedoop
     ln -s /kubedoop/kafka_${SCALA_VERSION}-${PRODUCT_VERSION} /kubedoop/kafka
     popd
