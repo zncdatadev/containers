@@ -64,7 +64,7 @@ EOF
 
 COPY kubedoop /build/
 
-RUN --mount=type=cache,id=maven,target=/root/.m2 <<EOF
+RUN <<EOF
     set -ex
     mkdir -p /build/hadoop-src
     pushd /build/hadoop-src
