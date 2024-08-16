@@ -109,6 +109,26 @@ jobs:
     needs: 
       - prepare_updated_product
     steps:
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # if set to "true" but frees about 6 GB
+        tool-cache: false
+        
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
@@ -133,6 +153,11 @@ jobs:
         bash --version
         jq --version
         docker info
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
     - name: Build Infra
       run: |
         set -ex
@@ -143,6 +168,11 @@ jobs:
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
             .scripts/build.sh product $item
         done
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
 
   prepare_product_matrix:
     name: Prepare Product Matrix
@@ -193,10 +223,55 @@ jobs:
       matrix:
         product: ${{ fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX) }}
     steps:
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # if set to "true" but frees about 6 GB
+        tool-cache: false
+        
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+    - name: Cache docker
+      id: cache-buildx
+      uses: actions/cache@v4
+      with:
+        path: 
+          /tmp/docker-cache
+        key: ${{ runner.os }}-docker-${{ github.run_id }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Install jq
+      uses: dcarbone/install-jq-action@v2.1.0
+    - name: Check version
+      run: |
+        bash --version
+        jq --version
+        docker info
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
     - name: Build Product
       run: |
         set -ex
@@ -218,6 +293,11 @@ jobs:
             .scripts/build.sh product --product-version $product_version $product_name
           fi
         done
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
 
   deploy_infra:
     name: Deploy Infra
@@ -227,6 +307,26 @@ jobs:
       - test_infra
     if: github.event_name == 'push' && github.repository_owner == 'zncdatadev'
     steps:
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # if set to "true" but frees about 6 GB
+        tool-cache: false
+        
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
@@ -244,12 +344,24 @@ jobs:
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+    - name: Install jq
+      uses: dcarbone/install-jq-action@v2.1.0
+    - name: Check version
+      run: |
+        bash --version
+        jq --version
+        docker info
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
     - name: Deploy Infra
       run: |
         set -ex
@@ -259,6 +371,11 @@ jobs:
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
             .scripts/build.sh product --push --progress plain $item 
         done
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
 
   deploy_product:
     name: Deploy Product
@@ -272,6 +389,26 @@ jobs:
       matrix:
         product: ${{fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX)}}
     steps:
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # if set to "true" but frees about 6 GB
+        tool-cache: false
+        
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
@@ -289,12 +426,24 @@ jobs:
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+    - name: Install jq
+      uses: dcarbone/install-jq-action@v2.1.0
+    - name: Check version
+      run: |
+        bash --version
+        jq --version
+        docker info
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
     - name: Deploy Product
       run: |
         set -ex
@@ -316,3 +465,8 @@ jobs:
             .scripts/build.sh product --push --progress plain --product-version $product_version $product_name
           fi
         done
+    - name: Show Usage
+      run: |
+        free -h
+        df -h
+        lsblk
