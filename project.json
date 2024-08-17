@@ -2,6 +2,7 @@
   "products_priority": {
     "zookeeper": 1000,
     "hadoop": 2000,
+    "hive": 3000,
     "kafka": 3000
   },
   "infra_priority": {

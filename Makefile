@@ -84,6 +84,14 @@ hadoop-buildx: jq ## Build Hadoop image with buildx
 	.scripts/build.sh product hadoop --push
 
 .PHONY:
+hive-build: jq ## Build Hive image
+	.scripts/build.sh product hive
+
+.PHONY:
+hive-buildx: jq ## Build Hive image with buildx
+	.scripts/build.sh product hive --push
+
+.PHONY:
 kafka-build: jq ## Build Kafka image
 	.scripts/build.sh product kafka
 
