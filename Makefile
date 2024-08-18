@@ -98,3 +98,11 @@ kafka-build: jq ## Build Kafka image
 .PHONY:
 kafka-buildx: jq ## Build Kafka image with buildx
 	.scripts/build.sh product kafka --push
+
+.PHONY:
+hbase-build: jq ## Build HBase image
+	.scripts/build.sh product hbase
+
+.PHONY:
+hbase-buildx: jq ## Build HBase image with buildx
+	.scripts/build.sh product hbase --push
