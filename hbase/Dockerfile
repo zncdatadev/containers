@@ -1,5 +1,123 @@
-ARG BASE_IMAGE
+# syntax=docker/dockerfile:1
 
-FROM ${BASE_IMAGE}
+ARG JAVA_BASE_VERSION
+ARG JAVA_DEVEL_VERSION
+ARG HADOOP_VERSION
+
+## stage: hbase-builder
+FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
 
 ARG PRODUCT_VERSION
+ARG HADOOP_VERSION
+ARG JMX_EXPORTER_VERSION
+
+WORKDIR /build
+
+COPY kubedoop/ /build/
+
+# setup jmx_exporter
+RUN <<EOF
+    set -ex
+    mkdir /kubedoop/jmx/
+    cp /build/jmx/config-${JMX_EXPORTER_VERSION}/* /kubedoop/jmx/
+    # check JMX_EXPORTER_VERSION
+    if [ -n "${JMX_EXPORTER_VERSION}" ]; then
+        curl -sSfL \
+            https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+            -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+        
+        ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
+        
+        
+    else
+        echo "JMX_EXPORTER_VERSION is not set"
+    fi
+EOF
+
+RUN <<EOF
+    set -e
+    mkdir -p /build/hbase-src
+    pushd /build/hbase-src
+    curl -sSfL \
+        https://archive.apache.org/dist/hbase/${PRODUCT_VERSION}/hbase-${PRODUCT_VERSION}-src.tar.gz \
+        | tar xzf - --strip-components=1
+    /build/apply_patches.sh /build/patches/${PRODUCT_VERSION}
+
+    mvn --batch-mode --no-transfer-progress -Dhadoop.profile=3.0 -Dhadoop-three.version=${HADOOP_VERSION} clean install assembly:single -DskipTests -Dcheckstyle.skip=true -Prelease
+
+    tar -xzf hbase-assembly/target/hbase-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
+    ln -s /kubedoop/hbase-${PRODUCT_VERSION} /kubedoop/hbase
+    popd
+    
+EOF
+
+# smoke test
+RUN /kubedoop/hbase-${PRODUCT_VERSION}/bin/hbase version
+
+
+## stage: hbase-operator-tools-builder
+FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS hbase-operator-tools-builder
+
+ARG PRODUCT_VERSION
+ARG HBASE_OPERATOR_TOOLS_VERSION
+ARG HBASE_THIRDPARTY_VERSION
+
+WORKDIR /build
+
+RUN <<EOF
+    set -ex
+    mkdir -p /build/hbase-operator-tools-src
+    pushd /build/hbase-operator-tools-src
+    curl -sSfL \
+        https://archive.apache.org/dist/hbase/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-src.tar.gz \
+        | tar xzf - --strip-components=1
+    mvn \
+        --batch-mode \
+        --no-transfer-progress \
+        -Dhbase.version=${PRODUCT_VERSION} \
+        -Dhbase-thirdparty.version=${HBASE_THIRDPARTY_VERSION} \
+        -DskipTests \
+        package assembly:single
+    
+    tar -xzf hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz -C /kubedoop
+    ln -s /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
+    popd
+EOF
+
+## stage: final
+FROM quay.io/zncdatadev/java-base:${JAVA_BASE_VERSION}-kubedoop0.0.0-dev
+
+ARG PRODUCT_VERSION
+
+RUN <<EOF
+    set -e
+    microdnf update
+    microdnf install \
+        gzip \
+        python \
+        python-pip \
+        tar \
+        zip
+    microdnf clean all
+EOF
+
+WORKDIR /kubedoop
+
+COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=hbase-operator-tools-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+
+ENV HBASE_CONFIG_DIR=/kubedoop/hbase/conf
+ENV HBASE_HOME=/kubedoop/hbase
+
+RUN <<EOF
+    echo 'export PATH=${PATH}:${HBASE_HOME}/bin' > /etc/profile.d/hbase.sh
+EOF
+
+WORKDIR /kubedoop/hbase
+
+USER kubedoop
+
+# smoke test
+RUN source /etc/profile.d/hbase.sh && hbase version
+
+CMD ["hbase", "master", "start"]
