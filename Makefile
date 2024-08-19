@@ -106,3 +106,11 @@ hbase-build: jq ## Build HBase image
 .PHONY:
 hbase-buildx: jq ## Build HBase image with buildx
 	.scripts/build.sh product hbase --push
+
+.PHONY:
+spark-build: jq ## Build Spark image
+	.scripts/build.sh product spark
+
+.PHONY:
+spark-buildx: jq ## Build Spark image with buildx
+	.scripts/build.sh product spark --push

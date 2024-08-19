@@ -4,6 +4,7 @@
     "hadoop": 2000,
     "hive": 3000,
     "hbase": 3000,
+    "spark-k8s": 3000,
     "kafka": 3000
   },
   "infra_priority": {
