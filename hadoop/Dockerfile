@@ -106,17 +106,17 @@ WORKDIR /kubedoop
 
 COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
-ENV HADOOP_CONF_DIR=/kubedoop/hadoop/etc/hadoop
 ENV HADOOP_HOME=/kubedoop/hadoop
+ENV HADOOP_CONF_DIR="${HADOOP_HOME}/etc/hadoop" \
+    HADOOP_YARN_HOME="${HADOOP_HOME}" \
+    HADOOP_MAPRED_HOME="${HADOOP_HOME}" \
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HADOOP_HOME}/lib/native:/usr/lib/jvm/jre/lib/server" \
+    PATH="${PATH}:${HADOOP_HOME}/bin"
 
 RUN <<EOT
     set -e
     cat > /etc/profile.d/hadoop.sh <<'EOF'
-export HADOOP_YARN_HOME=${HADOOP_HOME}
-export HADOOP_MAPRED_HOME=${HADOOP_HOME}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HADOOP_HOME}/lib/native:/usr/lib/jvm/jre/lib/server
-export CLASSPATH=${CLASSPATH}:$(${HADOOP_HOME}/bin/hadoop classpath --glob)
-export PATH=${PATH}:${HADOOP_HOME}/bin
+export CLASSPATH=${CLASSPATH}:$(hadoop classpath --glob)
 EOF
 
 EOT
@@ -124,6 +124,6 @@ EOT
 USER kubedoop
 
 # smoke test
-RUN source /etc/profile.d/hadoop.sh && hadoop version
+RUN hadoop version
 
 WORKDIR /kubedoop/hadoop
