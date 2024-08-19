@@ -117,8 +117,8 @@ function build_product_with_metadata () {
 
     if echo $property | jq -e '.dependencies?' >> /dev/null; then
       dependencies=$(echo $property | jq -r '.dependencies')
-      for key in $(echo $dependencies | yq -r 'keys[]'); do
-        value=$(echo $dependencies | yq -r ".[\"$key\"]")
+      for key in $(echo $dependencies | jq -r 'keys[]'); do
+        value=$(echo $dependencies | jq -r ".[\"$key\"]")
         key_fmt=$(echo $key | tr '[:lower:]' '[:upper:]' | tr '-' '_' | awk '{print $0"_VERSION"}')
         build_args+=("$key_fmt=$value")
       done
