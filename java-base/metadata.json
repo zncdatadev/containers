@@ -24,6 +24,12 @@
       "dependencies": {
         "vector": "0.39.0"
       }
+    },
+    {
+      "version": "22",
+      "dependencies": {
+        "vector": "0.39.0"
+      }
     }
   ]
 }

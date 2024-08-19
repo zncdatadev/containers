@@ -8,7 +8,10 @@ ARG PRODUCT_VERSION
 ARG MAVEN_VERSION
 
 RUN <<EOF
-    microdnf install hostname \
+    # install jdk 22 from epel in ubi9
+    rpm --install --replacepkgs https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+    microdnf update
+    microdnf install \
         cmake \
         cyrus-sasl-devel \
         diffutils \
@@ -40,7 +43,8 @@ RUN <<EOF
     microdnf clean all
 EOF
 
-# debug: RUN java -version
+# smoke test
+RUN java -version
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-${PRODUCT_VERSION}
 ENV JAVA_VERSION=${PRODUCT_VERSION}
@@ -59,4 +63,4 @@ RUN <<EOF
 EOF
 
 # somke test
-# test: RUN mvn --version
+RUN mvn --version
