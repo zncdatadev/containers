@@ -1,47 +1,75 @@
 # syntax=docker/dockerfile:1
 
-ARG BASE_IMAGE
+ARG JAVA_BASE_VERSION  
+ARG JAVA_DEVEL_VERSION
 
-FROM ${BASE_IMAGE} AS builder
+FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
 
 ARG PRODUCT_VERSION
+ARG JMX_EXPORTER_VERSION
+
 WORKDIR /build
 
-# curl -f -L -o log4shell https://github.com/lunasec-io/lunasec/releases/download/v1.6.1-log4shell/log4shell_1.6.1-log4shell_Linux_${ARCH} && \
-# chmod +x log4shell && \
-# ./log4shell patch --backup --force-patch --json /opt/apache-zookeeper
 
+# setup jmx_exporter
+COPY kubedoop/jmx/config /kubedoop/jmx
 RUN <<EOF
-    ARCH=$(uname -m) 
-    ARCH="${ARCH/amd64/x86_64}" 
-    ARCH="${ARCH/aarch64/arm64}"
+    set -e
     curl -sSfL \
-        https://downloads.apache.org/zookeeper/zookeeper-${PRODUCT_VERSION}/apache-zookeeper-${PRODUCT_VERSION}-bin.tar.gz \
-        | tar xzf - 
-    
+        https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+        -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+
+    ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
+EOF
+
+# build zookeeper
+RUN <<EOF
+    set -ex
+    mkdir -p /build/zookeeper-src
+    pushd /build/zookeeper-src
+    curl -sSfL \
+        https://archive.apache.org/dist/zookeeper/zookeeper-${PRODUCT_VERSION}/apache-zookeeper-${PRODUCT_VERSION}.tar.gz \
+        | tar xzf - --strip-components=1
+    ls -alh 
+    mvn --batch-mode --no-transfer-progress -pl "!zookeeper-client/zookeeper-client-c" clean install checkstyle:check spotbugs:check -DskipTests -Pfull-build
+    tar -xzf zookeeper-assembly/target/apache-zookeeper-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
+    mv /kubedoop/apache-zookeeper-${PRODUCT_VERSION}-bin /kubedoop/apache-zookeeper-${PRODUCT_VERSION}
+    ln -s /kubedoop/apache-zookeeper-${PRODUCT_VERSION} /kubedoop/zookeeper
+
+    popd
+EOF
+
+# smoke test
+RUN /kubedoop/zookeeper/bin/zkServer.sh version
+
+# Fix log4j vulnerability
+RUN <<EOF
+    set -e
+    ARCH=$(uname -m)
+    ARCH="${ARCH/amd64/x86_64}"
+    ARCH="${ARCH/aarch64/arm64}"
     curl -sSfL -o /usr/local/bin/log4shell \
         https://github.com/lunasec-io/lunasec/releases/download/v1.6.1-log4shell/log4shell_1.6.1-log4shell_Linux_${ARCH}
     chmod +x /usr/local/bin/log4shell
-    /usr/local/bin/log4shell patch --backup --force-patch --json apache-zookeeper-${PRODUCT_VERSION}-bin
-
+    /usr/local/bin/log4shell patch --backup --force-patch --json hadoop-${PRODUCT_VERSION}
 EOF
 
 ## final stage
-FROM ${BASE_IMAGE}
+FROM quay.io/zncdatadev/java-base:${JAVA_BASE_VERSION}-kubedoop0.0.0-dev
 
 ARG PRODUCT_VERSION
 
 WORKDIR /kubedoop
 
-COPY --chown=kubedoop:kubedoop --from=builder /build/apache-zookeeper-${PRODUCT_VERSION}-bin apache-zookeeper-${PRODUCT_VERSION}-bin
-
-# debug: RUN ls -l /kubedoop
+COPY --chown=kubedoop:kubedoop --from=java-builder /kubedoop/ /kubedoop/
 
 ENV ZOOKEEPER_HOME=/kubedoop/zookeeper
 ENV PATH=$ZOOKEEPER_HOME/bin:$PATH
 
-WORKDIR /kubedoop/zookeeper
+# smoke test
+RUN zkServer.sh version
 
+WORKDIR /kubedoop/zookeeper
 USER kubedoop
 
 CMD ["bin/zkServer.sh", "start-foreground", "config/zoo_sample.cfg"]
