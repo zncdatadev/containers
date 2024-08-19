@@ -39,7 +39,7 @@ RUN <<EOF
     curl -sSfL \
         https://archive.apache.org/dist/hbase/${PRODUCT_VERSION}/hbase-${PRODUCT_VERSION}-src.tar.gz \
         | tar xzf - --strip-components=1
-    /build/apply_patches.sh /build/patches/${PRODUCT_VERSION}
+    /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
 
     mvn --batch-mode --no-transfer-progress -Dhadoop.profile=3.0 -Dhadoop-three.version=${HADOOP_VERSION} clean install assembly:single -DskipTests -Dcheckstyle.skip=true -Prelease
 
