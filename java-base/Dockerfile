@@ -8,6 +8,8 @@ FROM quay.io/zncdatadev/vector:${VECTOR_VERSION}-kubedoop0.0.0-dev
 ARG PRODUCT_VERSION
 
 RUN <<EOF
+    # install jdk 22 from epel in ubi9
+    rpm --install --replacepkgs https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
     microdnf update
     microdnf install tzdata-java krb5-workstation
     microdnf clean all
