@@ -51,6 +51,8 @@ EOF
 
 COPY kubedoop/bin/start-metastore /kubedoop/hive-metastore/bin/
 
+# smoke test
+RUN /kubedoop/hive-metastore/bin/start-metastore --help
 
 FROM quay.io/zncdatadev/hadoop:${HADOOP_VERSION}-kubedoop0.0.0-dev AS hadoop
 
@@ -76,20 +78,15 @@ RUN <<EOF
     find /kubedoop/hadoop/share/ -name *.jar | grep 'aws\|azure' | xargs -I {} ln -s {} /kubedoop/hive-metastore/lib/
 EOF
 
-ENV HADOOP_HOME=/kubedoop/hadoop
-ENV HIVE_HOME=/kubedoop/hive-metastore
-
-
-RUN <<EOT
-    set -e
-    cat > /etc/profile.d/hive-metastore.sh <<'EOF'
-export HADOOP_YARN_HOME=${HADOOP_HOME}
-export HADOOP_MAPRED_HOME=${HADOOP_HOME}
-export PATH=${PATH}:${HIVE_HOME}/bin:${HADOOP_HOME}/bin
-EOF
-
-EOT
+ENV HADOOP_HOME=/kubedoop/hadoop \
+    HIVE_HOME=/kubedoop/hive-metastore
+ENV HADOOP_YARN_HOME="${HADOOP_HOME}" \
+    HADOOP_MAPRED_HOME="${HADOOP_HOME}" \
+    PATH="${PATH}:${HIVE_HOME}/bin:${HADOOP_HOME}/bin"
 
 USER kubedoop
 
 WORKDIR /kubedoop/hive-metastore
+
+# smoke test
+RUN base --service metastore --help || [ $? -eq 1 ]
