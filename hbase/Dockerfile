@@ -13,13 +13,11 @@ ARG JMX_EXPORTER_VERSION
 
 WORKDIR /build
 
-COPY kubedoop/ /build/
+COPY kubedoop/jmx/config /kubedoop/jmx
 
 # setup jmx_exporter
 RUN <<EOF
     set -ex
-    mkdir /kubedoop/jmx/
-    cp /build/jmx/config-${JMX_EXPORTER_VERSION}/* /kubedoop/jmx/
     # check JMX_EXPORTER_VERSION
     if [ -n "${JMX_EXPORTER_VERSION}" ]; then
         curl -sSfL \
@@ -27,12 +25,12 @@ RUN <<EOF
             -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
         
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
-        
-        
     else
         echo "JMX_EXPORTER_VERSION is not set"
     fi
 EOF
+
+COPY /kubedoop/ /build/
 
 RUN <<EOF
     set -e
@@ -68,9 +66,22 @@ RUN <<EOF
     set -ex
     mkdir -p /build/hbase-operator-tools-src
     pushd /build/hbase-operator-tools-src
-    curl -sSfL \
-        https://archive.apache.org/dist/hbase/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-src.tar.gz \
-        | tar xzf - --strip-components=1
+
+    # if HBASE_OPERATOR_TOOLS_VERSION contains '-', it is a snapshot version, we need to
+    # split it. the first part is version, the second part is the commit hash
+    # use the commit hash to download the source code.
+    if [[ ${HBASE_OPERATOR_TOOLS_VERSION} == *-* ]]; then
+        version=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 1)
+        sha=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 2)
+        HBASE_OPERATOR_TOOLS_VERSION="${version}-SNAPSHOT"
+        curl -sSfL \
+            https://github.com/apache/hbase-operator-tools/archive/${sha}.tar.gz \
+            | tar xzf - --strip-components=1
+    else
+        curl -sSfL \
+            https://archive.apache.org/dist/hbase/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-src.tar.gz \
+            | tar xzf - --strip-components=1
+    fi
     mvn \
         --batch-mode \
         --no-transfer-progress \
