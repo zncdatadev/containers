@@ -2,11 +2,17 @@
 
 FROM registry.access.redhat.com/ubi9-minimal
 
-COPY dnf.conf /etc/dnf/dnf.conf
+COPY kubedoop/dnf.conf /etc/dnf/dnf.conf
 
 RUN <<EOF
     microdnf update -y
-    microdnf install tar gzip
+    microdnf install \
+        iputils \
+        less \
+        procps \
+        tar \
+        xz
+
     groupadd -g 1001 --system kubedoop 
     useradd \
         --no-log-init \
