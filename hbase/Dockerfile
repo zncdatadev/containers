@@ -117,18 +117,15 @@ WORKDIR /kubedoop
 COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 COPY --from=hbase-operator-tools-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
-ENV HBASE_CONFIG_DIR=/kubedoop/hbase/conf
 ENV HBASE_HOME=/kubedoop/hbase
-
-RUN <<EOF
-    echo 'export PATH=${PATH}:${HBASE_HOME}/bin' > /etc/profile.d/hbase.sh
-EOF
+ENV HBASE_CONFIG_DIR="${HBASE_HOME}/conf" \
+    PATH="${PATH}:${HBASE_HOME}/bin"
 
 WORKDIR /kubedoop/hbase
 
 USER kubedoop
 
 # smoke test
-RUN source /etc/profile.d/hbase.sh && hbase version
+RUN hbase version
 
 CMD ["hbase", "master", "start"]
