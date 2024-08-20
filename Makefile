@@ -130,3 +130,11 @@ trino-build: jq ## Build Trino image
 .PHONY:
 trino-buildx: jq ## Build Trino image with buildx
 	.scripts/build.sh product trino --push
+
+.PHONY:
+dolphinscheduler-build: jq ## Build DolphinScheduler image
+	.scripts/build.sh product dolphinscheduler
+
+.PHONY:
+dolphinscheduler-buildx: jq ## Build DolphinScheduler image with buildx
+	.scripts/build.sh product dolphinscheduler --push
