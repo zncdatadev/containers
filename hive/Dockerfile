@@ -38,7 +38,7 @@ RUN <<EOF
     curl -sSfL \
         https://archive.apache.org/dist/hive/hive-${PRODUCT_VERSION}/apache-hive-${PRODUCT_VERSION}-src.tar.gz \
         | tar xzf - --strip-components=1
-    /build/apply_patches.sh /build/patches/${PRODUCT_VERSION}
+    /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
     mvn --batch-mode --no-transfer-progress clean package -DskipTests --projects standalone-metastore
 
     cp -r standalone-metastore/target/apache-hive-metastore-${PRODUCT_VERSION}-bin/apache-hive-metastore-${PRODUCT_VERSION}-bin /kubedoop/
