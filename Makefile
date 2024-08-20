@@ -114,3 +114,11 @@ spark-build: jq ## Build Spark image
 .PHONY:
 spark-buildx: jq ## Build Spark image with buildx
 	.scripts/build.sh product spark --push
+
+.PHONY:
+superset-build: jq ## Build Superset image
+	.scripts/build.sh product superset
+
+.PHONY:
+superset-buildx: jq ## Build Superset image with buildx
+	.scripts/build.sh product superset --push
