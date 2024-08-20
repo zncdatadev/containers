@@ -6,7 +6,8 @@
     "hbase": 3000,
     "spark-k8s": 3000,
     "kafka": 3000,
-    "superset": 3000
+    "superset": 3000,
+    "trino": 3000
   },
   "infra_priority": {
     "kubedoop-base": 100,
