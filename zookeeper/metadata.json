@@ -3,16 +3,19 @@
   "properties": [
     {
       "version": "3.8.4",
-      "upstream": {
-        "name": "java-base",
-        "version": "11"
+      "dependencies": {
+        "java-base": "11",
+        "java-devel": "11",
+        "jmx-exporter": "1.0.1"
       }
+
     },
     {
       "version": "3.9.2",
-      "upstream": {
-        "name": "java-base",
-        "version": "11"
+      "dependencies": {
+        "java-base": "11",
+        "java-devel": "11",
+        "jmx-exporter": "1.0.1"
       }
     }
   ]
