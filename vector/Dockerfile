@@ -1,29 +1,51 @@
 # syntax=docker/dockerfile:1
 
-ARG BASE_IMAGE
+ARG KUBEDOOP_BASE_VERSION
 
-FROM ${BASE_IMAGE:-quay.io/zncdatadev/kubedoop-base:0.0.1-kubedoop0.0.0-dev}
+## stage: builder
+FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev AS vector-builder
 
 ARG PRODUCT_VERSION
 ARG DOWNLOAD_URL=https://packages.timber.io/vector/${PRODUCT_VERSION}
 
 RUN <<EOF
+    set -x
+
+    microdnf update
+    microdnf install \
+        gzip \
+        tar \
+        xz
+EOF
+
+WORKDIR /build
+
+RUN <<EOF
+    set -ex
     ARCH=$(uname -m)
     ARCH="${ARCH/amd64/x86_64}"
     ARCH="${ARCH/arm64/aarch64}"
 
-    mkdir -p /tmp/vector
+    mkdir -p vector
+    pushd vector
 
     echo "Downloading Vector ${DOWNLOAD_URL}/vector-${PRODUCT_VERSION}-${ARCH}-unknown-linux-musl.tar.gz"
 
     curl -sSfL --proto '=https' --tlsv1.2 \
         ${DOWNLOAD_URL}/vector-${PRODUCT_VERSION}-${ARCH}-unknown-linux-musl.tar.gz | \
-        tar xzf - -C /tmp/vector --strip-components=2
-
-    mv /tmp/vector/bin/vector /usr/local/bin/vector
-    chmod +x /usr/local/bin/vector
-    mkdir /etc/vector
-    mv /tmp/vector/config/* /etc/vector/
-    rm -rf /tmp/vector
+        tar xzf - --strip-components=2
 
 EOF
+
+# smoke test
+RUN /build/vector/bin/vector --version
+
+## stage: final
+FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev
+
+
+COPY --from=vector-builder /build/vector/bin/ /usr/local/bin/
+COPY --from=vector-builder /build/vector/config /etc/vector
+
+# smoke test
+RUN vector --version

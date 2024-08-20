@@ -3,9 +3,8 @@
   "properties": [
     {
       "version": "0.39.0",
-      "upstream": {
-        "name": "kubedoop-base",
-        "version": "0.0.1"
+      "dependencies": {
+        "kubedoop-base": "1.0.0"
       }
     }
   ]
