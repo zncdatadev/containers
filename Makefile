@@ -122,3 +122,11 @@ superset-build: jq ## Build Superset image
 .PHONY:
 superset-buildx: jq ## Build Superset image with buildx
 	.scripts/build.sh product superset --push
+
+.PHONY:
+trino-build: jq ## Build Trino image
+	.scripts/build.sh product trino
+
+.PHONY:
+trino-buildx: jq ## Build Trino image with buildx
+	.scripts/build.sh product trino --push
