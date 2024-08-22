@@ -1,83 +1,204 @@
 #!/bin/bash
 
+set -e
+
 DEFAULT_PLATFORM="linux/amd64,linux/arm64"
 REGISTRY=${REGISTRY:-"quay.io/zncdatadev"}
 PLATFORM_VERSION=${PLATFORM_VERSION:-"0.0.0-dev"}
 PLATFORM_NAME=${PLATFORM_NAME:-"kubedoop"}
 PLATFORM_TAG="$PLATFORM_NAME$PLATFORM_VERSION"
 
-# Build docker image
+DEBUG=${CI_SCRIPT_DEBUG:-false}
+
+
+# Build image with docker
+function docker_builder() {
+  log "ERROR" "TODO: Implement docker_builder"
+}
+
+
+# Build image with nerdctl
+function nerdctl_builder () {
+  log "ERROR" "TODO: Implement nerdctl_builder"
+}
+
+
+# buildah or podman backend adaptor
 # Arguments:
-#   $1: tag
-#   $2: dockerfile
-#   $3: platform
-#   $4: push
-#   $5: cache-from
-#   $6: cache-to
-#   $7: progress
-#   $8: build-arg list
-#   $9: context
+#   $1: str   tag
+#   $2: str   dockerfile
+#   $3: str   platform
+#   $4: bool  push
+#   $5: array build-args array, (k1=v1 k2=v2)
+#   $6: str   context
+#   $7: bool  is_podman
 # Returns:
-function builder () {
+#   None
+function buildah_backend_adaptor () {
   local tag=$1
   local dockerfile=$2
   local platform=$3
   local push=$4
-  local cache_from=$5
-  local cache_to=$6
-  local progress=$7
-  local build_args=$8
-  local context=$9
+  local build_args=$5
+  local context=$6
+  # if 'is_podman' set and true, use podman
+  local is_podman=${7:-false}
 
-  local container_tool="docker"
-  local build_cmd="build --tag $tag"
+  local container_tool="buildah"
+  local platform_length=$(echo $platform | tr ',' '\n' | wc -l)
 
-  # use buildx if push is true
-  if [ "$push" = true ]; then
-    container_tool="$container_tool buildx"
-    platform="${platform:-$DEFAULT_PLATFORM}"
-
-    build_cmd="$build_cmd --push --platform $platform"
-
-    # cache-from && cache-to exist
-    if [ -n "$cache_from" ] && [ -n "$cache_to" ]; then
-      build_cmd="$build_cmd --cache-from type=local,src=$cache_from --cache-to type=local,dest=$cache_to"
-    elif [ -n "$DOCKER_CACHE_DIR" ]; then
-      build_cmd="$build_cmd --cache-from type=local,src=$DOCKER_CACHE_DIR --cache-to type=local,dest=$DOCKER_CACHE_DIR"
-    fi
+  if [ $is_podman = true ]; then
+    container_tool="podman"
   fi
 
+  local buildah_args=("build")
+
+  # if 'push' is true, and platform less then 2, use default platform
+  if [ $push = true ] && [ $platform_length -lt 2 ]; then
+    platform=$DEFAULT_PLATFORM
+    platform_length=$(echo $platform | tr ',' '\n' | wc -l)
+  fi
+
+  # if 'platform' set and more then one, use --manifest
+  # else use --tag
+  if [ $platform_length -gt 1 ]; then
+    buildah_args+=("--manifest=${tag}")
+    buildah_args+=("--platform=${platform}")
+  else
+    buildah_args+=("--tag=${tag}")
+  fi
+  
+
   if [ -n "$dockerfile" ]; then
-    build_cmd="$build_cmd --file $dockerfile"
+    buildah_args+=("--file=${dockerfile}")
   fi
 
   if [ -n "$build_args" ]; then
     for arg in $build_args; do
-      build_cmd="$build_cmd --build-arg $arg"
-      echo "Build arg: $arg"
+      buildah_args+=("--build-arg=${arg}")
     done
   fi
-  
-  # if progress is auth, plain, tty, or json, set it
-  if [ "$progress" == "auth" ] || [ "$progress" == "plain" ] || [ "$progress" == "tty" ] || [ "$progress" == "json" ]; then
-    build_cmd="$build_cmd --progress $progress"
+
+  buildah_args+=("${context}")
+
+  # build image
+  log "INFO" "Building image: ${buildah_args[*]}"
+  $container_tool ${buildah_args[@]}
+
+  # if DEBUG is true, list images
+  if [ $DEBUG = true ]; then
+    $container_tool images
   fi
 
-  build_cmd="$container_tool $build_cmd $context"
-
-  echo "Building image..."
-
-  eval $build_cmd
-
-  # if push is false, show docker images to debug
-  if [ "$push" = false ]; then
-    echo "Show docker images"
-    docker images
-    echo "Inspect image"
-    docker inspect $tag
+  if [ $platform_length -gt 1 ]; then
+    $container_tool manifest inspect $tag
   fi
 
+  # if 'push' set and true, push image
+  if [ $push = true ]; then
+    # if 'platform' seted, push manifest
+    # else push image
+    if [ $platform_length -gt 1 ]; then
+      log "INFO" "Pushing manifest: $tag"
+      $container_tool manifest push --all --rm $tag
+    else
+      log "INFO" "Pushing image: $tag"
+      $container_tool push $tag
+    fi
+  fi
 }
+
+
+# Build image with buildah
+# Arguments:
+#   $1: str   tag
+#   $2: str   dockerfile
+#   $3: str   platform
+#   $4: bool  push
+#   $5: array build-args array, (k1=v1 k2=v2)
+#   $6: str   context
+# Returns:
+#   None
+function buildah_builder () {
+  local tag=$1
+  local dockerfile=$2
+  local platform=$3
+  local push=$4
+  local build_args=$5
+  local context=$6
+
+  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" false
+}
+
+
+# Build image with podman
+# Arguments:
+#   $1: str   tag
+#   $2: str   dockerfile
+#   $3: str   platform
+#   $4: bool  push
+#   $5: array build-args array, (k1=v1 k2=v2)
+#   $6: str   context
+# Returns:
+#   None
+function podman_builder () {
+  local tag=$1
+  local dockerfile=$2
+  local platform=$3
+  local push=$4
+  local build_args=$5
+  local context=$6
+
+  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" true
+}
+
+
+# Factory method to return builder tool
+# Arguments:
+#   $1: str   builder tool name,vaild docker, buildah, podman, nerdctl
+# Returns:
+#   $1: str   builder implementation function name
+function builder_factory () {
+  local builder_tool=$1
+  case $builder_tool in
+    "docker" | "buildah" | "podman" | "nerdctl")
+      echo "${builder_tool}_builder"
+      ;;
+    *)
+      log "ERROR" "Unsupported builder tool: $builder_tool"
+      exit 1
+      ;;
+  esac
+}
+
+
+# Build docker image
+# Arguments:
+#   $1: str   builder_tool, docker, buildah, podman, nerdctl
+#   $2: str   tag
+#   $3: str   dockerfile, if not set, use default Dockerfile in context
+#   $4: str   platform, default is linux/amd64,linux/arm64
+#   $5: bool  push
+#   $6: array build-args array, (k1=v1 k2=v2)
+#   $7: str   context
+# Returns:
+#   None
+function builder () {
+  local builder_tool=$1
+  ## builder impl arguments
+  local tag=$2
+  local dockerfile=$3
+  local platform=$4
+  local push=$5
+  local build_args=$6
+  local context=$7
+  ## end builder impl arguments
+
+  local builder_impl=$(builder_factory $builder_tool)
+
+  $builder_impl "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"
+}
+
 
 # Parse product metadata.json in product path
 # Arguments:
@@ -89,12 +210,12 @@ function builder () {
 #      "tag": "quay.io/zncdatadev/airflow:1.10.12-kubedoop5.3.1",
 #      "build_args": ["PRODUCT_VERSION=1.10.12", "BASE_IMAGE=quay.io/zncdatadev/python:3.8.5-kubedoop0.0.0-dev"],
 #    }
-function build_product_with_metadata () {
+function get_product_metadata () {
   local product_path=$1
   local filter_version=$2
 
   local metadata_file="$product_path/metadata.json"
-  local product_name=$(jq -r '.name' $metadata_file)  
+  local product_name=$(jq -r '.name' $metadata_file)
 
   local result=()
 
@@ -135,4 +256,39 @@ function build_product_with_metadata () {
   done
 
   echo "${result[@]}" | jq -s '.' 
+}
+
+# log tool
+# format: datetime - [INFO] - message
+# support log level: INFO, WARN, ERROR
+# support color: red, green, yellow
+# We don't need debug level, because we can use -x option in bash script
+function log () {
+  local level=$1
+  local message=$2
+
+  local color
+
+  local datetime=$(date +"%Y-%m-%d %H:%M:%S")
+  local log_level="[INFO]"
+  local log_color="\033[0m"
+
+  case $level in
+    "INFO")
+      log_level="[INFO]"
+      ;;
+    "WARN")
+      log_level="[WARN]"
+      log_color="\033[0;33m"
+      ;;
+    "ERROR")
+      log_level="[ERROR]"
+      log_color="\033[0;31m"
+      ;;
+    *)
+      log_level="[INFO]"
+      ;;
+  esac
+  
+  echo -e "$log_color$datetime - $log_level - $message\033[0m"
 }

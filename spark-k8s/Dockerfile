@@ -3,7 +3,7 @@
 ARG JAVA_BASE_VERSION
 ARG JAVA_DEVEL_VERSION
 
-FROM gradle:8 AS gradle-builder
+FROM docker.io/library/gradle:8 AS gradle-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION

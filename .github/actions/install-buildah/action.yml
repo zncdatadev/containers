@@ -1,0 +1,71 @@
+name: 'Setup buildah'
+description: |
+  Due to the buildah 1.33.7 of ubuntu 24.04 do not support buildah heredoc syntax,
+  we build image in buildah container
+  Note: buildah 1.33.0 support heredoc syntax, but it is be patched in ubuntu 24.04.
+  When buildah heredoc syntax is available, we can directly build image in the runner.
+
+inputs:
+  buildah_version:
+    description: 'The version of buildah to install'
+    required: false
+    default: 'latest'
+  username:
+    description: 'The username for the registry'
+    required: false
+  password:
+    description: 'The password for the registry'
+    required: false
+  registry:
+    description: 'The registry to login to'
+    required: false
+    default: 'quay.io'
+  builder_name:
+    description: 'The name of the builder'
+    required: false
+    default: 'builder'
+outputs:
+  buildah_version:
+    description: 'The version of buildah installed'
+    value: ${{ inputs.buildah_version }}
+  builder_name:
+    description: 'The name of the builder'
+    value: ${{ inputs.builder_name }}
+
+runs:
+  using: 'composite'
+  steps:
+    # we need cross platform support
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Start buildah container
+      shell: bash
+      env:
+        BUILDER_NAME: ${{ inputs.builder_name }}
+        REGISTRY: ${{ inputs.registry }}
+        BUILDAH_VERSION: ${{ inputs.buildah_version }}
+        USERNAME: ${{ inputs.username }}
+        PASSWORD: ${{ inputs.password }}
+      run: |
+        set -ex
+        # start buildah in docker container
+        docker run \
+          --privileged \
+          --name $BUILDER_NAME \
+          -e BUILDAH_ISOLATION=chroot \
+          -e BUILDAH_STORAGE_DRIVER=vfs \
+          -e CONTAINER_TOOL_PROVIDER=buildah \
+          -e CI_SCRIPT_DEBUG=true \
+          -e REGISTRY=${REGISTRY} \
+          -v $(pwd):/app \
+          -d \
+          quay.io/buildah/stable:$BUILDAH_VERSION \
+            tail -f /dev/null
+
+        # install required tools
+        docker exec $BUILDER_NAME dnf install -y jq
+
+        # login to quay.io
+        if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
+          docker exec $BUILDER_NAME buildah login "$REGISTRY" --username "$USERNAME" --password "$PASSWORD"
+        fi

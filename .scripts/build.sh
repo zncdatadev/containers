@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CONTAINER_TOOL_PROVIDER=${CONTAINER_TOOL_PROVIDER:-"podman"}
+
 set -e
 
 . .scripts/lib.sh
@@ -26,16 +28,11 @@ Options:
       --push                  Push the built image to the registry
       --build-arg sring       Pass build arguments to the image, can be used multiple times
       --platform string       Set the platform for the image, default is linux/amd64,linux/arm64.
-      --cache-from string     Use an image as build cache
-      --cache-to string       Push the built image to the registry
 "
   local tag
   local dockerfile=""
   local platform=""
   local push=false
-  local cache_from=""
-  local cache_to=""
-  local progress=""
   local build_args=()
 
   while [ "$1" != "" ]; do
@@ -54,18 +51,6 @@ Options:
         ;;
       --push )
         push=true
-        ;;
-      --cache-from )
-        shift
-        cache_from=$1
-        ;;
-      --cache-to )
-        shift
-        cache_to=$1
-        ;;
-      --progress )
-        shift
-        progress=$1
         ;;
       --build-arg )
         shift
@@ -95,7 +80,7 @@ Options:
     exit 1
   fi
 
-  builder "$tag" "$dockerfile" "$platform" "$push" "$cache_from" "$cache_to" "$progress" "$build_args" "$context"
+  builder "$CONTAINER_TOOL_PROVIDER" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"
 }
 
 
@@ -111,8 +96,7 @@ Options:
       --product-version string    Set the product version
       --push                      Push the built image to the registry
       --platform string           Set the platform for the image, default is linux/amd64,linux/arm64.
-      --progress string           Set the progress output type [auto, plain, tty], default is auto
-      --cache-dir string          Set the cache directory
+      --sign string               Sign the image, currently only support cosign
 "
 
   local context
@@ -135,14 +119,6 @@ Options:
       --platform )
         shift
         platform=$1
-        ;;
-      --progress )
-        shift
-        progress=$1
-        ;;
-      --cache-dir )
-        shift
-        cache_dir=$1
         ;;
       --product-version )
         shift
@@ -169,7 +145,7 @@ Options:
     exit 1
   fi
 
-  local result=$(build_product_with_metadata "$context" "$product_version")
+  local result=$(get_product_metadata "$context" "$product_version")
 
   for item in $(echo $result | jq -c '.[]'); do
     local tag=$(echo $item | jq -r '.tag')
@@ -179,20 +155,23 @@ Options:
       build_args=$(echo $item | jq -r '.build_args[]' | tr '\n' ' ')
     fi
 
-    builder "$tag" "$dockerfile" "$platform" "$push" "" "" "$progress" "$build_args" "$context"
+    builder "$CONTAINER_TOOL_PROVIDER" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"
   done
 
 }
 
 function main () {
   local usage="
-Usage: build.sh COMMAND [OPTIONS] PATH
+Usage: build.sh COMMAND [OPTIONS]
 
 Build image
 
 Commands:
   image                       Build the image
   product                     Build the product image
+
+Options:
+  -h, --help                  Show this message
 
 "
   local command=$1
@@ -205,6 +184,10 @@ Commands:
     product )
       build_product "$@"
       ;;
+    -h | --help )
+      echo "$usage"
+      exit 0
+      ;;
     * )
       echo "$usage"
       exit 1
@@ -212,4 +195,13 @@ Commands:
   esac
 }
 
+function system_requirements () {
+  if ! command -v jq > /dev/null; then
+    echo "jq is required"
+    exit 1
+  fi
+}
+
+
+system_requirements
 main "$@"
