@@ -69,7 +69,7 @@ RUN <<EOF
     mkdir -p /build/hadoop-src
     pushd /build/hadoop-src
     curl -sSfL \
-        https://downloads.apache.org/hadoop/common/hadoop-${PRODUCT_VERSION}/hadoop-${PRODUCT_VERSION}-src.tar.gz \
+        https://archive.apache.org/dist/hadoop/common/hadoop-${PRODUCT_VERSION}/hadoop-${PRODUCT_VERSION}-src.tar.gz \
         | tar xzf - --strip-components=1
     /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
     mvn --no-transfer-progress clean package -Pdist,native -pl '!hadoop-tools/hadoop-pipes,!hadoop-yarn-project,!hadoop-mapreduce-project,!hadoop-minicluster' -Drequire.fuse=true -DskipTests -Dmaven.javadoc.skip=true
