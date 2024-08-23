@@ -324,3 +324,5 @@ fabric.properties
 
 output.json
 test.sh
+
+!.github/actions/build

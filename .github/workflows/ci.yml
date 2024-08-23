@@ -8,11 +8,12 @@ env:
   REGISTRY: quay.io/zncdatadev
   DOCKER_CACHE_DIR: /tmp/docker-cache
   CI_SCRIPT_DEBUG: true
+  CONTAINER_TOOL_PROVIDER: buildah
 
 jobs:
   linter_code_base:
     name: Markdown Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -30,7 +31,7 @@ jobs:
   
   prepare_updated_product:
     name: Prepare Updated Product
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       BEFORE_COMMIT_SHA: ${{ steps.get_updated_product.outputs.BEFORE_COMMIT_SHA }}
       AFTER_COMMIT_SHA: ${{ steps.get_updated_product.outputs.AFTER_COMMIT_SHA }}
@@ -100,12 +101,13 @@ jobs:
         PRODUCTS=$(jq -c '.products | tostring' output.json)
         INFRA=$(jq -c '.infra | tostring' output.json)
         echo "PRODUCTS: $PRODUCTS, INFRA: $INFRA"
+        
         echo "PRODUCTS=$PRODUCTS" >> "$GITHUB_OUTPUT"
         echo "INFRA=$INFRA" >> "$GITHUB_OUTPUT"
 
   test_infra:
     name: Test Infra
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: 
       - prepare_updated_product
     steps:
@@ -133,41 +135,46 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Cache docker
-      id: cache-buildx
-      uses: actions/cache@v4
-      with:
-        path: 
-          /tmp/docker-cache
-        key: ${{ runner.os }}-docker-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
     - name: Install jq
       uses: dcarbone/install-jq-action@v2.1.0
     - name: Check version
       run: |
         bash --version
         jq --version
-        docker info
+        buildah version
+        podman info
     - name: Show Usage
       run: |
         free -h
         df -h
         lsblk
+    - name: Install buildah
+      id: install_buildah
+      uses: ./.github/actions/install-buildah
+      with:
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
     - name: Build Infra
+      id: build_infra
       run: |
         set -ex
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA from output: $INFRA"
         
+        products=()
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
-            .scripts/build.sh product $item
+            # /app/.scripts/build.sh product $item
+            products+=($item)
         done
+
+        # save as space separated string to output
+        echo "PRODUCTS=${products[*]}" >> "$GITHUB_OUTPUT"
+    - name: Build Images
+      uses: ./.github/actions/build
+      with:
+        products: ${{ steps.build_infra.outputs.PRODUCTS }}
+        push: false
     - name: Show Usage
       run: |
         free -h
@@ -176,7 +183,7 @@ jobs:
 
   prepare_product_matrix:
     name: Prepare Product Matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: prepare_updated_product
     outputs:
       PRODUCT_MATRIX: ${{ steps.get_product_matrix.outputs.PRODUCT_MATRIX }}
@@ -216,7 +223,7 @@ jobs:
     
   test_product:
     name: Test Product
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: prepare_product_matrix
     if: ${{ needs.prepare_product_matrix.outputs.PRODUCT_MATRIX != '[]' }}
     strategy:
@@ -247,52 +254,29 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Cache docker
-      id: cache-buildx
-      uses: actions/cache@v4
-      with:
-        path: 
-          /tmp/docker-cache
-        key: ${{ runner.os }}-docker-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
     - name: Install jq
       uses: dcarbone/install-jq-action@v2.1.0
     - name: Check version
       run: |
         bash --version
         jq --version
-        docker info
+        buildah version
+        podman info
     - name: Show Usage
       run: |
         free -h
         df -h
         lsblk
+    - name: Install buildah
+      uses: ./.github/actions/install-buildah
+      with:
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
     - name: Build Product
-      run: |
-        set -ex
-
-        . ./.scripts/lib.sh
-
-        PRODUCT="${{ matrix.product }}"
-        echo "PRODUCT from matrix: $PRODUCT"
-        
-        product_name=$(echo $PRODUCT | cut -d':' -f1)
-        product_version=$(echo $PRODUCT | cut -d':' -f2)
-
-        metadata_file="${product_name}/metadata.json"
-
-        # build product
-        for property in $(jq -c '.properties[]' $metadata_file); do
-          version=$(echo $property | jq -r '.version')
-          if [ "$version" == "$product_version" ]; then
-            .scripts/build.sh product --product-version $product_version $product_name
-          fi
-        done
+      uses: ./.github/actions/build
+      with:
+        products: ${{ matrix.product }}
+        push: false
     - name: Show Usage
       run: |
         free -h
@@ -301,7 +285,7 @@ jobs:
 
   deploy_infra:
     name: Deploy Infra
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: 
       - prepare_updated_product
       - test_infra
@@ -331,28 +315,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Cache docker
-      id: cache-buildx
-      uses: actions/cache@v4
-      with:
-        path: 
-          /tmp/docker-cache
-        key: ${{ runner.os }}-docker-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
     - name: Install jq
       uses: dcarbone/install-jq-action@v2.1.0
     - name: Check version
       run: |
         bash --version
         jq --version
-        docker info
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
+        buildah version
+        podman info
+    - name: Login to quay.io
+      uses: redhat-actions/podman-login@v1
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_USERNAME }}
@@ -362,15 +334,32 @@ jobs:
         free -h
         df -h
         lsblk
+    - name: Install buildah
+      uses: ./.github/actions/install-buildah
+      with:
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
     - name: Deploy Infra
+      id: deploy_infra
       run: |
         set -ex
         INFRA="${{ needs.prepare_updated_product.outputs.INFRA }}"
         echo "INFRA from output: $INFRA"
+        
+        products=()
+
         # deploy infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
-            .scripts/build.sh product --push --progress plain $item 
+          products+=($item)
         done
+
+        # save as space separated string to output
+        echo "PRODUCTS=${products[*]}" >> "$GITHUB_OUTPUT"
+    - name: Build Images
+      uses: ./.github/actions/build
+      with:
+        products: ${{ steps.deploy_infra.outputs.PRODUCTS }}
+        push: true
     - name: Show Usage
       run: |
         free -h
@@ -379,7 +368,7 @@ jobs:
 
   deploy_product:
     name: Deploy Product
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'push' && github.repository_owner == 'zncdatadev' }}
     needs: 
       - prepare_product_matrix
@@ -413,58 +402,31 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Cache docker
-      id: cache-buildx
-      uses: actions/cache@v4
-      with:
-        path: 
-          /tmp/docker-cache
-        key: ${{ runner.os }}-docker-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
     - name: Install jq
       uses: dcarbone/install-jq-action@v2.1.0
     - name: Check version
       run: |
         bash --version
         jq --version
-        docker info
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        registry: quay.io
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_PASSWORD }}
+        buildah version
+        podman info
     - name: Show Usage
       run: |
         free -h
         df -h
         lsblk
+    - name: Install buildah
+      uses: ./.github/actions/install-buildah
+      with:
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
     - name: Deploy Product
-      run: |
-        set -ex
-
-        . ./.scripts/lib.sh
-
-        PRODUCT="${{ matrix.product }}"
-        echo "PRODUCT from matrix: $PRODUCT"
-        
-        product_name=$(echo $PRODUCT | cut -d':' -f1)
-        product_version=$(echo $PRODUCT | cut -d':' -f2)
-
-        metadata_file="${product_name}/metadata.json"
-
-        # deploy product
-        for property in $(jq -c '.properties[]' $metadata_file); do
-          version=$(echo $property | jq -r '.version')
-          if [ "$version" == "$product_version" ]; then
-            .scripts/build.sh product --push --progress plain --product-version $product_version $product_name
-          fi
-        done
+      uses: ./.github/actions/build
+      with:
+        products: ${{ matrix.product }}
+        push: true
     - name: Show Usage
       run: |
         free -h

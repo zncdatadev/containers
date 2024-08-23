@@ -1,0 +1,50 @@
+name: 'Build production image'
+description: 'Build production image'
+inputs:
+  builder_name:
+    description: 'The name of the builder'
+    required: false
+    default: 'builder'
+  products:
+    description: |
+      The products to build, the name sperated by space. e.g. "name1:version1 name1:version2 name2:version1"
+      If build a product without version, just use the name. we will build all versions of the product.
+    required: true
+  push:
+    description: |
+      Push the image to registry after build.
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build production image
+      shell: bash
+      env:
+        BUILDER_NAME: ${{ inputs.builder_name }}
+        PRODUCTS: ${{ inputs.products }}
+        PUSH: ${{ inputs.push }}
+      run: |
+        set -ex
+        
+        for product in $PRODUCTS; do
+          args=(".scripts/build.sh" "product")
+
+          if [[ $product == *":"* ]]; then
+            name=$(echo $product | cut -d':' -f1)
+            version=$(echo $product | cut -d':' -f2)
+            args+=("$name")
+            if [ -n "$version" ]; then
+              args+=("--product-version" "$version")
+            fi
+          else
+            args+=("$product")
+          fi
+
+          if [ "$PUSH" = "true" ]; then
+            args+=("--push")
+          fi
+
+          docker exec -w /app $BUILDER_NAME "${args[@]}"
+        done
