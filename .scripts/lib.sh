@@ -31,7 +31,8 @@ function nerdctl_builder () {
 #   $4: bool  push
 #   $5: array build-args array, (k1=v1 k2=v2)
 #   $6: str   context
-#   $7: bool  is_podman
+#   $7: str   sign
+#   $8: bool  is_podman
 # Returns:
 #   None
 function buildah_backend_adaptor () {
@@ -41,8 +42,9 @@ function buildah_backend_adaptor () {
   local push=$4
   local build_args=$5
   local context=$6
+  local sign=$7
   # if 'is_podman' set and true, use podman
-  local is_podman=${7:-false}
+  local is_podman=${8:-false}
 
   local container_tool="buildah"
   local platform_length=$(echo $platform | tr ',' '\n' | wc -l)
@@ -64,6 +66,7 @@ function buildah_backend_adaptor () {
   if [ $platform_length -gt 1 ]; then
     buildah_args+=("--manifest=${tag}")
     buildah_args+=("--platform=${platform}")
+    buildah_args+=("--jobs=4")
   else
     buildah_args+=("--tag=${tag}")
   fi
@@ -91,21 +94,36 @@ function buildah_backend_adaptor () {
   fi
 
   if [ $platform_length -gt 1 ]; then
+    log "INFO" "Inspecting manifest: $tag"
     $container_tool manifest inspect $tag
+  elif [ $push = true ]; then
+    log "INFO" "Inspecting image: $tag"
+    $container_tool inspect $tag
   fi
+
+  local digest_file=$(echo $tag | tr '/:' '-')_digest.txt
 
   # if 'push' set and true, push image
   if [ $push = true ]; then
-    # if 'platform' seted, push manifest
-    # else push image
+    # if 'platform' seted, push manifest else push image
     if [ $platform_length -gt 1 ]; then
       log "INFO" "Pushing manifest: $tag"
-      $container_tool manifest push --all --rm $tag
+      $container_tool manifest push --digestfile $digest_file --all $tag
     else
       log "INFO" "Pushing image: $tag"
-      $container_tool push $tag
+      $container_tool push --digestfile $digest_file $tag
+    fi
+
+    local image_digest=$(cat $digest_file)
+
+    # if 'sign' is set and image_digest is not empty, sign image
+    if [ -n "$sign" ] && [ -n "$image_digest" ]; then
+      local digest_tag=$(echo "$tag" | sed "s/:[^:]*$/@$image_digest/")
+      log "INFO" "Signing image: $digest_tag"
+      image_signer "$digest_tag" true "cosign"
     fi
   fi
+
 }
 
 
@@ -117,6 +135,7 @@ function buildah_backend_adaptor () {
 #   $4: bool  push
 #   $5: array build-args array, (k1=v1 k2=v2)
 #   $6: str   context
+#   $7: str   sign
 # Returns:
 #   None
 function buildah_builder () {
@@ -126,8 +145,9 @@ function buildah_builder () {
   local push=$4
   local build_args=$5
   local context=$6
+  local sign=$7
 
-  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" false
+  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign" false
 }
 
 
@@ -139,6 +159,7 @@ function buildah_builder () {
 #   $4: bool  push
 #   $5: array build-args array, (k1=v1 k2=v2)
 #   $6: str   context
+#   $7: str   sign
 # Returns:
 #   None
 function podman_builder () {
@@ -148,8 +169,9 @@ function podman_builder () {
   local push=$4
   local build_args=$5
   local context=$6
+  local sign=$7
 
-  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" true
+  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign" true
 }
 
 
@@ -181,6 +203,7 @@ function builder_factory () {
 #   $5: bool  push
 #   $6: array build-args array, (k1=v1 k2=v2)
 #   $7: str   context
+#   $8: str   sign
 # Returns:
 #   None
 function builder () {
@@ -192,11 +215,52 @@ function builder () {
   local push=$5
   local build_args=$6
   local context=$7
+  local sign=$8
   ## end builder impl arguments
 
   local builder_impl=$(builder_factory $builder_tool)
 
-  $builder_impl "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"
+  $builder_impl "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign"
+}
+
+
+# Cosign keyless sign image
+function cosign_signer () {
+  local image=$1
+  local upload=$2
+
+  if [ $upload = true ]; then
+    cosign sign -y $image
+  else
+    cosign sign -y --upload=false $image
+  fi
+}
+
+# https://github.com/sigstore/cosign/issues/587
+
+# Sign image with signer
+# Arguments:
+#   $1: str   image
+#   $2: bool  upload, if true, upload signature to registry
+#   $3: str   signer, currently only support cosign
+function image_signer () {
+  local image=$1
+  local upload=$2
+  local signer=$3
+
+  local signer_impl
+
+  case $signer in
+    "cosign")
+      signer_impl="cosign_signer"
+      ;;
+    *)
+      log ERROR "Unsupported signer: $signer"
+      exit 1
+      ;;
+  esac
+
+  $signer_impl "$image" $upload
 }
 
 

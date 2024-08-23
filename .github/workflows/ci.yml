@@ -67,23 +67,26 @@ jobs:
         elif [ $GH_EVENT == 'push' ]; then
           BEFORE_COMMIT_SHA=${{ github.event.before }}
           AFTER_COMMIT_SHA=${{ github.sha }}
-          # When push to a new branch, BEFORE_COMMIT_SHA is 0000000000000000000000000000000000000000, so we use previous commit
-          if [ $BEFORE_COMMIT_SHA == '0000000000000000000000000000000000000000' ] || ! git merge-base --is-ancestor $BEFORE_COMMIT_SHA $AFTER_COMMIT_SHA; then
-            echo "Push to a new branch or not a direct push to the branch, find the previous commit or the common ancestor"
-            DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
-            BEFORE_COMMIT_SHA=$(git rev-parse origin/$DEFAULT_BRANCH)
-          fi
 
+          # check if BEFORE_COMMIT_SHA is valid. eg: 
+          #   - push to a new branch, BEFORE_COMMIT_SHA is 0000000000000000000000000000000000000000
+          #   - push --amend in main branch, BEFORE_COMMIT_SHA may be invalid
+          # Or BEFORE_COMMIT_SHA is not an ancestor of AFTER_COMMIT_SHA
+          
+          if ! git cat-file -e $BEFORE_COMMIT_SHA >/dev/null 2>&1; then
+            BEFORE_COMMIT_SHA=$(git rev-parse "$AFTER_COMMIT_SHA"^)
+          fi
         fi
 
-        # save to env
+        echo "Save commit sha to env"
         echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA" >> $GITHUB_ENV
         echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> $GITHUB_ENV
-        # save to output
+            
+        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA"
         echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA" >> "$GITHUB_OUTPUT"
         echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA" >> "$GITHUB_OUTPUT"
 
-        # get updated product
+        echo "Get target product"
         python3 .github/scripts/get_target_product.py \
           --before-sha $BEFORE_COMMIT_SHA \
           --after-sha $AFTER_COMMIT_SHA
@@ -110,6 +113,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: 
       - prepare_updated_product
+    permissions:
+      id-token: write
     steps:
     - name: Show Usage
       run: |
@@ -164,7 +169,6 @@ jobs:
         products=()
         # build infra
         for item in $(echo "${INFRA}" | jq -r '.[]'); do
-            # /app/.scripts/build.sh product $item
             products+=($item)
         done
 
@@ -174,7 +178,6 @@ jobs:
       uses: ./.github/actions/build
       with:
         products: ${{ steps.build_infra.outputs.PRODUCTS }}
-        push: false
     - name: Show Usage
       run: |
         free -h
@@ -225,6 +228,8 @@ jobs:
     name: Test Product
     runs-on: ubuntu-24.04
     needs: prepare_product_matrix
+    permissions:
+      id-token: write
     if: ${{ needs.prepare_product_matrix.outputs.PRODUCT_MATRIX != '[]' }}
     strategy:
       matrix:
@@ -276,7 +281,6 @@ jobs:
       uses: ./.github/actions/build
       with:
         products: ${{ matrix.product }}
-        push: false
     - name: Show Usage
       run: |
         free -h
@@ -289,6 +293,8 @@ jobs:
     needs: 
       - prepare_updated_product
       - test_infra
+    permissions:
+      id-token: write
     if: github.event_name == 'push' && github.repository_owner == 'zncdatadev'
     steps:
     - name: Show Usage
@@ -360,6 +366,7 @@ jobs:
       with:
         products: ${{ steps.deploy_infra.outputs.PRODUCTS }}
         push: true
+        sign: true
     - name: Show Usage
       run: |
         free -h
@@ -374,6 +381,8 @@ jobs:
       - prepare_product_matrix
       - test_product
       - deploy_infra  # already deploy condition
+    permissions:
+      id-token: write
     strategy:
       matrix:
         product: ${{fromJson(needs.prepare_product_matrix.outputs.PRODUCT_MATRIX)}}
@@ -427,6 +436,7 @@ jobs:
       with:
         products: ${{ matrix.product }}
         push: true
+        sign: true
     - name: Show Usage
       run: |
         free -h

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.8
 
-FROM registry.access.redhat.com/ubi9-minimal
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194
 
 COPY kubedoop/dnf.conf /etc/dnf/dnf.conf
 

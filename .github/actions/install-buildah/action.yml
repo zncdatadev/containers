@@ -52,20 +52,35 @@ runs:
         docker run \
           --privileged \
           --name $BUILDER_NAME \
-          -e BUILDAH_ISOLATION=chroot \
-          -e BUILDAH_STORAGE_DRIVER=vfs \
           -e CONTAINER_TOOL_PROVIDER=buildah \
+          -e ACTIONS_ID_TOKEN_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+          -e ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL \
           -e CI_SCRIPT_DEBUG=true \
-          -e REGISTRY=${REGISTRY} \
           -v $(pwd):/app \
           -d \
           quay.io/buildah/stable:$BUILDAH_VERSION \
             tail -f /dev/null
 
-        # install required tools
-        docker exec $BUILDER_NAME dnf install -y jq
-
         # login to quay.io
         if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
           docker exec $BUILDER_NAME buildah login "$REGISTRY" --username "$USERNAME" --password "$PASSWORD"
         fi
+
+        # install required tools
+        docker exec $BUILDER_NAME sh -c "
+          set -ex
+
+          # install required tools
+          dnf install -y jq 
+          curl -sSfL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
+          chmod +x /usr/local/bin/cosign
+          cosign version
+
+          # to fix cosign publish with unauthorized error
+          # https://github.com/sigstore/cosign/issues/587#issuecomment-2305367341
+          # if /run/containers/0/auth.json exists, copy it to ~/.docker/config.json
+          if [ -f /run/containers/0/auth.json ]; then
+            mkdir -p /root/.docker/
+            cp /run/containers/0/auth.json /root/.docker/config.json
+          fi
+        "
