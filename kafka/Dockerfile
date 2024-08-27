@@ -32,14 +32,15 @@ EOF
 COPY kubedoop/ /build/
 
 # build kafka
-RUN <<EOF
-    set -e
+# use cache locked to fix gradle concurrency lock issue https://github.com/gradle/gradle/issues/8750#issuecomment-2312378643
+RUN --mount=type=cache,sharing=locked,target=/root/.gradle <<EOF
+    set -ex
     mkdir -p /build/kafka-src
     pushd /build/kafka-src
     curl -sSfL \
         https://archive.apache.org/dist/kafka/${PRODUCT_VERSION}/kafka-${PRODUCT_VERSION}-src.tgz \
         | tar xzf - --strip-components=1
-    ./gradlew clean releaseTarGz -x test --no-daemon
+    ./gradlew clean releaseTarGz -x test
     tar -xzf core/build/distributions/kafka_${SCALA_VERSION}-${PRODUCT_VERSION}.tgz -C /kubedoop
     ln -s /kubedoop/kafka_${SCALA_VERSION}-${PRODUCT_VERSION} /kubedoop/kafka
     popd
