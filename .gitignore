@@ -326,3 +326,6 @@ output.json
 test.sh
 
 !.github/actions/build
+
+# ignore suffix: _digest.txt files, it's used for temporary storing the digest of the file
+*_digest.txt

@@ -15,6 +15,11 @@ inputs:
       Push the image to registry after build.
     required: false
     default: 'false'
+  sign:
+    description: |
+      Sign the image after build.
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -25,9 +30,10 @@ runs:
         BUILDER_NAME: ${{ inputs.builder_name }}
         PRODUCTS: ${{ inputs.products }}
         PUSH: ${{ inputs.push }}
+        SIGN: ${{ inputs.sign }}
       run: |
         set -ex
-        
+        docker exec $BUILDER_NAME ls -alh /usr/local/bin/
         for product in $PRODUCTS; do
           args=(".scripts/build.sh" "product")
 
@@ -46,5 +52,10 @@ runs:
             args+=("--push")
           fi
 
+          if [ "$SIGN" = "true" ]; then
+            args+=("--sign" "cosign")
+          fi
+
           docker exec -w /app $BUILDER_NAME "${args[@]}"
+
         done

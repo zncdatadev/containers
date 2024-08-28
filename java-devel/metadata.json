@@ -4,30 +4,35 @@
     {
       "version": "1.8.0",
       "dependencies": {
+        "kubedoop-base": "1.0.0",
         "maven": "3.6.3"
       }
     },
     {
       "version": "11",
       "dependencies": {
+        "kubedoop-base": "1.0.0",
         "maven": "3.6.3"
       }
     },
     {
       "version": "17",
       "dependencies": {
+        "kubedoop-base": "1.0.0",
         "maven": "3.6.3"
       }
     },
     {
       "version": "21",
       "dependencies": {
+        "kubedoop-base": "1.0.0",
         "maven": "3.6.3"
       }
     },
     {
       "version": "22",
       "dependencies": {
+        "kubedoop-base": "1.0.0",
         "maven": "3.6.3"
       }
     }

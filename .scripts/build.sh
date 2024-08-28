@@ -1,6 +1,7 @@
 #!/bin/bash
 
 CONTAINER_TOOL_PROVIDER=${CONTAINER_TOOL_PROVIDER:-"podman"}
+SIGNER_TOOL_PROVIDER=${SIGNER_TOOL_PROVIDER:-"cosign"}
 
 set -e
 
@@ -103,9 +104,8 @@ Options:
   local dockerfile=""
   local push=false
   local platform=""
-  local progress=""
-  local cache_dir=""
   local product_version=""
+  local sign="$SIGNER_TOOL_PROVIDER"
 
   while [ "$1" != "" ]; do
     case $1 in
@@ -123,6 +123,10 @@ Options:
       --product-version )
         shift
         product_version=$1
+        ;;
+      --sign )
+        shift
+        sign=$1
         ;;
       -h | --help )
         echo "$usage"
@@ -155,7 +159,7 @@ Options:
       build_args=$(echo $item | jq -r '.build_args[]' | tr '\n' ' ')
     fi
 
-    builder "$CONTAINER_TOOL_PROVIDER" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"
+    builder "$CONTAINER_TOOL_PROVIDER" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign"
   done
 
 }
@@ -198,6 +202,16 @@ Options:
 function system_requirements () {
   if ! command -v jq > /dev/null; then
     echo "jq is required"
+    exit 1
+  fi
+
+  if ! command -v $CONTAINER_TOOL_PROVIDER > /dev/null; then
+    echo "$CONTAINER_TOOL_PROVIDER is required"
+    exit 1
+  fi
+
+  if ! command -v $SIGNER_TOOL_PROVIDER > /dev/null; then
+    echo "$SIGNER_TOOL_PROVIDER is required"
     exit 1
   fi
 }

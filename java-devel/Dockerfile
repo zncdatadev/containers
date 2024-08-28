@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
-ARG BASE_IMAGE
+ARG KUBEDOOP_BASE_VERSION
 
-FROM ${BASE_IMAGE:-quay.io/zncdatadev/kubedoop-base:0.0.1-kubedoop0.0.0-dev}
+FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev 
 
 ARG PRODUCT_VERSION
 ARG MAVEN_VERSION
