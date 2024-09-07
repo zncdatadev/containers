@@ -27,7 +27,6 @@ RUN <<EOF
     tar -xzf dolphinscheduler-dist/target/apache-dolphinscheduler-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
 
     ln -s /kubedoop/apache-dolphinscheduler-${PRODUCT_VERSION}-bin /kubedoop/dolphinscheduler
-    ls -alh /kubedoop/dolphinscheduler/bin
     popd
 EOF
 
