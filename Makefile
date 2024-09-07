@@ -23,7 +23,7 @@ JQ = $(LOCAL_BIN)/jq
 jq: ## Download jq locally if necessary.
 ifeq (,$(wildcard $(JQ)))
 ifeq (,$(shell which jq 2>/dev/null))
-    @{ \
+	@{ \
 		set -e ;\
 		mkdir -p $(dir $(JQ)) ;\
 		OS=$(shell uname -s | tr '[:upper:]' '[:lower:]') && \
@@ -31,9 +31,28 @@ ifeq (,$(shell which jq 2>/dev/null))
 		if [ "$${OS}" = "darwin" ]; then OS="macos"; fi && \
 		curl -sSLo $(JQ) https://github.com/jqlang/jq/releases/latest/download/jq-$${OS}-$${ARCH} ;\
 		chmod +x $(JQ) ;\
-    }
+	}
 else
 JQ = $(shell which jq)
+endif
+endif
+
+.PHONY: cosign
+COSIGN = $(LOCAL_BIN)/cosign
+cosign: ## Download cosign locally if necessary.
+ifeq (,$(wildcard $(COSIGN)))
+ifeq (,$(shell which cosign 2>/dev/null))
+	@{ \
+		set -e ;\
+		mkdir -p $(dir $(COSIGN)) ;\
+		OS=$(shell uname -s | tr '[:upper:]' '[:lower:]') && \
+		ARCH=$(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/') && \
+		if [ "$${OS}" = "darwin" ]; then OS="macos"; fi && \
+		curl -sSLo $(COSIGN) https://github.com/sigstore/cosign/releases/latest/download/cosign-$$OS-$${ARCH} ;\
+		chmod +x $(COSIGN) ;\
+	}
+else
+COSIGN = $(shell which cosign)
 endif
 endif
 
