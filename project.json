@@ -19,6 +19,7 @@
   "global_path": [
     ".github/workflows/ci.yml",
     ".github/scripts/*",
+    ".github/actions/**/*",
     ".scripts/*"
   ]
 }
