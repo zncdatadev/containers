@@ -39,7 +39,7 @@ RUN <<EOF
         https://archive.apache.org/dist/hive/hive-${PRODUCT_VERSION}/apache-hive-${PRODUCT_VERSION}-src.tar.gz \
         | tar xzf - --strip-components=1
     /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
-    mvn --batch-mode --no-transfer-progress clean package -DskipTests --projects standalone-metastore
+    mvn --no-transfer-progress clean package -DskipTests --projects standalone-metastore
 
     cp -r standalone-metastore/target/apache-hive-metastore-${PRODUCT_VERSION}-bin/apache-hive-metastore-${PRODUCT_VERSION}-bin /kubedoop/
     mv /kubedoop/apache-hive-metastore-${PRODUCT_VERSION}-bin /kubedoop/apache-hive-metastore-${PRODUCT_VERSION}
@@ -62,9 +62,6 @@ FROM ${BASE_IMAGE:-quay.io/zncdatadev/java-base:11-kubedoop0.0.0-dev}
 
 ARG PRODUCT_VERSION
 ARG HADOOP_VERSION
-ARG AWS_JAVA_SDK_BUNDLE_VERSION
-ARG AZURE_STORAGE_VERSION
-ARG AZURE_KEYVAULT_CORE_VERSION
 
 WORKDIR /kubedoop
 
