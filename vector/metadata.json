@@ -4,7 +4,8 @@
     {
       "version": "0.39.0",
       "dependencies": {
-        "kubedoop-base": "1.0.0"
+        "kubedoop-base": "1.0.0",
+        "inotify-tools": "4.23.9.0"
       }
     }
   ]
