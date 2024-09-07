@@ -33,7 +33,6 @@ runs:
         SIGN: ${{ inputs.sign }}
       run: |
         set -ex
-        docker exec $BUILDER_NAME ls -alh /usr/local/bin/
         for product in $PRODUCTS; do
           args=(".scripts/build.sh" "product")
 
