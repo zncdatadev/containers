@@ -1,4 +1,4 @@
-name: ci
+name: main
 
 on:
   pull_request:
@@ -366,7 +366,7 @@ jobs:
       with:
         products: ${{ steps.deploy_infra.outputs.PRODUCTS }}
         push: true
-        sign: true
+        sign: false
     - name: Show Usage
       run: |
         free -h
@@ -436,7 +436,7 @@ jobs:
       with:
         products: ${{ matrix.product }}
         push: true
-        sign: true
+        sign: false
     - name: Show Usage
       run: |
         free -h
