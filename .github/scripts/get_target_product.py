@@ -174,7 +174,7 @@ def resolve_changed_product_dependencies_with_priority(
         # get all infra higher than the minimum priority of the changed infra
         min_infra_priority = min([product.priority for product in infra_metadata])
         all_infra_metadata = get_products_metadata(infra_names, project_metadata.infra_priority)
-        infra_metadata.extend([product for product in all_infra_metadata if product.priority > min_infra_priority])
+        infra_metadata.extend(product for product in all_infra_metadata if product.priority > min_infra_priority and product not in infra_metadata)
     
     return ChangedProducts(
         products=[product.name for product in final_product_metadata],

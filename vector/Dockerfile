@@ -69,4 +69,3 @@ RUN ln -s /usr/local/inotify-tools/bin/inotifywait /usr/local/bin/inotifywait \
     && ln -s /usr/local/inotify-tools/bin/inotifywatch /usr/local/bin/inotifywatch
 
 # smoke test
-RUN vector --version

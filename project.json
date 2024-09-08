@@ -17,7 +17,7 @@
     "java-devel": 300
   },
   "global_path": [
-    ".github/workflows/ci.yml",
+    ".github/workflows/*",
     ".github/scripts/*",
     ".github/actions/**/*",
     ".scripts/*"
