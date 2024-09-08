@@ -30,9 +30,29 @@ FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS ja
 
 ARG PRODUCT_VERSION
 ARG STORAGE_CONNECTOR_VERSION
+ARG JMX_EXPORTER_VERSION
 
 WORKDIR /build
 
+
+COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
+
+# setup jmx_exporter
+RUN <<EOF
+    set -e
+    # check JMX_EXPORTER_VERSION
+    if [ -n "${JMX_EXPORTER_VERSION}" ]; then
+        curl -sSfL \
+            https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+            -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+        
+        ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
+    else
+        echo "JMX_EXPORTER_VERSION is not set"
+    fi
+EOF
+
+# build trino
 RUN <<EOF
     set -ex
     mkdir -p /build/trino-src

@@ -1,3 +1,6 @@
 ---
-rules:
-  - pattern: ".*"
+startDelaySeconds: 0
+ssl: false
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+attrNameSnakeCase: true

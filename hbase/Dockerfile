@@ -9,13 +9,12 @@ FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS ja
 
 ARG PRODUCT_VERSION
 ARG HADOOP_VERSION
-ARG JMX_EXPORTER_VERSION
-
-WORKDIR /build
-
-COPY kubedoop/jmx/config /kubedoop/jmx
+# 2.6 exports jmx and prometheus metrics by default
+ARG JMX_EXPORTER_VERSION=""
 
 # setup jmx_exporter
+WORKDIR /kubedoop/jmx
+COPY kubedoop/jmx /build/jmx
 RUN <<EOF
     set -ex
     # check JMX_EXPORTER_VERSION
@@ -25,11 +24,15 @@ RUN <<EOF
             -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
         
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
+        
+        # copy jmx_exporter config
+        cp /build/jmx/config-${JMX_EXPORTER_VERSION}/* /kubedoop/jmx/
     else
         echo "JMX_EXPORTER_VERSION is not set"
     fi
 EOF
 
+WORKDIR /build
 COPY /kubedoop/ /build/
 
 RUN <<EOF
