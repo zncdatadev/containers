@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-
-# Note: supported python3.11+
+# Note: only supported python3.11+
 
 import argparse
 import dataclasses
@@ -57,7 +56,44 @@ class ProductMetadata:
         return f'ProductMetadata(name={self.name}, priority={self.priority})'
 
 
+@dataclasses.dataclass
+class ChangedProducts:
+    products: list[str]
+    infra: list[str]
+
+
+def check_python_version() -> None:
+    """
+    Check python version, only support python3.11+
+    
+    :return: None
+    """
+    if sys.version_info < (3, 11):
+        logger.error(f'Python version should be 3.11+, current version is {sys.version_info}')
+        sys.exit(1)
+
 def load_project_metadata(metadata_path: Path = Path(PROJECT_METADATA_FILE_NAME)) -> ProjectMetadata:
+    """
+    Load project metadata from the metadata.json file in the project directory.
+    
+    Project metadata contains infra_priority, products_priority, and global_paths.
+    
+    * infra_priority is infrastructure product name and priority, the priority is used to sort the product build order.
+    infra product is the basic level of the product, it should be built first. And some infra product depends on other infra products.
+    priority is infra product relationship, the smaller number is lower level infra product, it should be built first.
+    
+    * products_priority is a dict of product name and priority, the priority is used to sort the product build order.
+    final products priority number unimportant, it only used to sort the product build order.
+    
+    * global_paths is a list of glob pattern, if the changed file is in the global path, all products should be built.
+    Usually, it contains some scripts, configuration files, etc.
+    
+    
+    :param metadata_path: the path of the metadata file
+    
+    :return: ProjectMetadata
+    
+    """
     with open(metadata_path, 'r', encoding='utf-8') as f:
         metadata = json.load(f)
 
@@ -70,6 +106,14 @@ def load_project_metadata(metadata_path: Path = Path(PROJECT_METADATA_FILE_NAME)
 
 
 def load_product_metadata(product_name: str, priority: int) -> ProductMetadata:
+    """
+    Load product metadata from the metadata.json file in the product directory
+    
+    :param product_name: the product name
+    :param priority: the priority of the product
+    
+    :return: ProductMetadata
+    """
     metadata_path = Path(f'{product_name}/{PROEUCT_METADATA_FILE_NAME}')
     
     with open(metadata_path, 'r', encoding='utf-8') as f:
@@ -96,12 +140,69 @@ def load_product_metadata(product_name: str, priority: int) -> ProductMetadata:
     return ProductMetadata(name=name, priority=priority, properties=properties)
 
 
+def resolve_changed_product_dependencies_with_priority(
+    project_metadata: ProjectMetadata,
+    changed_products_name: list[str],
+) -> ChangedProducts:
+    """
+    Resolve the changed product dependencies with priority
+    
+    * If the infra product is changed, all final products and the priority is higher than the changed products should be built.
+    
+    :param project_metadata: ProjectMetadata
+    :param changed_products_name: list of changed product names
+    
+    :return: ChangedProducts
+    
+    """
+    infra_names = set(project_metadata.infra_priority.keys())
+    final_product_names = set(project_metadata.products_priority.keys())
+    
+    changed_infra_names = set(changed_products_name) & infra_names
+    changed_final_product_names = set(changed_products_name) & final_product_names
+    logger.debug(f'Changed infra names: {changed_infra_names}, Changed final product names: {changed_final_product_names}')
+    
+    # if infra is changed, all final products should be built
+    if changed_infra_names:
+        changed_final_product_names = final_product_names
+    logger.debug(f'Changed final product names: {changed_final_product_names}')
+
+    infra_metadata = get_products_metadata(changed_infra_names, project_metadata.infra_priority)
+    final_product_metadata = get_products_metadata(changed_final_product_names, project_metadata.products_priority)
+    
+    if infra_metadata:
+        # get all infra higher than the minimum priority of the changed infra
+        min_infra_priority = min([product.priority for product in infra_metadata])
+        all_infra_metadata = get_products_metadata(infra_names, project_metadata.infra_priority)
+        infra_metadata.extend([product for product in all_infra_metadata if product.priority > min_infra_priority])
+    
+    return ChangedProducts(
+        products=[product.name for product in final_product_metadata],
+        infra=[product.name for product in infra_metadata],
+    )
+
 
 def get_changed_product_name(
     project_metadata: ProjectMetadata,
     before_sha: str| None = None,
     after_sha: str | None = None
 ) -> list[str]:
+    """
+    Use git diff command to get the changed product between two commits by checking the changed files.
+    
+    Product metadata contains product and infra product, also define some global paths.
+    If the changed file is in the global path, all products should be built.
+    Product priority is used to sort the product build order.
+    And those infra products priority is higher changed products, it also should be built,
+    even if the infra product is not changed. Because higher level products depend on the lower level products.
+    
+    :param project_metadata: ProjectMetadata
+    :param before_sha: the SHA of the commit before the event
+    :param after_sha: the SHA of the commit after the push event
+    
+    :return: list of product names
+    
+    """
     cmds = ['git', 'diff', '--name-only']
 
     if before_sha and after_sha:
@@ -121,49 +222,99 @@ def get_changed_product_name(
     
     all_product_names = set(list(project_metadata.products_priority.keys()) + list(project_metadata.infra_priority.keys()))
 
-    # check if the product name is a glob pattern, if not, convert it to a glob pattern
-    # Usually, products_priority and infra_priority are project name, it is not a glob pattern,
-    # but we need to check the full path of changed files  with glob pattern, to match which product should be built
-    # so we need to convert the product name to a glob pattern
-    all_product_patterns: dict[str, str] = {}
-    for product_name in all_product_names:
-        product_path = Path(product_name)
-        if not_glob_pattern.match(product_name):
-            if product_path.exists() and product_path.is_dir():
-                all_product_patterns.setdefault(product_name, f'{product_name}/**/*')
-            else:
-                logger.warning(f'Invalid product name: {product_name} or not exists')
+    all_products_pattern = convert_product_name_to_glob_pattern(all_product_names)
     
-    global_paths = project_metadata.global_paths
-    logger.debug(f'All product names: {all_product_names}, global paths: {global_paths}')
+    global_paths_pattern = project_metadata.global_paths
+    
+    logger.debug(f'All product names: {all_product_names}, global paths: {global_paths_pattern}')
 
     for changed_file in diff_files:
-        added = False   # debug flag
-        for global_path in global_paths:
-            # use glob to match the full path of changed files,
-            # if the changed file is in the global path, all products should be built
-            matches = glob.glob(global_path, recursive=True)
-            if changed_file in matches:
-                logger.info(f'Found global path: {global_path}, all products should be built')
-                changed_product_name = all_product_names
-                break
-        for product, product_pattern in all_product_patterns.items():
-            # use glob to match the full path of changed files
-            # if the changed file is in the product path, the product should be built
-            matches = glob.glob(product_pattern, recursive=True)
-            if changed_file in matches:
-                changed_product_name.add(product)
-                logger.info(f'Found changed product: {changed_file}')
-                added = True
-                break
-        if not added:
+
+        if calculate_global_path_changed(changed_file, global_paths_pattern):
+            changed_product_name = all_product_names
+            break
+        
+        product = calculate_product_changed(changed_file, all_products_pattern)
+        if product:
+            changed_product_name.add(product)
+        else:
             logger.debug(f'Ignore path: {changed_file}, not matched with any product pattern')
 
     logger.info(f'Changed product names: {changed_product_name}')
     return list(changed_product_name)
 
 
-def get_product_metadata(product_names: list[str], priority: dict[str, int]) -> list[ProductMetadata]:
+def calculate_global_path_changed(changed_file: str, global_paths_pattern: list[str]) -> bool:
+    """
+    Check if the changed file is in the global path
+    
+    :return: bool
+    
+    """
+    for global_path in global_paths_pattern:
+        # use glob to match the full path of changed files,
+        # if the changed file is in the global path, all products should be built
+        matches = glob.glob(global_path, recursive=True)
+        if changed_file in matches:
+            logger.info(f'Found global path: {global_path}, all products should be built')
+            return True
+    
+
+def calculate_product_changed(changed_file: str, products_pattern: dict[str, str]) -> str:
+    """
+    Caculate the changed product name by the changed file and product pattern
+    
+    :param changed_file: the changed file
+    :param products_pattern: dict of product name and glob pattern
+    
+    :return: 
+    
+    """
+    for product, product_pattern in products_pattern.items():
+        # use glob to match the full path of changed files
+        # if the changed file is in the product path, the product should be built
+        matches = glob.glob(product_pattern, recursive=True)
+        if changed_file in matches:
+            logger.info(f'Found changed product: {changed_file}')
+            return product
+
+
+def convert_product_name_to_glob_pattern(product_names: list[str]| set[set]) -> dict[str, str]:
+    """
+    check if the product name is a glob pattern, if not, convert it to a glob pattern
+    Usually, products_priority and infra_priority are project name, it is not a glob pattern,
+    but we need to check the full path of changed files  with glob pattern, to match which product should be built
+    so we need to convert the product name to a glob pattern
+    
+    :param product_names: list of product names
+    
+    :return: dict of product name and glob pattern
+    
+    """
+    all_product_patterns: dict[str, str] = {}
+    for product_name in product_names:
+        product_path = Path(product_name)
+        if not_glob_pattern.match(product_name):
+            if product_path.exists() and product_path.is_dir():
+                all_product_patterns.setdefault(product_name, f'{product_name}/**/*')
+            else:
+                logger.warning(f'Invalid product name: {product_name} or not exists')
+        else:
+            # Do not recommend to use glob pattern as a product name
+            logger.warning(f'Product should be a directory name, not a glob pattern: {product_name}')
+            all_product_patterns.setdefault(product_name, product_name)
+    return all_product_patterns
+
+
+def get_products_metadata(product_names: list[str], priority: dict[str, int]) -> list[ProductMetadata]:
+    """
+    Get the product metadata by the product names and priority, and sort by priority
+    
+    :param product_names: list of product names
+    :param priority: dict of product name and priority
+    
+    :return: list of ProductMetadata
+    """
     product_metadata: list[ProductMetadata] = []
     
     for product_name in product_names:
@@ -178,13 +329,12 @@ def get_product_metadata(product_names: list[str], priority: dict[str, int]) -> 
     return product_metadata
 
 
-def save_output(
-    data: dict[str, list[str]],
-    file: Path = Path('output.json')
-):
+def save_output(changed_product: ChangedProducts, file: Path = Path('output.json')):
+    products_name = dataclasses.asdict(changed_product)
     with open(file, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
-    logger.info(f'Saved data to the file: {file}')
+        json.dump(products_name, f, indent=2)
+    logger.info(f'Saved data to the file: {file}, data: {products_name}')
+
 
 def run(
     before_sha: str | None = None,
@@ -196,23 +346,21 @@ def run(
     
     metadata = load_project_metadata(Path(metadata_path))
     
-    changed_product_name = get_changed_product_name(project_metadata=metadata, before_sha=before_sha, after_sha=after_sha) 
-    changed_product = get_product_metadata(changed_product_name, metadata.products_priority)
-    changed_infra = get_product_metadata(changed_product_name, metadata.infra_priority)
-    logger.info(f'Changed product: {changed_product}, Changed infra product: {changed_infra}')
+    changed_products_name = get_changed_product_name(project_metadata=metadata, before_sha=before_sha, after_sha=after_sha)
     
-    data={
-        'products': [product.name for product in changed_product], 
-        'infra': [product.name for product in changed_infra],
-    }
+    resolved_products_name = resolve_changed_product_dependencies_with_priority(project_metadata=metadata, changed_products_name=changed_products_name)
     
-    save_output(data=data, file=Path(output_file)) 
+    save_output(changed_product=resolved_products_name, file=Path(output_file))
+     
     logger.info(f'Saved product names to the output file: {output_file}')
     
     logger.info(f'Finished to get target product names')
 
 
 def main():
+    # check python version, only support python3.11+
+    check_python_version()
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--before-sha', type=str, required=False, help='The SHA of the commit before the event, default is BEFORE_COMMIT_SHA in the environment')
     parser.add_argument('--after-sha', type=str, required=False, help='The SHA of the commit after the push event, default is AFTER_COMMIT_SHA in the environment')

@@ -62,8 +62,16 @@ java-base-build: jq ## Build Java base image
 	.scripts/build.sh product java-base
 
 .PHONY:
+java-base-buildx: jq ## Build Java base image with buildx
+	.scripts/build.sh product java-base --push
+
+.PHONY:
 java-devel-build: jq ## Build Java development image
 	.scripts/build.sh product java-devel
+
+.PHONY:
+java-devel-buildx: jq ## Build Java development image with buildx
+	.scripts/build.sh product java-devel --push
 
 ##@ product
 
