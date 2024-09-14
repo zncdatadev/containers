@@ -37,5 +37,6 @@ FROM quay.io/zncdatadev/java-base:${JAVA_BASE_VERSION}-kubedoop0.0.0-dev
 
 COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
+USER kubedoop
+
 WORKDIR /kubedoop/dolphinscheduler
-USER daemon
