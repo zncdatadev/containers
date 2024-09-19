@@ -25,6 +25,9 @@ RUN <<EOF
         -Prelease
 
     tar -xzf dolphinscheduler-dist/target/apache-dolphinscheduler-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
+    
+    # set +x to avoid permission denied for sub-projects
+    find /kubedoop/apache-dolphinscheduler-${PRODUCT_VERSION}-bin -maxdepth 2 -type d -name "bin" -exec chmod +x -R {} \;
 
     ln -s /kubedoop/apache-dolphinscheduler-${PRODUCT_VERSION}-bin /kubedoop/dolphinscheduler
     popd
