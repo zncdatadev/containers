@@ -11,7 +11,8 @@
         "jmx-exporter": "1.0.1",
         "aws-java-sdk-bundle": "1.12.367",
         "azure-storage": "7.0.1",
-        "azure-keyvault-core": "1.0.0"
+        "azure-keyvault-core": "1.0.0",
+        "oauth2-proxy": "7.6.0"
       }
     }
   ]

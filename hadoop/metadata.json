@@ -7,7 +7,8 @@
         "java-devel": "11",
         "java-base": "11",
         "protobuf": "3.7.1",
-        "jmx-exporter": "1.0.1"
+        "jmx-exporter": "1.0.1",
+        "oauth2-proxy": "7.6.0"
       }
     },
     {
@@ -16,7 +17,8 @@
         "java-devel": "11",
         "java-base": "11",
         "protobuf": "3.7.1",
-        "jmx-exporter": "1.0.1"
+        "jmx-exporter": "1.0.1",
+        "oauth2-proxy": "7.6.0"
       }
     },
     {
@@ -25,7 +27,8 @@
         "java-devel": "11",
         "java-base": "11",
         "protobuf": "3.7.1",
-        "jmx-exporter": "1.0.1"
+        "jmx-exporter": "1.0.1",
+        "oauth2-proxy": "7.6.0"
       }
     }
   ]
