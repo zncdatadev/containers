@@ -59,7 +59,7 @@ RUN /kubedoop/hbase-${PRODUCT_VERSION}/bin/hbase version
 RUN <<EOF
 set -ex
 ARCH=$(uname -m)
-ARCH="${ARCH/amd64/x86_64}"
+ARCH="${ARCH/x86_64/amd64}"
 ARCH="${ARCH/aarch64/arm64}"
 
 mkdir /kubedoop/oauth2-proxy
