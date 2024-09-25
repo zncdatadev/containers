@@ -11,6 +11,7 @@ ARG PRODUCT_VERSION
 ARG HADOOP_VERSION
 # 2.6 exports jmx and prometheus metrics by default
 ARG JMX_EXPORTER_VERSION=""
+ARG OAUTH2_PROXY_VERSION
 
 # setup jmx_exporter
 WORKDIR /kubedoop/jmx
@@ -54,6 +55,24 @@ EOF
 
 # smoke test
 RUN /kubedoop/hbase-${PRODUCT_VERSION}/bin/hbase version
+
+RUN <<EOF
+set -ex
+ARCH=$(uname -m)
+ARCH="${ARCH/x86_64/amd64}"
+ARCH="${ARCH/aarch64/arm64}"
+
+mkdir /kubedoop/oauth2-proxy
+cd /kubedoop/oauth2-proxy
+
+curl -sSfL \
+    https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
+    | tar xzf - --strip-components=1
+
+EOF
+
+# smoke test
+RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
 
 
 ## stage: hbase-operator-tools-builder

@@ -7,6 +7,7 @@ FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS ja
 ARG PRODUCT_VERSION
 ARG PROTOBUF_VERSION
 ARG JMX_EXPORTER_VERSION
+ARG OAUTH2_PROXY_VERSION
 
 WORKDIR /build
 
@@ -95,6 +96,24 @@ RUN <<EOF
     chmod +x /usr/local/bin/log4shell
     /usr/local/bin/log4shell patch --backup --force-patch --json hadoop-${PRODUCT_VERSION}
 EOF
+
+RUN <<EOF
+set -ex
+ARCH=$(uname -m)
+ARCH="${ARCH/x86_64/amd64}"
+ARCH="${ARCH/aarch64/arm64}"
+
+mkdir /kubedoop/oauth2-proxy
+cd /kubedoop/oauth2-proxy
+
+curl -sSfL \
+    https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
+    | tar xzf - --strip-components=1
+
+EOF
+
+# smoke test
+RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
 
 ## stage: final
 FROM quay.io/zncdatadev/java-base:${JAVA_BASE_VERSION}-kubedoop0.0.0-dev
