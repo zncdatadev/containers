@@ -24,7 +24,9 @@ configurations {
 }
 
 dependencies {
-    toCopy 'org.apache.spark:spark-hadoop-cloud_2.13:${PRODUCT_VERSION}'
+    toCopy('org.apache.spark:spark-hadoop-cloud_2.13:${PRODUCT_VERSION}') {
+        exclude group: 'org.slf4j', module: 'slf4j-api' // exclude slf4j-api to avoid conflict
+    }
     toCopy 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.2'
 }
 
