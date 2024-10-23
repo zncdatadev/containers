@@ -1,0 +1,9 @@
+{
+  "name": "go",
+  "properties": [
+    {
+      "version": "1.23.1",
+      "dependencies": {}
+    }
+  ]
+}

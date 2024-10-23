@@ -2,7 +2,7 @@
   "name": "java-devel",
   "properties": [
     {
-      "version": "1.8.0",
+      "version": "8",
       "dependencies": {
         "kubedoop-base": "1.0.0",
         "maven": "3.6.3"

@@ -4,7 +4,7 @@
     {
       "version": "3.2.2",
       "dependencies": {
-        "java-base": "11",
+        "java": "11",
         "java-devel": "11"
       }
     }

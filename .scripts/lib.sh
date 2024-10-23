@@ -31,7 +31,7 @@ function nerdctl_builder () {
 #   $4: bool  push
 #   $5: array build-args array, (k1=v1 k2=v2)
 #   $6: str   context
-#   $7: str   sign
+#   $7: bool   sign
 #   $8: bool  is_podman
 # Returns:
 #   None
@@ -117,7 +117,7 @@ function buildah_backend_adaptor () {
     local image_digest=$(cat $digest_file)
 
     # if 'sign' is set and image_digest is not empty, sign image
-    if [ -n "$sign" ] && [ -n "$image_digest" ]; then
+    if [ $sign = true ] && [ -n "$image_digest" ]; then
       local digest_tag=$(echo "$tag" | sed "s/:[^:]*$/@$image_digest/")
       log "INFO" "Signing image: $digest_tag"
       image_signer "$digest_tag" true "cosign"
@@ -135,7 +135,7 @@ function buildah_backend_adaptor () {
 #   $4: bool  push
 #   $5: array build-args array, (k1=v1 k2=v2)
 #   $6: str   context
-#   $7: str   sign
+#   $7: bool   sign
 # Returns:
 #   None
 function buildah_builder () {
@@ -147,7 +147,7 @@ function buildah_builder () {
   local context=$6
   local sign=$7
 
-  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign" false
+  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" $sign false
 }
 
 
@@ -159,7 +159,7 @@ function buildah_builder () {
 #   $4: bool  push
 #   $5: array build-args array, (k1=v1 k2=v2)
 #   $6: str   context
-#   $7: str   sign
+#   $7: bool   sign
 # Returns:
 #   None
 function podman_builder () {
@@ -171,7 +171,7 @@ function podman_builder () {
   local context=$6
   local sign=$7
 
-  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign" true
+  buildah_backend_adaptor "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" $sign true
 }
 
 
@@ -220,7 +220,7 @@ function builder () {
 
   local builder_impl=$(builder_factory $builder_tool)
 
-  $builder_impl "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign"
+  $builder_impl "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" $sign
 }
 
 

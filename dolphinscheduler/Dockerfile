@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG JAVA_BASE_VERSION
+ARG JAVA_VERSION
 ARG JAVA_DEVEL_VERSION
 
 ## stage: java-builder
@@ -36,7 +36,7 @@ EOF
 
 ## stage: final
 
-FROM quay.io/zncdatadev/java-base:${JAVA_BASE_VERSION}-kubedoop0.0.0-dev
+FROM quay.io/zncdatadev/java:${JAVA_VERSION}-kubedoop0.0.0-dev
 
 COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 

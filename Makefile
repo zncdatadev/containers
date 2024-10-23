@@ -77,12 +77,12 @@ vector-buildx: jq ## Build Vector image with buildx
 ##@ develop environment
 
 .PHONY:
-java-base-build: jq ## Build Java base image
-	.scripts/build.sh product java-base
+java-build: jq ## Build Java base image
+	.scripts/build.sh product java
 
 .PHONY:
-java-base-buildx: jq ## Build Java base image with buildx
-	.scripts/build.sh product java-base --push
+java-buildx: jq ## Build Java base image with buildx
+	.scripts/build.sh product java --push
 
 .PHONY:
 java-devel-build: jq ## Build Java development image

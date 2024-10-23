@@ -7,9 +7,17 @@ FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev
 ARG PRODUCT_VERSION
 ARG MAVEN_VERSION
 
-RUN <<EOF
-    # install jdk 22 from epel in ubi9
-    rpm --install --replacepkgs https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+RUN <<EOT
+    # https://adoptium.net/en-GB/installation/linux/#_centosrhelfedora_instructions
+    cat <<EOF > /etc/yum.repos.d/adoptium.repo
+[Adoptium]
+name=Adoptium
+baseurl=https://packages.adoptium.net/artifactory/rpm/${DISTRIBUTION_NAME:-$(. /etc/os-release; echo $ID)}/\$releasever/\$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.adoptium.net/artifactory/api/gpg/key/public
+EOF
+
     microdnf update
     microdnf install \
         cmake \
@@ -20,33 +28,32 @@ RUN <<EOF
         gcc-c++ \
         gettext \
         git \
+        gzip \
         hostname \
         krb5-devel \
         libcurl-devel \
         make \
         openssl-devel \
         patch \
+        pkg-config \
         tar \
+        temurin-${PRODUCT_VERSION}-jdk \
+        tzdata-java \
+        unzip \
         wget \
         which \
         xz \
         zlib-devel \
-        unzip \
         zip
 
     microdnf clean all
-EOF
-
-## Setup java
-RUN <<EOF
-    microdnf install java-${PRODUCT_VERSION}-openjdk-devel
-    microdnf clean all
-EOF
+    rm -rf /var/cache/yum
+EOT
 
 # smoke test
 RUN java -version
 
-ENV JAVA_HOME=/usr/lib/jvm/jre-${PRODUCT_VERSION}
+ENV JAVA_HOME=/usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk
 ENV JAVA_VERSION=${PRODUCT_VERSION}
 
 ## Setup maven
@@ -64,3 +71,8 @@ EOF
 
 # somke test
 RUN mvn --version
+
+# Mitigation for CVE-2021-44228 (Log4Shell)
+# This variable is supported as of Log4j version 2.10 and
+# disables the vulnerable feature
+ENV LOG4J_FORMAT_MSG_NO_LOOKUPS=true

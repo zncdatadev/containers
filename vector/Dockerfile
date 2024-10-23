@@ -9,8 +9,6 @@ ARG PRODUCT_VERSION
 ARG INOTIFY_TOOLS_VERSION
 
 RUN <<EOF
-    set -x
-
     microdnf update
     microdnf install \
         autoconf \

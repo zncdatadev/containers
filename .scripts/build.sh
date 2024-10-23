@@ -100,7 +100,7 @@ Options:
       --product-version string    Set the product version
       --push                      Push the built image to the registry
       --platform string           Set the platform for the image, default is linux/amd64,linux/arm64.
-      --sign string               Sign the image, currently only support cosign
+      --sign                      Sign the image, currently only support cosign
 "
 
   local context
@@ -108,7 +108,7 @@ Options:
   local push=false
   local platform=""
   local product_version=""
-  local sign="$SIGNER_TOOL_PROVIDER"
+  local sign=false
 
   while [ "$1" != "" ]; do
     case $1 in
@@ -129,7 +129,7 @@ Options:
         ;;
       --sign )
         shift
-        sign=$1
+        sign=true
         ;;
       -h | --help )
         echo "$usage"

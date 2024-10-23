@@ -5,7 +5,7 @@
       "version": "3.3.4",
       "dependencies": {
         "java-devel": "11",
-        "java-base": "11",
+        "java": "11",
         "protobuf": "3.7.1",
         "jmx-exporter": "1.0.1",
         "oauth2-proxy": "7.6.0"
@@ -15,7 +15,7 @@
       "version": "3.3.6",
       "dependencies": {
         "java-devel": "11",
-        "java-base": "11",
+        "java": "11",
         "protobuf": "3.7.1",
         "jmx-exporter": "1.0.1",
         "oauth2-proxy": "7.6.0"
@@ -25,7 +25,7 @@
       "version": "3.4.0",
       "dependencies": {
         "java-devel": "11",
-        "java-base": "11",
+        "java": "11",
         "protobuf": "3.7.1",
         "jmx-exporter": "1.0.1",
         "oauth2-proxy": "7.6.0"

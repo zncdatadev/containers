@@ -7,11 +7,11 @@ COPY kubedoop/dnf.conf /etc/dnf/dnf.conf
 RUN <<EOF
     microdnf update -y
     microdnf install \
+        findutils \
         iputils \
         less \
         procps \
-        tar \
-        xz
+        tar
 
     groupadd -g 1001 --system kubedoop 
     useradd \

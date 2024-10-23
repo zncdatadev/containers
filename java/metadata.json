@@ -1,8 +1,8 @@
 {
-  "name": "java-base",
+  "name": "java",
   "properties": [
     {
-      "version": "1.8.0",
+      "version": "8",
       "dependencies": {
         "vector": "0.39.0"
       }
