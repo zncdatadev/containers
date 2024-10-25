@@ -4,7 +4,7 @@
     {
       "version": "451",
       "dependencies": {
-        "java-base": "22",
+        "java": "22",
         "java-devel": "22",
         "jmx-exporter": "1.0.1",
         "storage-connector": "451"

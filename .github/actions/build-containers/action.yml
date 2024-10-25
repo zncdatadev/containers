@@ -1,14 +1,15 @@
-name: 'Build production image'
-description: 'Build production image'
+name: 'Build container image'
+description: 'Build container image'
 inputs:
   builder_name:
     description: 'The name of the builder'
     required: false
     default: 'builder'
-  products:
+  tags:
     description: |
-      The products to build, the name sperated by space. e.g. "name1:version1 name1:version2 name2:version1"
-      If build a product without version, just use the name. we will build all versions of the product.
+      The tags to build, the name sperated by space. e.g. "name1:version1 name1:version2 name2:version1"
+      If build a tag without version, just use the name. we will build all versions of the container by 
+      container metadata.json.
     required: true
   push:
     description: |
@@ -24,27 +25,27 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Build production image
+    - name: Build container image
       shell: bash
       env:
         BUILDER_NAME: ${{ inputs.builder_name }}
-        PRODUCTS: ${{ inputs.products }}
         PUSH: ${{ inputs.push }}
         SIGN: ${{ inputs.sign }}
+        tags: ${{ inputs.tags }}
       run: |
         set -ex
-        for product in $PRODUCTS; do
+        for tag in $tags; do
           args=(".scripts/build.sh" "product")
 
-          if [[ $product == *":"* ]]; then
-            name=$(echo $product | cut -d':' -f1)
-            version=$(echo $product | cut -d':' -f2)
+          if [[ $tag == *":"* ]]; then
+            name=$(echo $tag | cut -d':' -f1)
+            version=$(echo $tag | cut -d':' -f2)
             args+=("$name")
             if [ -n "$version" ]; then
               args+=("--product-version" "$version")
             fi
           else
-            args+=("$product")
+            args+=("$tag")
           fi
 
           if [ "$PUSH" = "true" ]; then
@@ -52,7 +53,7 @@ runs:
           fi
 
           if [ "$SIGN" = "true" ]; then
-            args+=("--sign" "cosign")
+            args+=("--sign")
           fi
 
           docker exec -w /app $BUILDER_NAME "${args[@]}"

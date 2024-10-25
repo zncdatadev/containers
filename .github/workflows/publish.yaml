@@ -1,0 +1,101 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - main
+
+# use cosign to sign with gh login, so we need pass the oidc token to the action
+permissions:
+  id-token: write
+
+jobs:
+  prepare:
+    name: Prepare Updated data
+    uses: ./.github/workflows/reusable-prepare.yaml
+    with:
+      sign: false
+      push: true
+
+  publish_rootfs:
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromjson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+      buildah_version: latest
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromjson(needs.prepare.outputs.rootfs_containers)}}
+
+
+  publish_infra:
+    name: test infra
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromjson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromjson(needs.prepare.outputs.infra_containers)}}
+    
+
+  publish_env:
+    name: test env
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromjson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromjson(needs.prepare.outputs.env_containers)}}
+    
+
+  publish_devel:
+    name: test devel
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromjson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromjson(needs.prepare.outputs.devel_containers)}}
+    
+
+  publish_app:
+    name: test app
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromJson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromJson(needs.prepare.outputs.app_containers)}}
+    
+  publish_tools:
+    name: Test Tools
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromJson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromJson(needs.prepare.outputs.tools_containers)}}
+    

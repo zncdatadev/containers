@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG JAVA_BASE_VERSION  
+ARG JAVA_VERSION  
 ARG JAVA_DEVEL_VERSION
 
 FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
@@ -54,7 +54,7 @@ RUN <<EOF
 EOF
 
 ## final stage
-FROM quay.io/zncdatadev/java-base:${JAVA_BASE_VERSION}-kubedoop0.0.0-dev
+FROM quay.io/zncdatadev/java:${JAVA_VERSION}-kubedoop0.0.0-dev
 
 ARG PRODUCT_VERSION
 

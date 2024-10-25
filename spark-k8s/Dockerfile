@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG JAVA_BASE_VERSION
+ARG JAVA_VERSION
 ARG JAVA_DEVEL_VERSION
 
 FROM docker.io/library/gradle:8 AS gradle-builder
@@ -119,7 +119,7 @@ EOF
 RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
 
 ## stage: final
-FROM quay.io/zncdatadev/java-base:${JAVA_BASE_VERSION}-kubedoop0.0.0-dev
+FROM quay.io/zncdatadev/java:${JAVA_VERSION}-kubedoop0.0.0-dev
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION

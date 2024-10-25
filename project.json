@@ -1,22 +1,51 @@
 {
-  "products_priority": {
-    "zookeeper": 1000,
-    "hadoop": 2000,
-    "hive": 3000,
-    "hbase": 3000,
-    "spark-k8s": 3000,
-    "kafka": 3000,
-    "superset": 3000,
-    "trino": 3000,
-    "dolphinscheduler": 3000
+  "containers": {
+    "rootfs": {
+      "parallel": true,
+      "paths": [
+        "kubedoop-base"
+      ]
+    },
+    "infra": {
+      "parallel": true,
+      "paths": [
+        "vector"
+      ]
+    },
+    "env": {
+      "parallel": true,
+      "paths": [
+        "java"
+      ]
+    },
+    "devel": {
+      "parallel": true,
+      "paths": [
+        "java-devel"
+      ]
+    },
+    "app": {
+      "parallel": true,
+      "paths": [
+        "hadoop",
+        "hive",
+        "hbase",
+        "spark-k8s",
+        "kafka",
+        "superset",
+        "trino",
+        "dolphinscheduler",
+        "zookeeper"
+      ]
+    },
+    "tools": {
+      "parallel": true,
+      "paths": [
+      ]
+    }
   },
-  "infra_priority": {
-    "kubedoop-base": 100,
-    "vector": 200,
-    "java-base": 300,
-    "java-devel": 300
-  },
-  "global_path": [
+  "path_prefix": "",
+  "global_paths": [
     ".github/workflows/*",
     ".github/scripts/*",
     ".github/actions/**/*",

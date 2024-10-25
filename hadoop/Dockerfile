@@ -1,4 +1,4 @@
-ARG JAVA_BASE_VERSION
+ARG JAVA_VERSION
 ARG JAVA_DEVEL_VERSION
 
 ## stage: builder
@@ -116,7 +116,7 @@ EOF
 RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
 
 ## stage: final
-FROM quay.io/zncdatadev/java-base:${JAVA_BASE_VERSION}-kubedoop0.0.0-dev
+FROM quay.io/zncdatadev/java:${JAVA_VERSION}-kubedoop0.0.0-dev
 
 ARG PRODUCT_VERSION
 

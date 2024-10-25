@@ -1,0 +1,113 @@
+name: Resuable prepare
+
+env:
+  CI_SCRIPT_DEBUG: true
+
+
+on:
+  workflow_call:
+    inputs:
+      sign:
+        description: 'Sign the image after build.'
+        required: false
+        type: boolean
+        default: false
+      push:
+        description: 'Push the image to registry after build.'
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      rootfs_containers:
+        description: 'The rootfs containers to build'
+        value: ${{ jobs.prepare.outputs.ROOTFS_CONTAINERS }}
+      infra_containers:
+        description: 'The infra containers to build'
+        value: ${{ jobs.prepare.outputs.INFRA_CONTAINERS }}
+      env_containers:
+        description: 'The env containers to build'
+        value: ${{ jobs.prepare.outputs.ENV_CONTAINERS }}
+      devel_containers:
+        description: 'The devel containers to build'
+        value: ${{ jobs.prepare.outputs.DEVEL_CONTAINERS }}
+      app_containers:
+        description: 'The app containers to build'
+        value: ${{ jobs.prepare.outputs.APP_CONTAINERS }}
+      tools_containers:
+        description: 'The tools containers to build'
+        value: ${{ jobs.prepare.outputs.TOOLS_CONTAINERS }}
+      sign_container:
+        description: 'Sign the image after build.'
+        value: ${{ inputs.sign }}
+      push_container:
+        description: 'Push the image to registry after build.'
+        value: ${{ inputs.push }}
+
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      ROOTFS_CONTAINERS: ${{ steps.get_updated_containers.outputs.ROOTFS_CONTAINERS }}
+      INFRA_CONTAINERS: ${{ steps.get_updated_containers.outputs.INFRA_CONTAINERS }}
+      ENV_CONTAINERS: ${{ steps.get_updated_containers.outputs.ENV_CONTAINERS }}
+      DEVEL_CONTAINERS: ${{ steps.get_updated_containers.outputs.DEVEL_CONTAINERS }}
+      APP_CONTAINERS: ${{ steps.get_updated_containers.outputs.APP_CONTAINERS }}
+      TOOLS_CONTAINERS: ${{ steps.get_updated_containers.outputs.TOOLS_CONTAINERS }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Setup python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Get Updated containers
+      id: get_updated_containers
+      run: |
+        set -ex
+        BEFORE_COMMIT_SHA=''
+        AFTER_COMMIT_SHA=''
+
+        GH_EVENT=${{ github.event_name }}
+
+        if [ $GH_EVENT == 'pull_request' ]; then
+          BEFORE_COMMIT_SHA=${{ github.event.pull_request.base.sha }}
+          AFTER_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
+        elif [ $GH_EVENT == 'push' ]; then
+          BEFORE_COMMIT_SHA=${{ github.event.before }}
+          AFTER_COMMIT_SHA=${{ github.sha }}
+
+          # check if BEFORE_COMMIT_SHA is valid. eg: 
+          #   - push to a new branch, BEFORE_COMMIT_SHA is 0000000000000000000000000000000000000000
+          #   - push --amend in main branch, BEFORE_COMMIT_SHA may be invalid
+          # Or BEFORE_COMMIT_SHA is not an ancestor of AFTER_COMMIT_SHA
+
+          if ! git cat-file -e $BEFORE_COMMIT_SHA >/dev/null 2>&1; then
+            BEFORE_COMMIT_SHA=$(git rev-parse "$AFTER_COMMIT_SHA"^)
+          fi
+        fi
+
+        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA"
+        echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA"
+
+        echo "Get updated containers"
+        python3 .github/scripts/diff.py \
+          --before-sha $BEFORE_COMMIT_SHA \
+          --after-sha $AFTER_COMMIT_SHA \
+          --output-file updated_containers.json
+      
+        # save as compact json array to output
+        OUTPUT=$(jq -c "." updated_containers.json)
+        echo "ROOTFS_CONTAINERS=$(jq -c '.rootfs' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
+        echo "INFRA_CONTAINERS=$(jq -c '.infra' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
+        echo "ENV_CONTAINERS=$(jq -c '.env' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
+        echo "DEVEL_CONTAINERS=$(jq -c '.devel' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
+        echo "APP_CONTAINERS=$(jq -c '.app' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
+        echo "TOOLS_CONTAINERS=$(jq -c '.tools' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
+    - name: Upload updated containers
+      uses: actions/upload-artifact@v3
+      with:
+        name: updated_containers
+        path: updated_containers.json

@@ -1,0 +1,94 @@
+name: test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  prepare:
+    name: Prepare Updated data
+    uses: ./.github/workflows/reusable-prepare.yaml
+
+  test_rootfs:
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromjson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+      buildah_version: latest
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromjson(needs.prepare.outputs.rootfs_containers)}}
+    
+
+  test_infra:
+    name: test infra
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromjson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromjson(needs.prepare.outputs.infra_containers)}}
+    
+
+  test_env:
+    name: test env
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromjson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromjson(needs.prepare.outputs.env_containers)}}
+    
+
+  test_devel:
+    name: test devel
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromjson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromjson(needs.prepare.outputs.devel_containers)}}
+    
+
+  test_app:
+    name: test app
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromJson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromJson(needs.prepare.outputs.app_containers)}}
+    
+  test_tools:
+    name: Test Tools
+    uses: ./.github/workflows/reusable-build-publish.yaml
+    with:
+      tags: ${{ matrix.container }}
+      push: ${{fromJson(needs.prepare.outputs.push_container)}}
+      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
+    secrets: inherit  # pass all secrets to the action
+    needs: prepare
+    strategy:
+      matrix:
+        container: ${{fromJson(needs.prepare.outputs.tools_containers)}}
+    
