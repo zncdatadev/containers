@@ -2,8 +2,10 @@
   "name": "go",
   "properties": [
     {
-      "version": "1.23.1",
-      "dependencies": {}
+      "version": "1.23.2",
+      "dependencies": {
+        "kubedoop-base": "1.0.0"
+      }
     }
   ]
 }
