@@ -1,4 +1,4 @@
-FROM docker.io/rockylinux/rockylinux:9
+FROM quay.io/rockylinux/rockylinux:9
 
 RUN groupadd -g 288 kdcproxy ; useradd -u 288 -g 288 -c 'IPA KDC Proxy User' -r -d / -s '/sbin/nologin' kdcproxy
 
@@ -20,7 +20,7 @@ ENV container=oci
 
 RUN echo "DefaultLimitNOFILE=4096" >> /etc/systemd/system.conf
 
-STOPSIGNAL RTMIN+3
+STOPSIGNAL SIGTERM
 
 RUN find /etc/systemd/system /usr/lib/systemd/system/{basic,multi-user,sysinit}.target.wants -type l \! -lname /dev/null | xargs rm -v \
     && systemctl mask systemd-logind.service && mv /usr/lib/systemd/system/systemd-logind.service /usr/lib/systemd/system/systemd-logind.service-disable-dbus
@@ -34,9 +34,7 @@ COPY container-krb5.target /usr/lib/systemd/system/
 RUN systemctl set-default container-krb5.target \
     && rmdir -v /etc/systemd/system/multi-user.target.wants \
     && mkdir /etc/systemd/system/container-krb5.target.wants \
-	&& ln -s /etc/systemd/system/container-krb5.target.wants /etc/systemd/system/multi-user.target.wants \
-    && mkdir /var/log/journal \
-    && systemd-tmpfiles --remove --create
+	&& ln -s /etc/systemd/system/container-krb5.target.wants /etc/systemd/system/multi-user.target.wants
 
 COPY krb5-setup /usr/sbin/krb5-setup
 

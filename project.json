@@ -43,6 +43,7 @@
     "tools": {
       "parallel": true,
       "paths": [
+        "krb5"
       ]
     }
   },
