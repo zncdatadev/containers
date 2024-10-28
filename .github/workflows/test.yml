@@ -19,6 +19,7 @@ jobs:
       buildah_version: latest
     secrets: inherit  # pass all secrets to the action
     needs: prepare
+    if: ${{fromJson(needs.prepare.outputs.rootfs_containers)}}
     strategy:
       matrix:
         container: ${{fromjson(needs.prepare.outputs.rootfs_containers)}}
@@ -33,6 +34,7 @@ jobs:
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
+    if: ${{fromJson(needs.prepare.outputs.infra_containers)}}
     strategy:
       matrix:
         container: ${{fromjson(needs.prepare.outputs.infra_containers)}}
@@ -47,6 +49,7 @@ jobs:
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
+    if: ${{fromJson(needs.prepare.outputs.env_containers)}}
     strategy:
       matrix:
         container: ${{fromjson(needs.prepare.outputs.env_containers)}}
@@ -61,6 +64,7 @@ jobs:
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
+    if: ${{fromJson(needs.prepare.outputs.devel_containers)}}
     strategy:
       matrix:
         container: ${{fromjson(needs.prepare.outputs.devel_containers)}}
@@ -75,6 +79,7 @@ jobs:
       sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
+    if: ${{fromJson(needs.prepare.outputs.app_containers)}}
     strategy:
       matrix:
         container: ${{fromJson(needs.prepare.outputs.app_containers)}}
@@ -88,6 +93,7 @@ jobs:
       sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
+    if: ${{fromJson(needs.prepare.outputs.tools_containers)}}
     strategy:
       matrix:
         container: ${{fromJson(needs.prepare.outputs.tools_containers)}}
