@@ -15,13 +15,15 @@
     "env": {
       "parallel": true,
       "paths": [
-        "java"
+        "java",
+        "go"
       ]
     },
     "devel": {
       "parallel": true,
       "paths": [
-        "java-devel"
+        "java-devel",
+        "go-devel"
       ]
     },
     "app": {
