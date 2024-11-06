@@ -15,8 +15,7 @@
     "env": {
       "parallel": true,
       "paths": [
-        "java",
-        "go"
+        "java"
       ]
     },
     "devel": {
