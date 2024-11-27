@@ -8,7 +8,7 @@ inputs:
   tags:
     description: |
       The tags to build, the name sperated by space. e.g. "name1:version1 name1:version2 name2:version1"
-      If build a tag without version, just use the name. we will build all versions of the container by 
+      If build a tag without version, just use the name. we will build all versions of the container by
       container metadata.json.
     required: true
   push:
@@ -21,7 +21,11 @@ inputs:
       Sign the image after build.
     required: false
     default: 'false'
-
+  platform_version:
+    description: |
+      The platform version.
+    required: false
+    default: '0.0.0-dev'
 runs:
   using: 'composite'
   steps:
@@ -32,8 +36,12 @@ runs:
         PUSH: ${{ inputs.push }}
         SIGN: ${{ inputs.sign }}
         tags: ${{ inputs.tags }}
+        PLATFORM_VERSION: ${{ inputs.platform_version }}
       run: |
         set -ex
+
+        echo "platform: $PLATFORM_VERSION"
+
         for tag in $tags; do
           args=(".scripts/build.sh" "product")
 
@@ -56,6 +64,6 @@ runs:
             args+=("--sign")
           fi
 
-          docker exec -w /app $BUILDER_NAME "${args[@]}"
+          docker exec -e PLATFORM_VERSION=$PLATFORM_VERSION -w /app $BUILDER_NAME "${args[@]}"
 
         done

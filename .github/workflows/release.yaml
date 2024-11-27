@@ -1,9 +1,12 @@
-name: Publish
+name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - '*'
+env:
+  CI_SCRIPT_DEBUG: true
+  CONTAINER_TOOL_PROVIDER: buildah
 
 # use cosign to sign with gh login, so we need pass the oidc token to the action
 permissions:
@@ -14,8 +17,10 @@ jobs:
     name: Prepare Updated data
     uses: ./.github/workflows/reusable-prepare.yaml
     with:
-      sign: false
+      sign: true
       push: true
+      registry: quay.io/zncdatadev
+      platform_version: ${{ github.ref_name}}
 
   publish_rootfs:
     uses: ./.github/workflows/reusable-build-publish.yaml
@@ -23,6 +28,8 @@ jobs:
       tags: ${{ matrix.container }}
       push: ${{fromjson(needs.prepare.outputs.push_container)}}
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+      platform_version: ${{needs.prepare.outputs.platform_version}}
+      registry: ${{needs.prepare.outputs.registry}}
       buildah_version: latest
     secrets: inherit  # pass all secrets to the action
     needs: prepare
@@ -39,6 +46,8 @@ jobs:
       tags: ${{ matrix.container }}
       push: ${{fromjson(needs.prepare.outputs.push_container)}}
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+      platform_version: ${{needs.prepare.outputs.platform_version}}
+      registry: ${{needs.prepare.outputs.registry}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.infra_containers)}}
@@ -54,6 +63,8 @@ jobs:
       tags: ${{ matrix.container }}
       push: ${{fromjson(needs.prepare.outputs.push_container)}}
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+      platform_version: ${{needs.prepare.outputs.platform_version}}
+      registry: ${{needs.prepare.outputs.registry}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.env_containers)}}
@@ -69,6 +80,8 @@ jobs:
       tags: ${{ matrix.container }}
       push: ${{fromjson(needs.prepare.outputs.push_container)}}
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+      platform_version: ${{needs.prepare.outputs.platform_version}}
+      registry: ${{needs.prepare.outputs.registry}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.devel_containers)}}
@@ -84,6 +97,8 @@ jobs:
       tags: ${{ matrix.container }}
       push: ${{fromJson(needs.prepare.outputs.push_container)}}
       sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
+      platform_version: ${{needs.prepare.outputs.platform_version}}
+      registry: ${{needs.prepare.outputs.registry}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.app_containers)}}
@@ -98,6 +113,8 @@ jobs:
       tags: ${{ matrix.container }}
       push: ${{fromJson(needs.prepare.outputs.push_container)}}
       sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
+      platform_version: ${{needs.prepare.outputs.platform_version}}
+      registry: ${{needs.prepare.outputs.registry}}
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.tools_containers)}}

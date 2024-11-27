@@ -17,6 +17,16 @@ on:
         required: false
         type: boolean
         default: false
+      platform_version:
+        description: 'The platform version.'
+        required: false
+        type: string
+        default: '0.0.0-dev'
+      registry:
+        description: 'The registry to login to'
+        required: false
+        type: string
+        default: 'quay.io/zncdatadev'
     outputs:
       rootfs_containers:
         description: 'The rootfs containers to build'
@@ -42,6 +52,12 @@ on:
       push_container:
         description: 'Push the image to registry after build.'
         value: ${{ inputs.push }}
+      platform_version:
+        description: 'The platform version.'
+        value: ${{ inputs.platform_version }}
+      registry:
+        description: 'The registry to login to'
+        value: ${{ inputs.registry }}
 
 
 jobs:
@@ -79,7 +95,7 @@ jobs:
           BEFORE_COMMIT_SHA=${{ github.event.before }}
           AFTER_COMMIT_SHA=${{ github.sha }}
 
-          # check if BEFORE_COMMIT_SHA is valid. eg: 
+          # check if BEFORE_COMMIT_SHA is valid. eg:
           #   - push to a new branch, BEFORE_COMMIT_SHA is 0000000000000000000000000000000000000000
           #   - push --amend in main branch, BEFORE_COMMIT_SHA may be invalid
           # Or BEFORE_COMMIT_SHA is not an ancestor of AFTER_COMMIT_SHA
@@ -97,7 +113,7 @@ jobs:
           --before-sha $BEFORE_COMMIT_SHA \
           --after-sha $AFTER_COMMIT_SHA \
           --output-file updated_containers.json
-      
+
         # save as compact json array to output
         OUTPUT=$(jq -c "." updated_containers.json)
         echo "ROOTFS_CONTAINERS=$(jq -c '.rootfs' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
