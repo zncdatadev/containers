@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG JAVA_VERSION  
+ARG JAVA_VERSION
 ARG JAVA_DEVEL_VERSION
 
 FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
@@ -28,7 +28,7 @@ RUN <<EOF
     mkdir -p /build/zookeeper-src
     pushd /build/zookeeper-src
     curl -sSfL \
-        https://archive.apache.org/dist/zookeeper/zookeeper-${PRODUCT_VERSION}/apache-zookeeper-${PRODUCT_VERSION}.tar.gz \
+        https://github.com/apache/zookeeper/archive/refs/tags/release-${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     mvn --batch-mode --no-transfer-progress -pl "!zookeeper-client/zookeeper-client-c" clean install checkstyle:check spotbugs:check -DskipTests -Pfull-build
     tar -xzf zookeeper-assembly/target/apache-zookeeper-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop

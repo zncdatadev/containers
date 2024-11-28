@@ -64,7 +64,7 @@ RUN <<EOF
         curl -sSfL \
             https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
             -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
-        
+
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
     else
         echo "JMX_EXPORTER_VERSION is not set"
@@ -77,7 +77,7 @@ RUN <<EOF
     mkdir -p /build/spark-src
     pushd /build/spark-src
     curl -sSfL \
-        https://archive.apache.org/dist/spark/spark-${PRODUCT_VERSION}/spark-${PRODUCT_VERSION}.tgz \
+        https://github.com/apache/spark/archive/refs/tags/v${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     ./dev/make-distribution.sh \
         -Dhadoop.version=${HADOOP_VERSION} \
@@ -87,9 +87,9 @@ RUN <<EOF
         -Pkubernetes \
         -Phive \
         -Phive-thriftserver
-    
+
     cp -r dist /kubedoop/spark-${PRODUCT_VERSION}
-    
+
     ln -s /kubedoop/spark-${PRODUCT_VERSION} /kubedoop/spark
     ln -s /kubedoop/spark/jars/spark-examples_*.jar /kubedoop/spark/examples.jar
     popd

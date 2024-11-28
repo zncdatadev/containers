@@ -22,7 +22,7 @@ RUN <<EOF
         curl -sSfL \
             https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
             -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
-        
+
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
     else
         echo "JMX_EXPORTER_VERSION is not set"
@@ -38,7 +38,7 @@ RUN --mount=type=cache,sharing=locked,target=/root/.gradle <<EOF
     mkdir -p /build/kafka-src
     pushd /build/kafka-src
     curl -sSfL \
-        https://archive.apache.org/dist/kafka/${PRODUCT_VERSION}/kafka-${PRODUCT_VERSION}-src.tgz \
+        https://github.com/apache/kafka/archive/refs/tags/${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     ./gradlew clean releaseTarGz -x test
     tar -xzf core/build/distributions/kafka_${SCALA_VERSION}-${PRODUCT_VERSION}.tgz -C /kubedoop

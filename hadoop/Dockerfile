@@ -21,7 +21,7 @@ RUN <<EOF
         curl -sSfL \
             https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
             -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
-        
+
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
     else
         echo "JMX_EXPORTER_VERSION is not set"
@@ -70,13 +70,13 @@ RUN <<EOF
     mkdir -p /build/hadoop-src
     pushd /build/hadoop-src
     curl -sSfL \
-        https://archive.apache.org/dist/hadoop/common/hadoop-${PRODUCT_VERSION}/hadoop-${PRODUCT_VERSION}-src.tar.gz \
+        https://github.com/apache/hadoop/archive/refs/tags/rel/release-${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
     mvn --no-transfer-progress clean package -Pdist,native -pl '!hadoop-tools/hadoop-pipes,!hadoop-yarn-project,!hadoop-mapreduce-project,!hadoop-minicluster' -Drequire.fuse=true -DskipTests -Dmaven.javadoc.skip=true
 
     cp -r hadoop-dist/target/hadoop-${PRODUCT_VERSION} /kubedoop/hadoop-${PRODUCT_VERSION}
-    cp hadoop-hdfs-project/hadoop-hdfs-native-client/target/main/native/fuse-dfs/fuse_dfs /kubedoop/hadoop-${PRODUCT_VERSION}/bin 
+    cp hadoop-hdfs-project/hadoop-hdfs-native-client/target/main/native/fuse-dfs/fuse_dfs /kubedoop/hadoop-${PRODUCT_VERSION}/bin
 
     ln -s /kubedoop/hadoop-${PRODUCT_VERSION} /kubedoop/hadoop
     popd

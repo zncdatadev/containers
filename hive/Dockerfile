@@ -22,7 +22,7 @@ RUN <<EOF
         curl -sSfL \
             https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
             -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
-        
+
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
     else
         echo "JMX_EXPORTER_VERSION is not set"
@@ -36,7 +36,7 @@ RUN <<EOF
     mkdir -p /build/hive-src
     pushd /build/hive-src
     curl -sSfL \
-        https://archive.apache.org/dist/hive/hive-${PRODUCT_VERSION}/apache-hive-${PRODUCT_VERSION}-src.tar.gz \
+        https://github.com/apache/hive/archive/refs/tags/rel/release-${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
     mvn --no-transfer-progress clean package -DskipTests --projects standalone-metastore
