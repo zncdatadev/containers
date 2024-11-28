@@ -45,7 +45,7 @@ RUN <<EOF
         curl -sSfL \
             https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
             -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
-        
+
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
     else
         echo "JMX_EXPORTER_VERSION is not set"
@@ -61,7 +61,7 @@ RUN <<EOF
     curl -sSfL \
         https://github.com/trinodb/trino/archive/refs/tags/${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
-    
+
     ./mvnw --no-transfer-progress package -DskipTests -Dmaven.gitcommitid.skip=true --projects="!docs,!core/trino-server-rpm"
 
     tar -xzf core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz -C /kubedoop
@@ -90,7 +90,7 @@ EOF
 
 
 ## stage: final
-FROM quay.io/zncdatadev/java:${JAVA_VERSION}-kubedoop0.0.0-dev
+FROM quay.io/zncdatadev/java-base:${JAVA_VERSION}-kubedoop0.0.0-dev
 
 RUN <<EOF
     set -e

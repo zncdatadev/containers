@@ -58,7 +58,7 @@ FROM quay.io/zncdatadev/hadoop:${HADOOP_VERSION}-kubedoop0.0.0-dev AS hadoop
 
 
 ## stage: final
-FROM ${BASE_IMAGE:-quay.io/zncdatadev/java:11-kubedoop0.0.0-dev}
+FROM ${BASE_IMAGE:-quay.io/zncdatadev/java-base:11-kubedoop0.0.0-dev}
 
 ARG PRODUCT_VERSION
 ARG HADOOP_VERSION
