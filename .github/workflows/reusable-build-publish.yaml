@@ -1,13 +1,22 @@
 name: Resuable Build and Publish
 
 env:
-  REGISTRY: quay.io/zncdatadev
   CI_SCRIPT_DEBUG: true
   CONTAINER_TOOL_PROVIDER: buildah
 
 on:
   workflow_call:
     inputs:
+      registry:
+        description: 'The registry to login to'
+        required: false
+        type: string
+        default: 'quay.io/zncdatadev'
+      platform_version:
+        description: 'The platform version'
+        required: false
+        type: string
+        default: '0.0.0-dev'
       builder_name:
         type: string
         description: 'The name of the builder'
@@ -16,7 +25,7 @@ on:
       tags:
         description: |
           The tags to build, the name sperated by space. e.g. "name1:version1 name1:version2 name2:version1"
-          If build a tag without version, just use the name. we will build all versions of the container by 
+          If build a tag without version, just use the name. we will build all versions of the container by
           container metadata.json.
         required: true
         type: string
@@ -37,7 +46,7 @@ on:
         required: false
         type: string
         default: 'latest'
-    
+
 
 jobs:
   triage:
@@ -60,7 +69,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
           buildah_version: ${{ inputs.buildah_version }}
           builder_name: ${{ inputs.builder_name }}
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ inputs.registry }}
       - name: Build Images
         uses: ./.github/actions/build-containers
         with:
@@ -68,3 +77,4 @@ jobs:
           sign: ${{ inputs.sign }}
           push: ${{ inputs.push }}
           builder_name: ${{ inputs.builder_name }}
+          platform_version: ${{ inputs.platform_version }}
