@@ -23,9 +23,9 @@ RUN <<EOF
         curl -sSfL \
             https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
             -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
-        
+
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
-        
+
         # copy jmx_exporter config
         cp /build/jmx/config-${JMX_EXPORTER_VERSION}/* /kubedoop/jmx/
     else
@@ -41,7 +41,7 @@ RUN <<EOF
     mkdir -p /build/hbase-src
     pushd /build/hbase-src
     curl -sSfL \
-        https://archive.apache.org/dist/hbase/${PRODUCT_VERSION}/hbase-${PRODUCT_VERSION}-src.tar.gz \
+        https://github.com/apache/hbase/archive/refs/tags/rel/${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
 
@@ -50,7 +50,7 @@ RUN <<EOF
     tar -xzf hbase-assembly/target/hbase-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
     ln -s /kubedoop/hbase-${PRODUCT_VERSION} /kubedoop/hbase
     popd
-    
+
 EOF
 
 # smoke test
@@ -101,7 +101,7 @@ RUN <<EOF
             | tar xzf - --strip-components=1
     else
         curl -sSfL \
-            https://archive.apache.org/dist/hbase/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-src.tar.gz \
+            https://github.com/apache/hbase-operator-tools/archive/refs/tags/rel/${HBASE_OPERATOR_TOOLS_VERSION}.tar.gz \
             | tar xzf - --strip-components=1
     fi
     mvn \
@@ -111,7 +111,7 @@ RUN <<EOF
         -Dhbase-thirdparty.version=${HBASE_THIRDPARTY_VERSION} \
         -DskipTests \
         package assembly:single
-    
+
     tar -xzf hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz -C /kubedoop
     ln -s /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
     popd

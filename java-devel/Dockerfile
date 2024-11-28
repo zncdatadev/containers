@@ -2,7 +2,7 @@
 
 ARG KUBEDOOP_BASE_VERSION
 
-FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev 
+FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev
 
 ARG PRODUCT_VERSION
 ARG MAVEN_VERSION
