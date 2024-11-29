@@ -54,7 +54,7 @@ RUN <<EOF
 EOF
 
 ## final stage
-FROM quay.io/zncdatadev/java:${JAVA_VERSION}-kubedoop0.0.0-dev
+FROM quay.io/zncdatadev/java-base:${JAVA_VERSION}-kubedoop0.0.0-dev
 
 ARG PRODUCT_VERSION
 

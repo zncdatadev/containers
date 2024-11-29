@@ -15,7 +15,7 @@
     "env": {
       "parallel": true,
       "paths": [
-        "java"
+        "java-base"
       ]
     },
     "devel": {
