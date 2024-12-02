@@ -6,7 +6,7 @@ on:
       - '*'
 env:
   CI_SCRIPT_DEBUG: true
-  CONTAINER_TOOL_PROVIDER: buildah
+  CONTAINER_TOOL: buildah
 
 # use cosign to sign with gh login, so we need pass the oidc token to the action
 permissions:

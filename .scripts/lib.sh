@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 DEFAULT_PLATFORM="linux/amd64,linux/arm64"
 REGISTRY=${REGISTRY:-"quay.io/zncdatadev"}
@@ -8,18 +8,18 @@ PLATFORM_VERSION=${PLATFORM_VERSION:-"0.0.0-dev"}
 PLATFORM_NAME=${PLATFORM_NAME:-"kubedoop"}
 PLATFORM_TAG="$PLATFORM_NAME$PLATFORM_VERSION"
 
-DEBUG=${CI_SCRIPT_DEBUG:-false}
+CI_DEBUG=${CI_DEBUG:-false}
 
 
 # Build image with docker
 function docker_builder() {
-  log "ERROR" "TODO: Implement docker_builder"
+  echo "EROR: TODO: Implement docker_builder" >&2
 }
 
 
 # Build image with nerdctl
 function nerdctl_builder () {
-  log "ERROR" "TODO: Implement nerdctl_builder"
+  echo "EROR: TODO: Implement nerdctl_builder" >&2
 }
 
 
@@ -70,7 +70,7 @@ function buildah_backend_adaptor () {
   else
     buildah_args+=("--tag=${tag}")
   fi
-  
+
 
   if [ -n "$dockerfile" ]; then
     buildah_args+=("--file=${dockerfile}")
@@ -85,19 +85,19 @@ function buildah_backend_adaptor () {
   buildah_args+=("${context}")
 
   # build image
-  log "INFO" "Building image: ${buildah_args[*]}"
+  echo "INFO: Building image: ${buildah_args[*]}" >&2
   $container_tool ${buildah_args[@]}
 
-  # if DEBUG is true, list images
-  if [ $DEBUG = true ]; then
+  # if CI_DEBUG is true, list images
+  if [ $CI_DEBUG = true ]; then
     $container_tool images
   fi
 
   if [ $platform_length -gt 1 ]; then
-    log "INFO" "Inspecting manifest: $tag"
+    echo "INFO: Inspecting manifest: $tag" >&2
     $container_tool manifest inspect $tag
   elif [ $push = true ]; then
-    log "INFO" "Inspecting image: $tag"
+    echo "INFO: Inspecting image: $tag" >&2
     $container_tool inspect $tag
   fi
 
@@ -107,10 +107,10 @@ function buildah_backend_adaptor () {
   if [ $push = true ]; then
     # if 'platform' seted, push manifest else push image
     if [ $platform_length -gt 1 ]; then
-      log "INFO" "Pushing manifest: $tag"
+      echo "INFO: Pushing manifest: $tag" >&2
       $container_tool manifest push --digestfile $digest_file --all $tag
     else
-      log "INFO" "Pushing image: $tag"
+      echo "INFO: Pushing image: $tag" >&2
       $container_tool push --digestfile $digest_file $tag
     fi
 
@@ -119,7 +119,7 @@ function buildah_backend_adaptor () {
     # if 'sign' is set and image_digest is not empty, sign image
     if [ $sign = true ] && [ -n "$image_digest" ]; then
       local digest_tag=$(echo "$tag" | sed "s/:[^:]*$/@$image_digest/")
-      log "INFO" "Signing image: $digest_tag"
+      echo "INFO: Signing image: $digest_tag" >&2
       image_signer "$digest_tag" true "cosign"
     fi
   fi
@@ -184,10 +184,12 @@ function builder_factory () {
   local builder_tool=$1
   case $builder_tool in
     "docker" | "buildah" | "podman" | "nerdctl")
-      echo "${builder_tool}_builder"
+      local builder_impl="${builder_tool}_builder"
+      echo "INFO: Builder tool: $builder_impl" >&2
+      echo $builder_impl
       ;;
     *)
-      log "ERROR" "Unsupported builder tool: $builder_tool"
+      echo "EROR: Unsupported builder tool: $builder_tool"
       exit 1
       ;;
   esac
@@ -215,11 +217,13 @@ function builder () {
   local push=$5
   local build_args=$6
   local context=$7
-  local sign=$8
   ## end builder impl arguments
+  local sign=$8 # Enable image signing
+
 
   local builder_impl=$(builder_factory $builder_tool)
 
+  echo "INFO: Building image: $tag" >&2
   $builder_impl "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" $sign
 }
 
@@ -255,11 +259,12 @@ function image_signer () {
       signer_impl="cosign_signer"
       ;;
     *)
-      log ERROR "Unsupported signer: $signer"
+      echo ERROR "Unsupported signer: $signer"
       exit 1
       ;;
   esac
 
+  echo "INFO: Signing image: $image" >&2
   $signer_impl "$image" $upload
 }
 
@@ -269,11 +274,17 @@ function image_signer () {
 #   $1: required  product path
 #   $2: optional  product version, if not set, return all versions
 # Returns:
-#   JSON: product metadata
-#    {
-#      "tag": "quay.io/zncdatadev/airflow:1.10.12-kubedoop5.3.1",
-#      "build_args": ["PRODUCT_VERSION=1.10.12", "BASE_IMAGE=quay.io/zncdatadev/python:3.8.5-kubedoop0.0.0-dev"],
-#    }
+#   JSON: product metadata array
+#    [
+#      {
+#        "tag": "quay.io/zncdatadev/airflow:1.10.12-kubedoop5.3.1",
+#        "build_args": ["PRODUCT_VERSION=1.10.12", "HADOOP_VERSION=3.3.4"],
+#      },
+#      {
+#        "tag": "quay.io/zncdatadev/airflow:1.10.12-kubedoop5.3.2",
+#        "build_args": ["PRODUCT_VERSION=1.10.12", "HADOOP_VERSION=3.3.5"],
+#      }
+#    ]
 function get_product_metadata () {
   local product_path=$1
   local filter_version=$2
@@ -284,21 +295,18 @@ function get_product_metadata () {
   local result=()
 
   for property in $(jq -c '.properties[]' $metadata_file); do
-    
     local product_version=$(echo $property | jq -r '.version')
+
+    # if 'filter_version' set and equal to 'product_version', return result
+    # else continue
+    if [ -n "$filter_version" ] && [ "$filter_version" == "$product_version" ]; then
+      result=($container_tool_args_json)
+      break
+    fi
+
+    # container_tool_args is a list of key=value pairs for container_tool args
     local build_args=("PRODUCT_VERSION=$product_version")
     local tag="$REGISTRY/$product_name:$product_version-$PLATFORM_TAG"
-
-    # Create a json object with tag
-    local property_json=$(jq -n --arg tag "$tag" '{tag: $tag}')
-
-    local base_image=""
-    if echo $property | jq -e '.upstream?' > /dev/null; then
-      local upstream_name=$(echo $property | jq -r '.upstream.name')
-      local upstream_version=$(echo $property | jq -r '.upstream.version')
-      base_image="BASE_IMAGE=$REGISTRY/$upstream_name:$upstream_version-$PLATFORM_TAG"
-      build_args+=($base_image)
-    fi
 
     if echo $property | jq -e '.dependencies?' >> /dev/null; then
       dependencies=$(echo $property | jq -r '.dependencies')
@@ -308,51 +316,18 @@ function get_product_metadata () {
         build_args+=("$key_fmt=$value")
       done
     fi
+
     local build_args_json=$(printf '%s\n' "${build_args[@]}" | jq -R . | jq -s .)
-    property_json=$(echo "$property_json" | jq --argjson build_args "$build_args_json" '. + {build_args: $build_args}')
+    # container_tool_args is a json object
+    local container_tool_args=$(jq -n --arg tag "$tag" --argjson build_args "$build_args_json" '{tag: $tag, build_args: $build_args}')
 
-    if [ -n "$filter_version" ] && [ "$filter_version" == "$product_version" ]; then
-      result=($property_json)
-      break
-    fi
-
-    result+=($property_json)
+    result+=($container_tool_args)
   done
 
-  echo "${result[@]}" | jq -s '.' 
-}
+  # Convert array to json object
+  local result_json=$(printf '%s\n' "${result[@]}" | jq -s .)
+  echo "INFO: Product metadata: $result_json" >&2
 
-# log tool
-# format: datetime - [INFO] - message
-# support log level: INFO, WARN, ERROR
-# support color: red, green, yellow
-# We don't need debug level, because we can use -x option in bash script
-function log () {
-  local level=$1
-  local message=$2
-
-  local color
-
-  local datetime=$(date +"%Y-%m-%d %H:%M:%S")
-  local log_level="[INFO]"
-  local log_color="\033[0m"
-
-  case $level in
-    "INFO")
-      log_level="[INFO]"
-      ;;
-    "WARN")
-      log_level="[WARN]"
-      log_color="\033[0;33m"
-      ;;
-    "ERROR")
-      log_level="[ERROR]"
-      log_color="\033[0;31m"
-      ;;
-    *)
-      log_level="[INFO]"
-      ;;
-  esac
-  
-  echo -e "$log_color$datetime - $log_level - $message\033[0m"
+  # Return result json
+  echo $result_json
 }
