@@ -57,7 +57,7 @@ runs:
         docker run \
           --privileged \
           --name $BUILDER_NAME \
-          -e CONTAINER_TOOL_PROVIDER=buildah \
+          -e CONTAINER_TOOL=buildah \
           -e ACTIONS_ID_TOKEN_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN \
           -e ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL \
           -e REGISTRY=$REGISTRY \

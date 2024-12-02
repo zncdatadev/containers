@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CONTAINER_TOOL_PROVIDER=${CONTAINER_TOOL_PROVIDER:-"podman"}
-SIGNER_TOOL_PROVIDER=${SIGNER_TOOL_PROVIDER:-"cosign"}
-CI_SCRIPT_DEBUG=${CI_SCRIPT_DEBUG:-false}
+CONTAINER_TOOL=${CONTAINER_TOOL:-"podman"}
+SIGNER_TOOL=${SIGNER_TOOL:-"cosign"}
+CI_DEBUG=${CI_DEBUG:-false}
 
 PATH=$PATH:$(pwd)/bin
 
@@ -10,12 +10,13 @@ set -e
 
 . .scripts/lib.sh
 
-# if CI_SCRIPT_DEBUG is set, then enable debug mode
-if [ "$CI_SCRIPT_DEBUG" = "true" ]; then
+# if CI_DEBUG is set, then enable debug mode
+if [ "$CI_DEBUG" = "true" ]; then
   set -x
 fi
 
 
+# Build a signal image
 function build_image () {
   local usage="
 Usage: command <Arguments> [OPTIONS] PATH
@@ -38,6 +39,7 @@ Options:
   local platform=""
   local push=false
   local build_args=()
+  local sign=false
 
   while [ "$1" != "" ]; do
     case $1 in
@@ -80,14 +82,17 @@ Options:
   done
 
   if [ -z "$tag" ]; then
-    echo "Tag is required"
+    echo "Tag is required" >&2
     exit 1
   fi
 
-  builder "$CONTAINER_TOOL_PROVIDER" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"
+  system_requirements $sign
+
+  builder "$CONTAINER_TOOL" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"
 }
 
 
+# Build the product image
 function build_product () {
   local usage="
 Usage: command [OPTIONS] PATH
@@ -151,6 +156,8 @@ Options:
     exit 1
   fi
 
+  system_requirements $sign
+
   local result=$(get_product_metadata "$context" "$product_version")
 
   for item in $(echo $result | jq -c '.[]'); do
@@ -161,9 +168,8 @@ Options:
       build_args=$(echo $item | jq -r '.build_args[]' | tr '\n' ' ')
     fi
 
-    builder "$CONTAINER_TOOL_PROVIDER" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign"
+    builder "$CONTAINER_TOOL" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign"
   done
-
 }
 
 function main () {
@@ -202,18 +208,20 @@ Options:
 }
 
 function system_requirements () {
+  local sign=$1
+
   if ! command -v jq > /dev/null; then
-    echo "jq is required"
+    echo "jq is required. Please install it refer to <https://stedolan.github.io/jq/download/>" >&2
     exit 1
   fi
 
-  if ! command -v $CONTAINER_TOOL_PROVIDER > /dev/null; then
-    echo "$CONTAINER_TOOL_PROVIDER is required"
+  if ! command -v $CONTAINER_TOOL > /dev/null; then
+    echo "$CONTAINER_TOOL is required!"
     exit 1
   fi
 
-  if ! command -v $SIGNER_TOOL_PROVIDER > /dev/null; then
-    echo "$SIGNER_TOOL_PROVIDER is required"
+  if [ "$sign" = true ] && ! command -v $SIGNER_TOOL > /dev/null; then
+    echo "$SIGNER_TOOL is required, Please install it refer to <https://docs.sigstore.dev/cosign/system_config/installation/>" >&2
     exit 1
   fi
 }
