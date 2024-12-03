@@ -61,20 +61,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install buildah
-        id: install_buildah
-        uses: ./.github/actions/install-buildah
-        with:
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-          buildah_version: ${{ inputs.buildah_version }}
-          builder_name: ${{ inputs.builder_name }}
-          registry: ${{ inputs.registry }}
-      - name: Build Images
-        uses: ./.github/actions/build-containers
-        with:
-          tags: ${{ inputs.tags }}
-          sign: ${{ inputs.sign }}
-          push: ${{ inputs.push }}
-          builder_name: ${{ inputs.builder_name }}
-          platform_version: ${{ inputs.platform_version }}
+      - name: show info
+        run: |
+          echo "Show quay username ${{ secrets.QUAY_USERNAME }}"
