@@ -309,11 +309,7 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 .vscode
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+
 
 # Local History for Visual Studio Code
 .history/
@@ -328,4 +324,5 @@ test.sh
 !.github/actions/build
 
 # ignore suffix: _digest.txt files, it's used for temporary storing the digest of the file
-*_digest.txt
+*-digest.txt
+*-digest.json

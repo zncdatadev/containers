@@ -4,9 +4,6 @@ on:
   push:
     tags:
       - '*'
-env:
-  CI_SCRIPT_DEBUG: true
-  CONTAINER_TOOL: buildah
 
 # use cosign to sign with gh login, so we need pass the oidc token to the action
 permissions:
@@ -30,7 +27,6 @@ jobs:
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
       platform_version: ${{needs.prepare.outputs.platform_version}}
       registry: ${{needs.prepare.outputs.registry}}
-      buildah_version: latest
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.rootfs_containers)}}
@@ -40,7 +36,7 @@ jobs:
 
 
   publish_infra:
-    name: test infra
+    name: Release infra
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -57,7 +53,7 @@ jobs:
 
 
   publish_env:
-    name: test env
+    name: Release env
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -74,7 +70,7 @@ jobs:
 
 
   publish_devel:
-    name: test devel
+    name: Release devel
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -91,7 +87,7 @@ jobs:
 
 
   publish_app:
-    name: test app
+    name: Release app
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -107,7 +103,7 @@ jobs:
         container: ${{fromJson(needs.prepare.outputs.app_containers)}}
 
   publish_tools:
-    name: Test Tools
+    name: Release Tools
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}

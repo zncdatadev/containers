@@ -1,8 +1,8 @@
 name: Resuable Build and Publish
 
 env:
-  CI_SCRIPT_DEBUG: true
-  CONTAINER_TOOL: buildah
+  CI_DEBUG: true
+  CONTAINER_TOOL: docker
 
 on:
   workflow_call:
@@ -17,11 +17,6 @@ on:
         required: false
         type: string
         default: '0.0.0-dev'
-      builder_name:
-        type: string
-        description: 'The name of the builder'
-        required: false
-        default: 'builder'
       tags:
         description: |
           The tags to build, the name sperated by space. e.g. "name1:version1 name1:version2 name2:version1"
@@ -41,40 +36,116 @@ on:
         required: false
         type: boolean
         default: false
-      buildah_version:
-        description: 'The version of buildah to install'
-        required: false
-        type: string
-        default: 'latest'
 
 
 jobs:
   triage:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Show Usage
         run: |
           free -h
           df -h
           lsblk
+
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install buildah
-        id: install_buildah
-        uses: ./.github/actions/install-buildah
-        with:
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-          buildah_version: ${{ inputs.buildah_version }}
-          builder_name: ${{ inputs.builder_name }}
-          registry: ${{ inputs.registry }}
-      - name: Build Images
-        uses: ./.github/actions/build-containers
-        with:
-          tags: ${{ inputs.tags }}
-          sign: ${{ inputs.sign }}
-          push: ${{ inputs.push }}
-          builder_name: ${{ inputs.builder_name }}
-          platform_version: ${{ inputs.platform_version }}
+      - name: Show version
+        run: |
+          docker info
+      # - name: Free Space
+      #   run: |
+      #     echo "INFO: show free space"
+      #     free -h
+      #     df -h
+      #     lsblk
+
+      #     echo "INFO: clean useless files"
+
+      #     # Option: Remove Android library
+      #     sudo rm -rf /usr/local/lib/android
+
+      #     # Option: Remove .NET runtime
+      #     sudo rm -rf /usr/share/dotnet || true
+
+      #     # Option: Remove Haskell runtime
+      #     sudo rm -rf /opt/ghc || true
+      #     sudo rm -rf /usr/local/.ghcup || true
+
+      #     # Option: Remove large packages
+
+      #     sudo apt-get remove -y --fix-missing \
+      #       'php.*' \
+      #       '^mongodb-.*' \
+      #       '^mysql-.*' \
+      #       google-cloud-sdk \
+      #       google-cloud-cli \
+      #       azure-cli \
+      #       google-chrome-stable \
+      #       firefox \
+      #       powershell
+      #     sudo apt-get autoremove -y
+
+      #     # Option: Remove Docker images
+      #     sudo docker image prune --all --force || true
+
+      #     # Option: Remove tool cache
+      #     sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
+
+      #     # Option: Remove Swap storage
+      #     sudo swapoff -a || true
+      #     sudo rm -f /mnt/swapfile || true
+      #     free -h
+
+      #     echo "INFO: show free space"
+      #     free -h
+      #     df -h
+      - name: Login to Quay.io
+        run: |
+          if [ -n "${{ secrets.QUAY_USERNAME }}" ] && [ -n "${{ secrets.QUAY_PASSWORD }}" ]; then
+            echo "${{ secrets.QUAY_PASSWORD }}" | docker login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Publish
+        env:
+          PUSH: ${{ inputs.push }}
+          SIGN: ${{ inputs.sign }}
+          TAGS: ${{ inputs.tags }}
+          PLATFORM_VERSION: ${{ inputs.platform_version }}
+          REGISTRY: ${{ inputs.registry }}
+        run: |
+          for tag in $TAGS; do
+            echo "INFO: Building $tag"
+            cmd=('.scripts/build.sh' 'product')
+
+            if [ "$PUSH" = "true" ]; then
+              cmd+=('--push')
+            fi
+
+            if [ "$SIGN" = "true" ]; then
+              cmd+=('--sign')
+            fi
+
+            if [[ $tag == *":"* ]]; then
+              tag_path=$(echo $tag | cut -d':' -f1)
+              app_version=$(echo $tag | cut -d':' -f2)
+              if [ -n "$app_version" ]; then
+                cmd+=('--product-version' "$app_version")
+              fi
+              cmd+=("$tag_path")
+            else
+              cmd+=("$tag")
+            fi
+
+            echo "INFO: Running ${cmd[@]}"
+            "${cmd[@]}"
+
+          done

@@ -1,12 +1,15 @@
 #!/bin/bash
 
-CONTAINER_TOOL=${CONTAINER_TOOL:-"podman"}
+# 添加更严格的错误处理
+set -e          # 遇到错误立即退出
+set -o pipefail # 管道中的错误也会导致退出
+# set -u          # 使用未定义变量时报错
+
+CONTAINER_TOOL=${CONTAINER_TOOL:-"docker"}
 SIGNER_TOOL=${SIGNER_TOOL:-"cosign"}
 CI_DEBUG=${CI_DEBUG:-false}
 
 PATH=$PATH:$(pwd)/bin
-
-set -e
 
 . .scripts/lib.sh
 
@@ -88,7 +91,11 @@ Options:
 
   system_requirements $sign
 
-  builder "$CONTAINER_TOOL" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"
+  # 添加返回值检查
+  if ! build_sign_image "$CONTAINER_TOOL" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"; then
+    echo "ERROR: Failed to build image" >&2
+    exit 1
+  fi
 }
 
 
@@ -158,7 +165,11 @@ Options:
 
   system_requirements $sign
 
-  local result=$(get_product_metadata "$context" "$product_version")
+  local result
+  if ! result=$(get_product_metadata "$context" "$product_version"); then
+    echo "ERROR: Failed to get product metadata" >&2
+    exit 1
+  fi
 
   for item in $(echo $result | jq -c '.[]'); do
     local tag=$(echo $item | jq -r '.tag')
@@ -168,7 +179,7 @@ Options:
       build_args=$(echo $item | jq -r '.build_args[]' | tr '\n' ' ')
     fi
 
-    builder "$CONTAINER_TOOL" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" "$sign"
+    build_sign_image "$CONTAINER_TOOL" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context" $sign
   done
 }
 
