@@ -14,6 +14,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
+
     - name: Lint Code Base
       uses: github/super-linter@v4
       env:
@@ -23,7 +24,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         LINTER_RULES_PATH: /
         MARKDOWN_CONFIG_FILE: .markdownlint.yml
-  
+
+
   lint_python:
     name: Python Lint
     runs-on: ubuntu-24.04
@@ -32,17 +34,21 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
+
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 isort
+
     - name: Lint with flake8
       run: |
         flake8 --max-line-length=200 .
+
     - name: Lint with isort
       run: |
         isort --check-only --diff .

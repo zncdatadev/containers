@@ -1,21 +1,21 @@
 name: Publish
 
+
 on:
   push:
     branches:
       - main
 
-# use cosign to sign with gh login, so we need pass the oidc token to the action
-permissions:
-  id-token: write
 
 jobs:
   prepare:
+    if: github.repository_owner == 'zncdatadev'
     name: Prepare Updated data
     uses: ./.github/workflows/reusable-prepare.yaml
     with:
       sign: false
       push: true
+
 
   publish_rootfs:
     uses: ./.github/workflows/reusable-build-publish.yaml
