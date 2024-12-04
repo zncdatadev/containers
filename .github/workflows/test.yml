@@ -6,7 +6,7 @@ on:
       - main
   push:
     branches:
-      - "*"
+      - '**'
 
 jobs:
   prepare:
@@ -19,6 +19,7 @@ jobs:
       tags: ${{ matrix.container }}
       push: ${{fromjson(needs.prepare.outputs.push_container)}}
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
+      buildah_version: latest
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.rootfs_containers)}}
