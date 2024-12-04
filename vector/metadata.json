@@ -7,6 +7,13 @@
         "kubedoop-base": "1.0.0",
         "inotify-tools": "4.23.9.0"
       }
+    },
+    {
+      "version": "0.41.1",
+      "dependencies": {
+        "kubedoop-base": "1.0.0",
+        "inotify-tools": "4.23.9.0"
     }
+  }
   ]
 }
