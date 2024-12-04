@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
+# check=error=true
 
-ARG KUBEDOOP_BASE_VERSION
+ARG KUBEDOOP_BASE_VERSION=1.0.0
 
 FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev
 
@@ -33,6 +34,7 @@ EOF
         krb5-devel \
         libcurl-devel \
         make \
+        maven \
         openssl-devel \
         patch \
         pkg-config \
@@ -55,22 +57,6 @@ RUN java -version
 
 ENV JAVA_HOME=/usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk
 ENV JAVA_VERSION=${PRODUCT_VERSION}
-
-## Setup maven
-ENV MAVEN_VERSION=${MAVEN_VERSION}
-ENV MAVEN_HOME=/usr/share/maven
-
-RUN <<EOF
-    curl -sSfL \
-        https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
-        | tar xzf - -C /usr/share && \
-    ln -s /usr/share/apache-maven-${MAVEN_VERSION} ${MAVEN_HOME} && \
-    ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn
-
-EOF
-
-# somke test
-RUN mvn --version
 
 # Mitigation for CVE-2021-44228 (Log4Shell)
 # This variable is supported as of Log4j version 2.10 and
