@@ -15,12 +15,14 @@ permissions:
 jobs:
   prepare:
     name: Prepare Updated data
+    if: github.repository_owner == 'zncdatadev'
     uses: ./.github/workflows/reusable-prepare.yaml
     with:
       sign: true
       push: true
       registry: quay.io/zncdatadev
       platform_version: ${{ github.ref_name}}
+
 
   publish_rootfs:
     uses: ./.github/workflows/reusable-build-publish.yaml

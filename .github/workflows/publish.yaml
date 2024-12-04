@@ -7,10 +7,6 @@ on:
       - main
 
 
-# use cosign to sign with gh login, so we need pass the oidc token to the action
-permissions:
-  id-token: write
-
 jobs:
   prepare:
     if: github.repository_owner == 'zncdatadev'
@@ -19,6 +15,7 @@ jobs:
     with:
       sign: false
       push: true
+
 
   publish_rootfs:
     uses: ./.github/workflows/reusable-build-publish.yaml
