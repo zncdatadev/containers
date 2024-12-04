@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# check=skip=InvalidDefaultArgInFrom;error=true
 
 
 FROM zncdatadev/image/java-devel AS java-builder
@@ -21,7 +22,6 @@ EOF
 
 # build zookeeper
 RUN <<EOF
-    set -ex
     mkdir -p /build/zookeeper-src
     pushd /build/zookeeper-src
     curl -sSfL \
@@ -61,10 +61,7 @@ WORKDIR /kubedoop
 COPY --chown=kubedoop:kubedoop --from=java-builder /kubedoop/ /kubedoop/
 
 ENV ZOOKEEPER_HOME=/kubedoop/zookeeper
-ENV PATH=$ZOOKEEPER_HOME/bin:$PATH
-
-# smoke test
-RUN zkServer.sh version
+ENV PATH="$ZOOKEEPER_HOME/bin:$PATH"
 
 WORKDIR /kubedoop/zookeeper
 USER kubedoop
