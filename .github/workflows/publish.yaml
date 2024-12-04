@@ -23,7 +23,6 @@ jobs:
       tags: ${{ matrix.container }}
       push: ${{fromjson(needs.prepare.outputs.push_container)}}
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-      buildah_version: latest
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.rootfs_containers)}}
@@ -33,7 +32,7 @@ jobs:
 
 
   publish_infra:
-    name: test infra
+    name: Publish infra
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -48,7 +47,7 @@ jobs:
 
 
   publish_env:
-    name: test env
+    name: Publish env
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -63,7 +62,7 @@ jobs:
 
 
   publish_devel:
-    name: test devel
+    name: Publish devel
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -78,7 +77,7 @@ jobs:
 
 
   publish_app:
-    name: test app
+    name: Publish app
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -92,7 +91,7 @@ jobs:
         container: ${{fromJson(needs.prepare.outputs.app_containers)}}
 
   publish_tools:
-    name: Test Tools
+    name: Publish Tools
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
