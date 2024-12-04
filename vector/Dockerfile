@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG KUBEDOOP_BASE_VERSION
+ARG KUBEDOOP_BASE_VERSION=1.0.0
 
 ## stage: builder
 FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev AS builder
@@ -39,7 +39,7 @@ RUN <<EOF
 EOF
 
 # smoke test
-RUN test -f /build/vector/vector-${PRODUCT_VERSION}-1.${ARCH}.rpm
+RUN test -f /build/vector/vector-${PRODUCT_VERSION}-1.*.rpm
 
 # bunld inotify-tools
 RUN <<EOF
@@ -55,13 +55,17 @@ RUN <<EOF
     make install
 EOF
 
+# smoke test
+RUN test -d /usr/local/inotify-tools
+
 ## stage: final
 FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev
 
-COPY --from=builder /build/vector /build/vector
+COPY --from=builder /build/vector /tmp/vector
 COPY --from=builder /usr/local/inotify-tools /usr/local/inotify-tools
 
 # setup inotify-tools
 RUN ln -s /usr/local/inotify-tools/bin/inotifywait /usr/local/bin/inotifywait \
     && ln -s /usr/local/inotify-tools/bin/inotifywatch /usr/local/bin/inotifywatch \
-    && rpm -ivh /build/vector/*.rpm
+    && rpm -ivh /tmp/vector/*.rpm \
+    && rm -rf /tmp/vector
