@@ -40,7 +40,7 @@ function get_current_platform () {
 #     hbase
 #
 # Arguments:
-#   $1: str   tag
+#   $1: str   tag, eg: quay.io/zncdatadev/vector:0.39.0-kubedoop0.0.0-dev
 #   $2: str   dockerfile, if not set, use default Dockerfile in context
 #   $3: str   platform, default is linux/amd64,linux/arm64
 #   $4: bool  push
@@ -55,13 +55,6 @@ function docker_builder () {
   local push=$4
   local build_args=$5
   local context=$6
-
-  # check docker buildx context
-  if ! docker buildx ls | grep -q "default"; then
-    echo "INFO: Creating docker buildx context: default" >&2
-    docker buildx create --name default
-    docker buildx use default
-  fi
 
   local platform_length
   if [ -z "$platform" ]; then
