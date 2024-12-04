@@ -1,25 +1,25 @@
 name: test
 
+
 on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - '**'
+
 
 jobs:
   prepare:
     name: Prepare Updated data
     uses: ./.github/workflows/reusable-prepare.yaml
 
+
   test_rootfs:
+    name: Test rootfs
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
       push: ${{fromjson(needs.prepare.outputs.push_container)}}
       sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-      buildah_version: latest
     secrets: inherit  # pass all secrets to the action
     needs: prepare
     if: ${{fromJson(needs.prepare.outputs.rootfs_containers)}}
@@ -29,7 +29,7 @@ jobs:
 
 
   test_infra:
-    name: test infra
+    name: Test infra
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -44,7 +44,7 @@ jobs:
 
 
   test_env:
-    name: test env
+    name: Test env
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -59,7 +59,7 @@ jobs:
 
 
   test_devel:
-    name: test devel
+    name: Test devel
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -74,7 +74,7 @@ jobs:
 
 
   test_app:
-    name: test app
+    name: Test app
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       tags: ${{ matrix.container }}
@@ -86,6 +86,7 @@ jobs:
     strategy:
       matrix:
         container: ${{fromJson(needs.prepare.outputs.app_containers)}}
+
 
   test_tools:
     name: Test Tools

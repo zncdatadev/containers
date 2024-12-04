@@ -1,13 +1,16 @@
 name: Release
 
+
 on:
   push:
     tags:
       - '*'
 
+
 # use cosign to sign with gh login, so we need pass the oidc token to the action
 permissions:
   id-token: write
+
 
 jobs:
   prepare:

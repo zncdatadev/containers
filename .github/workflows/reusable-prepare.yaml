@@ -1,7 +1,8 @@
 name: Resuable prepare
 
+
 env:
-  CI_SCRIPT_DEBUG: true
+  CI_DEBUG: true
 
 
 on:
@@ -75,55 +76,43 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
     - name: Setup python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+
+    - name: Git graph
+      run: git log --graph --all --decorate --abbrev-commit --pretty=oneline
+
     - name: Get Updated containers
       id: get_updated_containers
       run: |
-        set -ex
-        BEFORE_COMMIT_SHA=''
-        AFTER_COMMIT_SHA=''
+        before_sha=$(git rev-parse HEAD^)
+        current_sha=$(git rev-parse HEAD)
 
-        GH_EVENT=${{ github.event_name }}
-
-        if [ $GH_EVENT == 'pull_request' ]; then
-          BEFORE_COMMIT_SHA=${{ github.event.pull_request.base.sha }}
-          AFTER_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
-        elif [ $GH_EVENT == 'push' ]; then
-          BEFORE_COMMIT_SHA=${{ github.event.before }}
-          AFTER_COMMIT_SHA=${{ github.sha }}
-
-          # check if BEFORE_COMMIT_SHA is valid. eg:
-          #   - push to a new branch, BEFORE_COMMIT_SHA is 0000000000000000000000000000000000000000
-          #   - push --amend in main branch, BEFORE_COMMIT_SHA may be invalid
-          # Or BEFORE_COMMIT_SHA is not an ancestor of AFTER_COMMIT_SHA
-
-          if ! git cat-file -e $BEFORE_COMMIT_SHA >/dev/null 2>&1; then
-            BEFORE_COMMIT_SHA=$(git rev-parse "$AFTER_COMMIT_SHA"^)
-          fi
+        # When ref is a tag, before_sha is the sha of the previous tag
+        # If no previous tag, before_sha is the sha of the first commit
+        if [[ ${{ github.ref }} =~ ^refs/tags/ ]]; then
+          before_sha=$(git discribe --tags --abbrev=0 --max-parents=0 HEAD^)
         fi
-
-        echo "BEFORE_COMMIT_SHA=$BEFORE_COMMIT_SHA"
-        echo "AFTER_COMMIT_SHA=$AFTER_COMMIT_SHA"
 
         echo "Get updated containers"
         python3 .github/scripts/diff.py \
-          --before-sha $BEFORE_COMMIT_SHA \
-          --after-sha $AFTER_COMMIT_SHA \
+          --before-sha "$before_sha" \
+          --after-sha "$current_sha" \
           --output-file updated_containers.json
 
-        # save as compact json array to output
-        OUTPUT=$(jq -c "." updated_containers.json)
-        echo "ROOTFS_CONTAINERS=$(jq -c '.rootfs' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
-        echo "INFRA_CONTAINERS=$(jq -c '.infra' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
-        echo "ENV_CONTAINERS=$(jq -c '.env' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
-        echo "DEVEL_CONTAINERS=$(jq -c '.devel' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
-        echo "APP_CONTAINERS=$(jq -c '.app' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
-        echo "TOOLS_CONTAINERS=$(jq -c '.tools' <<< $OUTPUT)" >> "$GITHUB_OUTPUT"
+        # Set the output variables
+        while read -r key; do
+          if [[ $key =~ ^[A-Za-z_]+$ ]]; then
+            upper_key=$(echo "$key" | tr '[:lower:]' '[:upper:]')
+            echo "${upper_key}_CONTAINERS=$(jq -c ".$key" updated_containers.json)" >> "$GITHUB_OUTPUT"
+          fi
+        done < <(jq -r 'to_entries | .[] | .key' updated_containers.json)
+
     - name: Upload updated containers
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: updated_containers
         path: updated_containers.json

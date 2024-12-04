@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 logging.basicConfig(
-    level=logging.DEBUG if os.environ.get('CI_SCRIPT_DEBUG') else logging.INFO,
+    level=logging.DEBUG if os.environ.get('CI_DEBUG') else logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s',
 )
 

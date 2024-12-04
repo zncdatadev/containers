@@ -1,8 +1,10 @@
 name: Resuable Build and Publish
 
+
 env:
   CI_DEBUG: true
   CONTAINER_TOOL: docker
+
 
 on:
   workflow_call:
