@@ -24,7 +24,6 @@ WORKDIR /build
 
 RUN <<EOF
     set -ex
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
     ARCH=$(uname -m)
     ARCH="${ARCH/amd64/x86_64}"
     ARCH="${ARCH/arm64/aarch64}"
@@ -32,13 +31,15 @@ RUN <<EOF
     mkdir -p vector
     pushd vector
 
+    # https://packages.timber.io/vector/0.42.0/vector-0.42.0-1.aarch64.rpm
     curl -sSfL --proto '=https' --tlsv1.2 \
-        https://packages.timber.io/vector/${PRODUCT_VERSION}/vector-${PRODUCT_VERSION}-${ARCH}-unknown-${OS}-musl.tar.gz | \
-        tar xzf - --strip-components=2
+        -o vector-${PRODUCT_VERSION}-1.${ARCH}.rpm \
+        https://packages.timber.io/vector/${PRODUCT_VERSION}/vector-${PRODUCT_VERSION}-1.${ARCH}.rpm
+
 EOF
 
 # smoke test
-RUN /build/vector/bin/vector --version
+RUN test -f vector/vector-${PRODUCT_VERSION}-1.${ARCH}.rpm
 
 # bunld inotify-tools
 RUN <<EOF
@@ -57,13 +58,10 @@ EOF
 ## stage: final
 FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev
 
-
-COPY --from=builder /build/vector/bin/ /usr/local/bin/
-COPY --from=builder /build/vector/config /etc/vector
+COPY --from=builder /build/vector /build/vector
 COPY --from=builder /usr/local/inotify-tools /usr/local/inotify-tools
 
 # setup inotify-tools
 RUN ln -s /usr/local/inotify-tools/bin/inotifywait /usr/local/bin/inotifywait \
-    && ln -s /usr/local/inotify-tools/bin/inotifywatch /usr/local/bin/inotifywatch
-
-# smoke test
+    && ln -s /usr/local/inotify-tools/bin/inotifywatch /usr/local/bin/inotifywatch \
+    && rpm -ivh /build/vector/*.rpm
