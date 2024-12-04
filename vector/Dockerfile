@@ -39,7 +39,7 @@ RUN <<EOF
 EOF
 
 # smoke test
-RUN test -f vector/vector-${PRODUCT_VERSION}-1.${ARCH}.rpm
+RUN test -f /build/vector/vector-${PRODUCT_VERSION}-1.${ARCH}.rpm
 
 # bunld inotify-tools
 RUN <<EOF
