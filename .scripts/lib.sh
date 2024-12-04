@@ -108,13 +108,10 @@ function docker_builder () {
 
   container_tool_args+=("${context}")
 
+  local cmd=("$container_tool" "${container_tool_args[@]}")
   # build image
   echo "INFO: Building image: $container_tool ${container_tool_args[*]}" >&2
-  local cmd="$container_tool ${container_tool_args[*]}"
-  if ! eval "$cmd"; then
-    echo "ERROR: Failed to build image: $cmd" >&2
-    exit 1
-  fi
+  "${cmd[@]}"
 
   # 检查digest文件是否存在和是否有效
   if [ ! -f "$digest_file" ]; then
@@ -210,13 +207,10 @@ function buildah_backend_adaptor () {
 
   buildah_args+=("${context}")
 
+  local cmd=("$container_tool" "${buildah_args[@]}")
   # build image
   echo "INFO: Building image: ${buildah_args[*]}" >&2
-  local cmd="$container_tool ${buildah_args[*]}"
-  if ! eval "$cmd"; then
-    echo "ERROR: Failed to build image: $cmd" >&2
-    exit 1
-  fi
+  "${cmd[@]}"
 
   # if CI_DEBUG is true, list images
   if [ $CI_DEBUG = true ]; then
