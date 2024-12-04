@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# check=skip=InvalidDefaultArgInFrom;error=true
 
 ARG JAVA_VERSION
 ARG JAVA_DEVEL_VERSION
@@ -9,7 +10,6 @@ ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
 
 WORKDIR /build
-
 
 # setup jmx_exporter
 COPY kubedoop/jmx/config /kubedoop/jmx
@@ -24,7 +24,6 @@ EOF
 
 # build zookeeper
 RUN <<EOF
-    set -ex
     mkdir -p /build/zookeeper-src
     pushd /build/zookeeper-src
     curl -sSfL \
@@ -64,6 +63,7 @@ COPY --chown=kubedoop:kubedoop --from=java-builder /kubedoop/ /kubedoop/
 
 ENV ZOOKEEPER_HOME=/kubedoop/zookeeper
 ENV PATH=$ZOOKEEPER_HOME/bin:$PATH
+ENV PATH="$ZOOKEEPER_HOME/bin:$PATH"
 
 # smoke test
 RUN zkServer.sh version
