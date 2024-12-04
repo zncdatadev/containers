@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# 添加更严格的错误处理
-set -e          # 遇到错误立即退出
-set -o pipefail # 管道中的错误也会导致退出
-# set -u          # 使用未定义变量时报错
+set -e
+set -o pipefail
 
 CONTAINER_TOOL=${CONTAINER_TOOL:-"docker"}
 SIGNER_TOOL=${SIGNER_TOOL:-"cosign"}
@@ -91,7 +89,6 @@ Options:
 
   system_requirements $sign
 
-  # 添加返回值检查
   if ! build_sign_image "$CONTAINER_TOOL" "$tag" "$dockerfile" "$platform" $push "$build_args" "$context"; then
     echo "ERROR: Failed to build image" >&2
     exit 1

@@ -113,7 +113,6 @@ function docker_builder () {
   echo "INFO: Building image: $container_tool ${container_tool_args[*]}" >&2
   "${cmd[@]}"
 
-  # 检查digest文件是否存在和是否有效
   if [ ! -f "$digest_file" ]; then
     echo "ERROR: Digest file not found: $digest_file" >&2
     exit 1

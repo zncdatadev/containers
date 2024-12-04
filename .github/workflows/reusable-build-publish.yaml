@@ -55,53 +55,54 @@ jobs:
       - name: Show version
         run: |
           docker info
-      # - name: Free Space
-      #   run: |
-      #     echo "INFO: show free space"
-      #     free -h
-      #     df -h
-      #     lsblk
+      - name: Free Space
+        run: |
+          echo "INFO: show free space"
+          free -h
+          df -h
+          lsblk
+          lscpu
 
-      #     echo "INFO: clean useless files"
+          echo "INFO: clean useless files"
 
-      #     # Option: Remove Android library
-      #     sudo rm -rf /usr/local/lib/android
+          # Option: Remove Android library
+          sudo rm -rf /usr/local/lib/android
 
-      #     # Option: Remove .NET runtime
-      #     sudo rm -rf /usr/share/dotnet || true
+          # Option: Remove .NET runtime
+          sudo rm -rf /usr/share/dotnet || true
 
-      #     # Option: Remove Haskell runtime
-      #     sudo rm -rf /opt/ghc || true
-      #     sudo rm -rf /usr/local/.ghcup || true
+          # Option: Remove Haskell runtime
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/.ghcup || true
 
-      #     # Option: Remove large packages
+          # Option: Remove large packages
 
-      #     sudo apt-get remove -y --fix-missing \
-      #       'php.*' \
-      #       '^mongodb-.*' \
-      #       '^mysql-.*' \
-      #       google-cloud-sdk \
-      #       google-cloud-cli \
-      #       azure-cli \
-      #       google-chrome-stable \
-      #       firefox \
-      #       powershell
-      #     sudo apt-get autoremove -y
+          sudo apt-get remove -y --fix-missing \
+            'php.*' \
+            '^mongodb-.*' \
+            '^mysql-.*' \
+            google-cloud-sdk \
+            google-cloud-cli \
+            azure-cli \
+            google-chrome-stable \
+            firefox \
+            powershell
+          sudo apt-get autoremove -y
 
-      #     # Option: Remove Docker images
-      #     sudo docker image prune --all --force || true
+          # Option: Remove Docker images
+          sudo docker image prune --all --force || true
 
-      #     # Option: Remove tool cache
-      #     sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
+          # Option: Remove tool cache
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
 
-      #     # Option: Remove Swap storage
-      #     sudo swapoff -a || true
-      #     sudo rm -f /mnt/swapfile || true
-      #     free -h
+          # Option: Remove Swap storage
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile || true
+          free -h
 
-      #     echo "INFO: show free space"
-      #     free -h
-      #     df -h
+          echo "INFO: show free space"
+          free -h
+          df -h
       - name: Login to Quay.io
         run: |
           if [ -n "${{ secrets.QUAY_USERNAME }}" ] && [ -n "${{ secrets.QUAY_PASSWORD }}" ]; then
