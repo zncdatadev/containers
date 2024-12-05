@@ -262,25 +262,34 @@ def regex_pattern_builder(paths: dict[str, Path]) -> dict[str, Path]:
     return all_patterns
 
 
-def filter_project_metadata(project_metadata: ProjectMetadata, container_names: list[str]) -> ProjectMetadata:
+def get_change_container_groups(project_metadata: ProjectMetadata, changed_containers: list[str]) -> dict[str, list[str]]:
     """
-    Filter the project metadata by the container names
+    Get the changed container groups by the changed container names
 
     :param project_metadata: ProjectMetadata
-    :param container_names: list of container names
+    :param changed_containers: list of changed container names
 
-    :return: ProjectMetadata
+    :return: list of ContainerGroup
+
+    example output data
+    {
+        "group1": ["container1:version1", "container2:version1"],
+        "group2": ["container3:version1"],
+        "group3": []
+    }
     """
-    container_groups = []
+    changed_groups: dict[str, list[str]] = {}
+
     for group in project_metadata.container_roups:
+        group_name = group.name
         containers = []
         for container in group.containers:
-            if container.name in container_names:
-                containers.append(container)
-        if containers:
-            container_groups.append(ContainerGroup(name=group.name, parallel=group.parallel, containers=containers))
+            if container.name in changed_containers:
+                containers.extend([f'{container.name}:{c.version}' for c in container.versions])
+        changed_groups[group_name] = containers
 
-    return ProjectMetadata(container_roups=container_groups, global_paths=project_metadata.global_paths)
+    logger.debug(f'Changed container groups: {changed_groups}')
+    return changed_groups
 
 
 def save_output_file(output_file: str, data: dict) -> None:
@@ -308,23 +317,9 @@ def run(
     project_metadata = load_project_metadata()
     changed_containers = get_changed_container_name(project_metadata, before_sha, after_sha)
 
-    changed_project_metadata = filter_project_metadata(project_metadata, changed_containers)
+    changed_groups = get_change_container_groups(project_metadata, changed_containers)
 
-    # example output data
-    # {
-    #     "group1": ["container1:version1", "container2:version1"],
-    #     "group2": ["container3:version1", "container3:version2"]
-    # }
-    data: dict[str, list[str]] = {}
-
-    for group in changed_project_metadata.container_roups:
-        containers = []
-        for container_metadata in group.containers:
-            for version in container_metadata.versions:
-                containers.append(f'{version.name}:{version.version}')
-        data[group.name] = containers
-
-    save_output_file(output_file=output_file, data=data)
+    save_output_file(output_file=output_file, data=changed_groups)
 
 
 def main():

@@ -47,7 +47,7 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        flake8 --max-line-length=200 .
+        flake8 --max-line-length=200 --extend-exclude .venv .
 
     - name: Lint with isort
       run: |
