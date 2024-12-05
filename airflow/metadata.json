@@ -6,9 +6,17 @@
       "dependencies": {
         "python": "3.12",
         "git-sync": "4.2.4",
-        "statsd-exporter": "0.26.1",
-        "vector": "0.39.0"
-
+        "statsd-exporter": "0.27.1",
+        "vector": "0.41.1"
+      }
+    },
+    {
+      "version": "2.9.3",
+      "dependencies": {
+        "python": "3.9",
+        "git-sync": "4.2.4",
+        "statsd-exporter": "0.27.1",
+        "vector": "0.41.1"
       }
     }
   ]
