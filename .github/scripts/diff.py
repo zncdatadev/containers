@@ -262,7 +262,6 @@ def regex_pattern_builder(paths: dict[str, Path]) -> dict[str, Path]:
     return all_patterns
 
 
-
 def get_change_container_groups(project_metadata: ProjectMetadata, changed_containers: list[str]) -> dict[str, list[str]]:
     """
     Get the changed container groups by the changed container names
