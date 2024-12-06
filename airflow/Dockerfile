@@ -49,7 +49,7 @@ RUN /kubedoop/app/bin/airflow version | grep -q ${PRODUCT_VERSION}
 
 
 ## stage: statsd exporter
-FROM zncdatadev/image/kubedoop-base AS statsd-exporter-builder
+FROM zncdatadev/image/vector AS statsd-exporter-builder
 
 ARG STATSD_EXPORTER_VERSION
 
