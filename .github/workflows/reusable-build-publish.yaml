@@ -133,7 +133,7 @@ jobs:
             cmd+=('--sign')
           fi
 
-          for target in $targets; do
+          for target in $TARGETS; do
             cmd+=("$target")
           done
 

@@ -52,15 +52,6 @@ Options:
       -s | --sign )
         sign=true
         ;;
-      -t | --target )
-        shift
-        if [ -z "$1" ]; then
-          echo "Error: --target requires a value"
-          echo "$usage"
-          exit 1
-        fi
-        targets+=("$1")
-        ;;
       -h | --help )
         echo "$usage"
         exit 0
