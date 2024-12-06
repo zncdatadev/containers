@@ -87,8 +87,20 @@ Options:
   # Check system requirements if signing is requested
   system_requirements $sign
 
+
+  # Note:
+  # If push is not true, we use single-architecture to build the image.
+  # The docker version in Ubuntu 24.04 of the current GitHub runner does not
+  # support multi-architecture image building with the --load parameter.
+  # Moreover, if push is false, we do not need to build multi-architecture images,
+  # just load the current system architecture image into docker with the --load parameter.
+  local platforms='["linux/amd64", "linux/arm64"]'
+  if [ "$push" = false ]; then
+    platforms='["linux/'$(uname -m)'"]'
+  fi
+
   # Get the bakefile configuration
-  local bakefile=$(get_bakefile)
+  local bakefile=$(get_bakefile $platforms)
 
   # Check debug mode
   if [ "$debug" = true ] || [ "$CI_DEBUG" = "true" ]; then
@@ -195,10 +207,19 @@ function build_sign_image () {
 
 # Get docker bake file using project.yaml and versions.yaml in product path
 # The bake file is a JSON object
-# Arguments: None
+# Arguments:
+#   $1: str, platforms, platforms for bakefile. eg: '["linux/amd64", "linux/arm64"]'
 # Returns:
 #   JSON: bake file JSON object
+#
 function get_bakefile () {
+  local platforms=$1
+
+  # if platforms is empty, set default value
+  if [ -z "$platforms" ]; then
+    platforms='["linux/'$(uname -m)'"]'
+  fi
+
   local current_sha=$(git rev-parse HEAD)
 
   # Use yq to parse yaml file to json
@@ -229,7 +250,6 @@ function get_bakefile () {
         # Add target to product groups
         product_groups=$(echo "$product_groups" | jq --arg name "$target_name" '. + [$name]')
 
-        local platforms=$(jq -n '["linux/amd64", "linux/arm64"]')
         local tags=$(jq -n --arg tag "$REGISTRY/$product_name:$product_version-$KUBEDOOP_TAG" '[$tag]')
 
         # Construct contexts object
