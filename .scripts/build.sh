@@ -287,6 +287,9 @@ function get_bakefile () {
           target=$(echo "$target" | jq --arg k "contexts" --argjson v "$contexts" '. + {($k): $v}')
         fi
 
+        local cache_from="type=registry,ignore-err=true,mode=max,ref=$REGISTRY/$product_name:$product_version-kubedoop0.0.0-dev"
+        target=$(echo "$target" | jq --arg k "cache-from" --arg v "$cache_from" '. + {($k): [$v]}')
+
         local datetime=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
         local labels=$(jq -n '{}')
