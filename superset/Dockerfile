@@ -57,7 +57,7 @@ RUN SUPERSET_SECRET_KEY=$(openssl rand -hex 32) FLASK_APP="superset.app:create_a
 
 
 ## stage: statsd exporter
-FROM zncdatadev/image/kubedoop-base AS statsd-exporter-builder
+FROM zncdatadev/image/vector AS statsd-exporter-builder
 
 ARG STATSD_EXPORTER_VERSION
 
