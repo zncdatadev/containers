@@ -1,0 +1,4 @@
+versions:
+  - product: 3.2.2
+    java-base: 11
+    java-devel: 11

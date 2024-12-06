@@ -1,11 +1,8 @@
 # syntax=docker/dockerfile:1
 
 
-ARG JAVA_VERSION
-ARG JAVA_DEVEL_VERSION
-
 ## stage: trino-storage-connector-builder
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS storage-connector-builder
+FROM zncdatadev/image/java-devel AS storage-connector-builder
 
 ARG PRODUCT_VERSION
 ARG STORAGE_CONNECTOR_VERSION
@@ -25,8 +22,9 @@ RUN <<EOF
     # all jars artifact location: /build/trino-storage-src/target/trino-storage-451/
 EOF
 
+
 ## stage: trino-builder
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
+FROM zncdatadev/image/java-devel AS java-builder
 
 ARG PRODUCT_VERSION
 ARG STORAGE_CONNECTOR_VERSION
@@ -90,7 +88,7 @@ EOF
 
 
 ## stage: final
-FROM quay.io/zncdatadev/java-base:${JAVA_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/java-base
 
 RUN <<EOF
     set -e

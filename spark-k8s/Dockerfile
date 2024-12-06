@@ -1,7 +1,5 @@
 # syntax=docker/dockerfile:1
 
-ARG JAVA_VERSION
-ARG JAVA_DEVEL_VERSION
 
 FROM docker.io/library/gradle:8 AS gradle-builder
 
@@ -45,8 +43,9 @@ EOF
 
 EOT
 
+
 ## stage: java-builder
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
+FROM zncdatadev/image/java-devel AS java-builder
 
 ARG PRODUCT_VERSION
 ARG HADOOP_VERSION
@@ -118,8 +117,9 @@ EOF
 # smoke test
 RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
 
+
 ## stage: final
-FROM quay.io/zncdatadev/java-base:${JAVA_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/java-base
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION

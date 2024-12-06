@@ -1,11 +1,7 @@
 
-ARG JAVA_VERSION
-ARG JAVA_DEVEL_VERSION
-ARG HADOOP_VERSION
-
 
 ## stage: java-builder
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
+FROM zncdatadev/image/java-devel AS java-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
@@ -54,11 +50,12 @@ COPY kubedoop/bin/start-metastore /kubedoop/hive-metastore/bin/
 # smoke test
 RUN /kubedoop/hive-metastore/bin/start-metastore --help
 
-FROM quay.io/zncdatadev/hadoop:${HADOOP_VERSION}-kubedoop0.0.0-dev AS hadoop
+
+FROM zncdatadev/image/hadoop AS hadoop
 
 
 ## stage: final
-FROM ${BASE_IMAGE:-quay.io/zncdatadev/java-base:11-kubedoop0.0.0-dev}
+FROM zncdatadev/image/java-base
 
 ARG PRODUCT_VERSION
 ARG HADOOP_VERSION

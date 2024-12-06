@@ -1,8 +1,7 @@
 # Golang development environment
 
-ARG KUBEDOOP_BASE_VERSION
 
-FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev 
+FROM zncdatadev/image/kubedoop-base
 
 ARG PRODUCT_VERSION
 

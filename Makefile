@@ -1,26 +1,39 @@
 REGISTRY ?= quay.io/zncdatadev
-PLATFORM_VERSION ?= 0.0.0-dev
+KUBEDOOP_VERSION ?= 0.0.0-dev
+CI_DEBUG ?= false
 
 .PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-
-# CONTAINER_TOOL defines the container tool to be used for building images.
-# Be aware that the target commands are only tested with Docker which is
-# scaffolded by default. However, you might want to replace it to use other
-# tools. (i.e. podman)
-CONTAINER_TOOL ?= docker
-
-PLATFORMS ?= linux/arm64,linux/amd64
-
 LOCAL_BIN = ./bin
 
-##@ install
+##@ Install dependencies
 
+# install yq
+.PHONY: yq
+YQ = $(LOCAL_BIN)/yq
+yq: ## Download yq locally if necessary.
+ifeq (,$(wildcard $(YQ)))
+ifeq (,$(shell which yq 2>/dev/null))
+	@{ \
+		set -e ;\
+		mkdir -p $(dir $(YQ)) ;\
+		OS=$(shell uname -s | tr '[:upper:]' '[:lower:]') && \
+		ARCH=$(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/') && \
+		if [ "$${OS}" = "darwin" ]; then OS="macos"; fi && \
+		curl -sSLo $(YQ) https://github.com/mikefarah/yq/releases/latest/download/ya_$${OS}_$${ARCH} ;\
+		chmod +x $(YQ) ;\
+	}
+else
+YQ = $(shell which yq)
+endif
+endif
+
+# install jq
 .PHONY: jq
 JQ = $(LOCAL_BIN)/jq
-jq: ## Download jq locally if necessary.
+jq: yq ## Download jq locally if necessary.
 ifeq (,$(wildcard $(JQ)))
 ifeq (,$(shell which jq 2>/dev/null))
 	@{ \
@@ -60,108 +73,134 @@ endif
 
 .PHONY:
 kubedoop-base-build: jq ## Build kubedoop-base image
-	.scripts/build.sh product kubedoop-base
+	.scripts/build.sh -t kubedoop-base
 
 .PHONY:
 kubedoop-base-buildx: jq ## Build kubedoop-base image with buildx
-	.scripts/build.sh product kubedoop-base --push
+	.scripts/build.sh -t kubedoop-base --push
 
 .PHONY:
 vector-build: ## Build Vector image
-	.scripts/build.sh product vector	
+	.scripts/build.sh -t vector
 
 .PHONY:
 vector-buildx: jq ## Build Vector image with buildx
-	.scripts/build.sh product vector --push
+	.scripts/build.sh -t vector --push
 
 ##@ develop environment
 
 .PHONY:
+go-devel-build: jq ## Build Go development image
+	.scripts/build.sh -t go-devel
+
+.PHONY:
+go-devel-buildx: jq ## Build Go development image with buildx
+	.scripts/build.sh -t go-devel --push
+
+.PHONY:
 java-build: jq ## Build Java base image
-	.scripts/build.sh product java
+	.scripts/build.sh -t java
 
 .PHONY:
 java-buildx: jq ## Build Java base image with buildx
-	.scripts/build.sh product java --push
+	.scripts/build.sh -t java --push
 
 .PHONY:
 java-devel-build: jq ## Build Java development image
-	.scripts/build.sh product java-devel
+	.scripts/build.sh -t java-devel
 
 .PHONY:
 java-devel-buildx: jq ## Build Java development image with buildx
-	.scripts/build.sh product java-devel --push
+	.scripts/build.sh -t java-devel --push
 
-##@ product
-
-.PHONY:
-zookeeper-build: jq ## Build Zookeeper image
-	.scripts/build.sh product zookeeper
+##@ tools
 
 .PHONY:
-zookeeper-buildx: jq ## Build Zookeeper image with buildx
-	.scripts/build.sh product zookeeper --push
+krb5-build: jq ## Build krb5 image
+	.scripts/build.sh -t krb5
 
 .PHONY:
-hadoop-build: jq ## Build Hadoop image
-	.scripts/build.sh product hadoop
+krb5-buildx: jq ## Build krb5 image with buildx
+	.scripts/build.sh -t krb5 --push
+
+##@ app
 
 .PHONY:
-hadoop-buildx: jq ## Build Hadoop image with buildx
-	.scripts/build.sh product hadoop --push
+airflow-build: jq ## Build Airflow image
+	.scripts/build.sh -t airflow
 
 .PHONY:
-hive-build: jq ## Build Hive image
-	.scripts/build.sh product hive
-
-.PHONY:
-hive-buildx: jq ## Build Hive image with buildx
-	.scripts/build.sh product hive --push
-
-.PHONY:
-kafka-build: jq ## Build Kafka image
-	.scripts/build.sh product kafka
-
-.PHONY:
-kafka-buildx: jq ## Build Kafka image with buildx
-	.scripts/build.sh product kafka --push
-
-.PHONY:
-hbase-build: jq ## Build HBase image
-	.scripts/build.sh product hbase
-
-.PHONY:
-hbase-buildx: jq ## Build HBase image with buildx
-	.scripts/build.sh product hbase --push
-
-.PHONY:
-spark-build: jq ## Build Spark image
-	.scripts/build.sh product spark
-
-.PHONY:
-spark-buildx: jq ## Build Spark image with buildx
-	.scripts/build.sh product spark --push
-
-.PHONY:
-superset-build: jq ## Build Superset image
-	.scripts/build.sh product superset
-
-.PHONY:
-superset-buildx: jq ## Build Superset image with buildx
-	.scripts/build.sh product superset --push
-
-.PHONY:
-trino-build: jq ## Build Trino image
-	.scripts/build.sh product trino
-
-.PHONY:
-trino-buildx: jq ## Build Trino image with buildx
-	.scripts/build.sh product trino --push
+airflow-buildx: jq ## Build Airflow image with buildx
+	.scripts/build.sh -t airflow --push
 
 .PHONY:
 dolphinscheduler-build: jq ## Build DolphinScheduler image
-	.scripts/build.sh product dolphinscheduler
+	.scripts/build.sh -t dolphinscheduler
 
 .PHONY:
 dolphinscheduler-buildx: jq ## Build DolphinScheduler image with buildx
-	.scripts/build.sh product dolphinscheduler --push
+	.scripts/build.sh -t dolphinscheduler --push
+
+.PHONY:
+hadoop-build: jq ## Build Hadoop image
+	.scripts/build.sh -t hadoop
+
+.PHONY:
+hadoop-buildx: jq ## Build Hadoop image with buildx
+	.scripts/build.sh -t hadoop --push
+
+.PHONY:
+hbase-build: jq ## Build HBase image
+	.scripts/build.sh -t hbase
+
+.PHONY:
+hbase-buildx: jq ## Build HBase image with buildx
+	.scripts/build.sh -t hbase --push
+
+.PHONY:
+hive-build: jq ## Build Hive image
+	.scripts/build.sh -t hive
+
+.PHONY:
+hive-buildx: jq ## Build Hive image with buildx
+	.scripts/build.sh -t hive --push
+
+.PHONY:
+zookeeper-build: jq ## Build Zookeeper image
+	.scripts/build.sh -t zookeeper
+
+.PHONY:
+zookeeper-buildx: jq ## Build Zookeeper image with buildx
+	.scripts/build.sh -t zookeeper --push
+
+.PHONY:
+kafka-build: jq ## Build Kafka image
+	.scripts/build.sh -t kafka
+
+.PHONY:
+kafka-buildx: jq ## Build Kafka image with buildx
+	.scripts/build.sh -t kafka --push
+
+.PHONY:
+spark-build: jq ## Build Spark image
+	.scripts/build.sh -t spark
+
+.PHONY:
+spark-buildx: jq ## Build Spark image with buildx
+	.scripts/build.sh -t spark --push
+
+.PHONY:
+superset-build: jq ## Build Superset image
+	.scripts/build.sh -t superset
+
+.PHONY:
+superset-buildx: jq ## Build Superset image with buildx
+	.scripts/build.sh -t superset --push
+
+.PHONY:
+trino-build: jq ## Build Trino image
+	.scripts/build.sh -t trino
+
+.PHONY:
+trino-buildx: jq ## Build Trino image with buildx
+	.scripts/build.sh -t trino --push

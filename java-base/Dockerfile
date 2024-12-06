@@ -1,10 +1,9 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-ARG VECTOR_VERSION=0.41.1
 
 ## stage: final
-FROM quay.io/zncdatadev/vector:${VECTOR_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/vector
 
 ARG PRODUCT_VERSION
 

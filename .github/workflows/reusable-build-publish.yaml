@@ -14,16 +14,15 @@ on:
         required: false
         type: string
         default: 'quay.io/zncdatadev'
-      platform_version:
-        description: 'The platform version'
+      kubedoop_version:
+        description: 'The kubedoop version'
         required: false
         type: string
         default: '0.0.0-dev'
-      tags:
+      target:
         description: |
-          The tags to build, the name sperated by space. e.g. "name1:version1 name1:version2 name2:version1"
-          If build a tag without version, just use the name. we will build all versions of the container by
-          container metadata.json.
+          The target to build, the name sperated by space. e.g. "name1:version1" or "name1"
+          If build a tag without version, just use the name. we will build all versions of the container.
         required: true
         type: string
       push:
@@ -121,11 +120,11 @@ jobs:
         env:
           PUSH: ${{ inputs.push }}
           SIGN: ${{ inputs.sign }}
-          TAGS: ${{ inputs.tags }}
+          TARGETS: ${{ inputs.targets }}
           PLATFORM_VERSION: ${{ inputs.platform_version }}
           REGISTRY: ${{ inputs.registry }}
         run: |
-          for tag in $TAGS; do
+          for tag in $targets; do
             echo "INFO: Building $tag"
             cmd=('.scripts/build.sh' 'product')
 

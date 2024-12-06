@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
 
-ARG VECTOR_VERSION
 
 ## stage: builder
-FROM quay.io/zncdatadev/vector:${VECTOR_VERSION}-kubedoop0.0.0-dev AS builder
+FROM zncdatadev/image/vector AS builder
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
@@ -45,7 +44,7 @@ RUN <<EOF
         statsd \
         trino[sqlalchemy] \
         tzdata
-    
+
     # if AUTHLIB_VERSION is set, install the specified version
     if [ -n "${AUTHLIB_VERSION}" ]; then
         pip install --no-cache-dir authlib==${AUTHLIB_VERSION}
@@ -58,7 +57,7 @@ RUN SUPERSET_SECRET_KEY=$(openssl rand -hex 32) FLASK_APP="superset.app:create_a
 
 
 ## stage: statsd exporter
-FROM quay.io/zncdatadev/kubedoop-base:1.0.0-kubedoop0.0.0-dev AS statsd-exporter-builder
+FROM zncdatadev/image/kubedoop-base AS statsd-exporter-builder
 
 ARG STATSD_EXPORTER_VERSION
 
@@ -71,9 +70,9 @@ RUN <<EOF
         gzip \
         tar \
         xz
-        
+
     microdnf clean all
-    
+
 EOF
 
 # download and build statsd-exporter
@@ -94,7 +93,7 @@ EOF
 RUN /kubedoop/bin/statsd-exporter --version
 
 ## stage: final
-FROM quay.io/zncdatadev/vector:${VECTOR_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/vector
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION

@@ -1,0 +1,7 @@
+versions:
+  - product: 2.10.2
+    python: 3.12
+    go-devel: 1.22.9
+    git-sync: 4.2.4
+    statsd-exporter: 0.26.1
+    vector: 0.39.0

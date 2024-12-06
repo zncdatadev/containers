@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-ARG KUBEDOOP_BASE_VERSION=1.0.0
 
-FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/kubedoop-base
 
 ARG PRODUCT_VERSION
 ARG MAVEN_VERSION

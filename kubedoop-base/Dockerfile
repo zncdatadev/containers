@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.8
 
+
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194
 
 COPY kubedoop/dnf.conf /etc/dnf/dnf.conf
@@ -13,7 +14,7 @@ RUN <<EOF
         procps \
         tar
 
-    groupadd -g 1001 --system kubedoop 
+    groupadd -g 1001 --system kubedoop
     useradd \
         --no-log-init \
         --gid 1001 \

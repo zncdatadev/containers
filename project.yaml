@@ -1,0 +1,22 @@
+# Define the project configuration
+products:
+  - kubedoop-base
+  - vector
+  # - java-base
+  # - java-devel
+  # - go-devel
+  # - airflow
+  # - hadoop
+  # - hive
+  # - spark-k8s
+  # - kafka
+  # - superset
+  # - trino
+  # - dolphinscheduler
+  # - zookeeper
+  # - krb5
+# If file under the path is changed, the all product will be rebuilt
+global-paths:
+  - .github/workflows
+  - .github/scripts
+  - .scripts

@@ -1,8 +1,7 @@
-ARG JAVA_VERSION
-ARG JAVA_DEVEL_VERSION
+
 
 ## stage: builder
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
+FROM zncdatadev/image/java-devel AS java-builder
 
 ARG PRODUCT_VERSION
 ARG PROTOBUF_VERSION
@@ -115,8 +114,9 @@ EOF
 # smoke test
 RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
 
+
 ## stage: final
-FROM quay.io/zncdatadev/java-base:${JAVA_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/java-base
 
 ARG PRODUCT_VERSION
 
