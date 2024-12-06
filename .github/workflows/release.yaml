@@ -17,108 +17,19 @@ jobs:
     name: Prepare Updated data
     if: github.repository_owner == 'zncdatadev'
     uses: ./.github/workflows/reusable-prepare.yaml
+
+
+  publish:
+    name: Test products
+    needs:
+      - prepare
+    uses: ./.github/workflows/reusable-build-publish.yaml
     with:
-      sign: true
-      push: true
       registry: quay.io/zncdatadev
-      platform_version: ${{ github.ref_name}}
-
-
-  publish_rootfs:
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-      platform_version: ${{needs.prepare.outputs.platform_version}}
-      registry: ${{needs.prepare.outputs.registry}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.rootfs_containers)}}
+      kubedoop_version: ${{ github.ref_name}}
+      targets: ${{ matrix.targets }}
+      push: true
+      sign: true
     strategy:
       matrix:
-        container: ${{fromjson(needs.prepare.outputs.rootfs_containers)}}
-
-
-  publish_infra:
-    name: Release infra
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-      platform_version: ${{needs.prepare.outputs.platform_version}}
-      registry: ${{needs.prepare.outputs.registry}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.infra_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.infra_containers)}}
-
-
-  publish_env:
-    name: Release env
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-      platform_version: ${{needs.prepare.outputs.platform_version}}
-      registry: ${{needs.prepare.outputs.registry}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.env_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.env_containers)}}
-
-
-  publish_devel:
-    name: Release devel
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-      platform_version: ${{needs.prepare.outputs.platform_version}}
-      registry: ${{needs.prepare.outputs.registry}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.devel_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.devel_containers)}}
-
-
-  publish_app:
-    name: Release app
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromJson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
-      platform_version: ${{needs.prepare.outputs.platform_version}}
-      registry: ${{needs.prepare.outputs.registry}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.app_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromJson(needs.prepare.outputs.app_containers)}}
-
-  publish_tools:
-    name: Release Tools
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromJson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
-      platform_version: ${{needs.prepare.outputs.platform_version}}
-      registry: ${{needs.prepare.outputs.registry}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.tools_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromJson(needs.prepare.outputs.tools_containers)}}
+        targets: ${{ fromjson(needs.prepare.outputs.targets) }}

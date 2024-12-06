@@ -13,91 +13,14 @@ jobs:
     uses: ./.github/workflows/reusable-prepare.yaml
 
 
-  test_rootfs:
-    name: Test rootfs
+  test:
+    name: Test products
+    needs:
+      - prepare
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.rootfs_containers)}}
+      registry: quay.io/zncdatadev
+      targets: ${{ matrix.targets }}
     strategy:
       matrix:
-        container: ${{fromjson(needs.prepare.outputs.rootfs_containers)}}
-
-
-  test_infra:
-    name: Test infra
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.infra_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.infra_containers)}}
-
-
-  test_env:
-    name: Test env
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.env_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.env_containers)}}
-
-
-  test_devel:
-    name: Test devel
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.devel_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.devel_containers)}}
-
-
-  test_app:
-    name: Test app
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromJson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.app_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromJson(needs.prepare.outputs.app_containers)}}
-
-
-  test_tools:
-    name: Test Tools
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromJson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.tools_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromJson(needs.prepare.outputs.tools_containers)}}
+        targets: ${{ fromjson(needs.prepare.outputs.targets) }}

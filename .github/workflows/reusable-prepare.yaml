@@ -7,70 +7,17 @@ env:
 
 on:
   workflow_call:
-    inputs:
-      sign:
-        description: 'Sign the image after build.'
-        required: false
-        type: boolean
-        default: false
-      push:
-        description: 'Push the image to registry after build.'
-        required: false
-        type: boolean
-        default: false
-      platform_version:
-        description: 'The platform version.'
-        required: false
-        type: string
-        default: '0.0.0-dev'
-      registry:
-        description: 'The registry to login to'
-        required: false
-        type: string
-        default: 'quay.io/zncdatadev'
     outputs:
-      rootfs_containers:
-        description: 'The rootfs containers to build'
-        value: ${{ jobs.prepare.outputs.ROOTFS_CONTAINERS }}
-      infra_containers:
-        description: 'The infra containers to build'
-        value: ${{ jobs.prepare.outputs.INFRA_CONTAINERS }}
-      env_containers:
-        description: 'The env containers to build'
-        value: ${{ jobs.prepare.outputs.ENV_CONTAINERS }}
-      devel_containers:
-        description: 'The devel containers to build'
-        value: ${{ jobs.prepare.outputs.DEVEL_CONTAINERS }}
-      app_containers:
-        description: 'The app containers to build'
-        value: ${{ jobs.prepare.outputs.APP_CONTAINERS }}
-      tools_containers:
-        description: 'The tools containers to build'
-        value: ${{ jobs.prepare.outputs.TOOLS_CONTAINERS }}
-      sign_container:
-        description: 'Sign the image after build.'
-        value: ${{ inputs.sign }}
-      push_container:
-        description: 'Push the image to registry after build.'
-        value: ${{ inputs.push }}
-      platform_version:
-        description: 'The platform version.'
-        value: ${{ inputs.platform_version }}
-      registry:
-        description: 'The registry to login to'
-        value: ${{ inputs.registry }}
+      targets:
+        description: 'The targets to build, the name sperated by space. e.g. "name1:version1 name1:version1" or "name1" or "name1, name2"'
+        value: ${{ jobs.prepare.outputs.TARGETS }}
 
 
 jobs:
   prepare:
     runs-on: ubuntu-24.04
     outputs:
-      ROOTFS_CONTAINERS: ${{ steps.get_updated_containers.outputs.ROOTFS_CONTAINERS }}
-      INFRA_CONTAINERS: ${{ steps.get_updated_containers.outputs.INFRA_CONTAINERS }}
-      ENV_CONTAINERS: ${{ steps.get_updated_containers.outputs.ENV_CONTAINERS }}
-      DEVEL_CONTAINERS: ${{ steps.get_updated_containers.outputs.DEVEL_CONTAINERS }}
-      APP_CONTAINERS: ${{ steps.get_updated_containers.outputs.APP_CONTAINERS }}
-      TOOLS_CONTAINERS: ${{ steps.get_updated_containers.outputs.TOOLS_CONTAINERS }}
+      TARGETS: ${{ steps.get_updated_targets.outputs.TARGETS }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -85,8 +32,8 @@ jobs:
     - name: Git graph
       run: git log --graph --all --decorate --abbrev-commit --pretty=oneline
 
-    - name: Get Updated containers
-      id: get_updated_containers
+    - name: Get updated targets
+      id: get_updated_targets
       run: |
         before_sha=$(git rev-parse HEAD^)
         current_sha=$(git rev-parse HEAD)
@@ -97,22 +44,7 @@ jobs:
           before_sha=$(git discribe --tags --abbrev=0 --max-parents=0 HEAD^)
         fi
 
-        echo "Get updated containers"
-        python3 .github/scripts/diff.py \
-          --before-sha "$before_sha" \
-          --after-sha "$current_sha" \
-          --output-file updated_containers.json
+        # updated_targets like: ["kubedoop-base:1.0.0","vector:0.39.0"]
+        updated_targets=$(.scripts/diff.sh --base $current_sha --compare $before_sha)
 
-        # Set the output variables
-        while read -r key; do
-          if [[ $key =~ ^[A-Za-z_]+$ ]]; then
-            upper_key=$(echo "$key" | tr '[:lower:]' '[:upper:]')
-            echo "${upper_key}_CONTAINERS=$(jq -c ".$key" updated_containers.json)" >> "$GITHUB_OUTPUT"
-          fi
-        done < <(jq -r 'to_entries | .[] | .key' updated_containers.json)
-
-    - name: Upload updated containers
-      uses: actions/upload-artifact@v4
-      with:
-        name: updated_containers
-        path: updated_containers.json
+        echo "TARGETS=$updated_targets" >> $GITHUB_OUTPUT
