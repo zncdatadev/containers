@@ -252,13 +252,11 @@ function get_bakefile () {
           # get value by dependency key
           value=$(echo "$version" | jq -r --arg k "$dependency" '.[$k]')
           # When dependency is in products, it is a context for target, should:
-          #  - Skip adding to args
           #  - Add to contexts
           if echo "$products" | jq -e --arg k "$dependency" '. | index($k)' > /dev/null; then
             local contexts_target_key="zncdatadev/image/$dependency"
             local contexts_target_value="target:$dependency-$(echo $value | tr '.' '_')"
             contexts=$(echo "$contexts" | jq --arg k "$contexts_target_key" --arg v "$contexts_target_value" '. + {($k): $v}')
-            continue
           fi
 
           # Transform dependency name to uppercase and replace - with _, append _VERSION
