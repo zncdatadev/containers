@@ -2,7 +2,6 @@
 
 set -e
 set -o pipefail
-set -x
 
 
 CI_DEBUG=${CI_DEBUG:-false}

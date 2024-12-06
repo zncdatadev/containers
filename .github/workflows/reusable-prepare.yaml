@@ -1,10 +1,6 @@
 name: Resuable prepare
 
 
-env:
-  CI_DEBUG: true
-
-
 on:
   workflow_call:
     outputs:
