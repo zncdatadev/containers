@@ -2,18 +2,22 @@
 products:
   - kubedoop-base
   - vector
+  # devel
   - java-base
   - java-devel
-  - go-devel
+  # apps
   - airflow
+  - dolphinscheduler
+  - go-devel
   - hadoop
+  - hbase
   - hive
-  - spark-k8s
   - kafka
+  - spark-k8s
   - superset
   - trino
-  - dolphinscheduler
   - zookeeper
+  # tools
   - krb5
 # If file under the path is changed, the all product will be rebuilt
 global-paths:
