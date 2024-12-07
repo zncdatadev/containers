@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
 
-ARG KUBEDOOP_BASE_VERSION=1.0.0
 
 ## stage: builder
-FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev AS builder
+FROM zncdatadev/image/kubedoop-base AS builder
 
 ARG PRODUCT_VERSION
 ARG INOTIFY_TOOLS_VERSION
@@ -58,8 +57,9 @@ EOF
 # smoke test
 RUN test -d /usr/local/inotify-tools
 
+
 ## stage: final
-FROM quay.io/zncdatadev/kubedoop-base:${KUBEDOOP_BASE_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/kubedoop-base
 
 COPY --from=builder /build/vector /tmp/vector
 COPY --from=builder /usr/local/inotify-tools /usr/local/inotify-tools

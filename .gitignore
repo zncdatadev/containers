@@ -323,6 +323,5 @@ test.sh
 
 !.github/actions/build
 
-# ignore suffix: _digest.txt files, it's used for temporary storing the digest of the file
-*-digest.txt
+docker-bake-digests.json
 *-digest.json

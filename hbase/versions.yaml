@@ -1,0 +1,17 @@
+versions:
+  - product: 2.4.18
+    java-base: 11
+    java-devel: 11
+    hadoop: 3.3.6
+    hbase-operator-tools: 1.2.0
+    hbase-thirdparty: 4.1.5
+    jmx-exporter: 1.0.1
+    oauth2-proxy: 7.6.0
+  - product: 2.6.0
+    java-base: 11
+    java-devel: 11
+    hadoop: 3.3.6
+    hbase-operator-tools: 1.3.0-075ec30
+    hbase-thirdparty: 4.1.5
+    jmx-exporter: 1.0.1
+    oauth2-proxy: 7.6.0

@@ -1,0 +1,7 @@
+versions:
+  - product: 0.39.0
+    kubedoop-base: 1.0.0
+    inotify-tools: 4.23.9.0
+  - product: 0.41.1
+    kubedoop-base: 1.0.0
+    inotify-tools: 4.23.9.0

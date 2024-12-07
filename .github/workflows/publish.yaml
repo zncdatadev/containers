@@ -1,7 +1,7 @@
 name: Publish
 
-
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -12,94 +12,18 @@ jobs:
     if: github.repository_owner == 'zncdatadev'
     name: Prepare Updated data
     uses: ./.github/workflows/reusable-prepare.yaml
+
+  publish:
+    name: Test products
+    needs:
+      - prepare
+    uses: ./.github/workflows/reusable-build-publish.yaml
     with:
-      sign: false
+      registry: quay.io/zncdatadev
+      kubedoop_version: 0.0.0-dev
+      targets: ${{ matrix.targets }}
       push: true
-
-
-  publish_rootfs:
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.rootfs_containers)}}
+      sign: false
     strategy:
       matrix:
-        container: ${{fromjson(needs.prepare.outputs.rootfs_containers)}}
-
-
-  publish_infra:
-    name: Publish infra
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.infra_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.infra_containers)}}
-
-
-  publish_env:
-    name: Publish env
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.env_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.env_containers)}}
-
-
-  publish_devel:
-    name: Publish devel
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromjson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromjson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.devel_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromjson(needs.prepare.outputs.devel_containers)}}
-
-
-  publish_app:
-    name: Publish app
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromJson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.app_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromJson(needs.prepare.outputs.app_containers)}}
-
-  publish_tools:
-    name: Publish Tools
-    uses: ./.github/workflows/reusable-build-publish.yaml
-    with:
-      tags: ${{ matrix.container }}
-      push: ${{fromJson(needs.prepare.outputs.push_container)}}
-      sign: ${{fromJson(needs.prepare.outputs.sign_container)}}
-    secrets: inherit  # pass all secrets to the action
-    needs: prepare
-    if: ${{fromJson(needs.prepare.outputs.tools_containers)}}
-    strategy:
-      matrix:
-        container: ${{fromJson(needs.prepare.outputs.tools_containers)}}
+        targets: ${{ fromjson(needs.prepare.outputs.targets) }}

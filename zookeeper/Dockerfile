@@ -1,15 +1,12 @@
 # syntax=docker/dockerfile:1
 
-ARG JAVA_VERSION
-ARG JAVA_DEVEL_VERSION
 
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
+FROM zncdatadev/image/java-devel AS java-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
 
 WORKDIR /build
-
 
 # setup jmx_exporter
 COPY kubedoop/jmx/config /kubedoop/jmx
@@ -53,8 +50,9 @@ RUN <<EOF
     /usr/local/bin/log4shell patch --backup --force-patch --json hadoop-${PRODUCT_VERSION}
 EOF
 
+
 ## final stage
-FROM quay.io/zncdatadev/java-base:${JAVA_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/java-base
 
 ARG PRODUCT_VERSION
 

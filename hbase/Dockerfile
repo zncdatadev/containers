@@ -1,11 +1,8 @@
 # syntax=docker/dockerfile:1
 
-ARG JAVA_VERSION
-ARG JAVA_DEVEL_VERSION
-ARG HADOOP_VERSION
 
 ## stage: hbase-builder
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
+FROM zncdatadev/image/java-devel AS java-builder
 
 ARG PRODUCT_VERSION
 ARG HADOOP_VERSION
@@ -76,7 +73,7 @@ RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
 
 
 ## stage: hbase-operator-tools-builder
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS hbase-operator-tools-builder
+FROM zncdatadev/image/java-devel AS hbase-operator-tools-builder
 
 ARG PRODUCT_VERSION
 ARG HBASE_OPERATOR_TOOLS_VERSION
@@ -117,8 +114,9 @@ RUN <<EOF
     popd
 EOF
 
+
 ## stage: final
-FROM quay.io/zncdatadev/java-base:${JAVA_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/java-base
 
 ARG PRODUCT_VERSION
 

@@ -1,10 +1,8 @@
 # syntax=docker/dockerfile:1
 
-ARG JAVA_VERSION
-ARG JAVA_DEVEL_VERSION
 
 # stage: java-builder
-FROM quay.io/zncdatadev/java-devel:${JAVA_DEVEL_VERSION}-kubedoop0.0.0-dev AS java-builder
+FROM zncdatadev/image/java-devel AS java-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
@@ -60,8 +58,9 @@ RUN <<EOF
     /usr/local/bin/log4shell patch --backup --force-patch --json /kubedoop/kafka
 EOF
 
+
 ## stage: final
-FROM quay.io/zncdatadev/java-base:${JAVA_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/java-base
 
 ARG PRODUCT_VERSION
 

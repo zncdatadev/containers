@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
 
-ARG VECTOR_VERSION
 
 ## stage: builder
-FROM quay.io/zncdatadev/vector:${VECTOR_VERSION}-kubedoop0.0.0-dev AS builder
+FROM zncdatadev/image/vector AS builder
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
@@ -25,12 +24,11 @@ RUN <<EOF
         python${PYTHON_VERSION}-pip \
         python${PYTHON_VERSION}-setuptools \
         python${PYTHON_VERSION}-wheel \
-        
+
     microdnf clean all
 EOF
 
 WORKDIR /kubedoop
-
 
 RUN <<EOF
     set -ex
@@ -49,8 +47,9 @@ EOF
 # smoke test
 RUN /kubedoop/app/bin/airflow version | grep -q ${PRODUCT_VERSION}
 
+
 ## stage: statsd exporter
-FROM quay.io/zncdatadev/kubedoop-base:1.0.0-kubedoop0.0.0-dev AS statsd-exporter-builder
+FROM zncdatadev/image/vector AS statsd-exporter-builder
 
 ARG STATSD_EXPORTER_VERSION
 
@@ -63,13 +62,12 @@ RUN <<EOF
         gzip \
         tar \
         xz
-        
+
     microdnf clean all
-    
+
 EOF
 
 # download and build statsd-exporter
-
 RUN <<EOF
     set -ex
     mkdir -p /build/statsd-exporter-src
@@ -85,8 +83,9 @@ EOF
 # smoke test
 RUN /kubedoop/bin/statsd-exporter --version
 
+
 # stage: git-sync-builder
-FROM quay.io/zncdatadev/go-devel:1.22.9-kubedoop0.0.0-dev AS git-sync-builder
+FROM zncdatadev/image/go-devel AS git-sync-builder
 
 ARG GIT_SYNC_VERSION
 
@@ -113,7 +112,7 @@ RUN /kubedoop/bin/git-sync --version
 
 
 # stage: final
-FROM quay.io/zncdatadev/vector:${VECTOR_VERSION}-kubedoop0.0.0-dev
+FROM zncdatadev/image/vector
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
