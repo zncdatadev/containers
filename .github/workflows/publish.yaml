@@ -24,6 +24,7 @@ jobs:
       targets: ${{ matrix.targets }}
       push: true
       sign: false
+    secrets: inherit
     strategy:
       matrix:
         targets: ${{ fromjson(needs.prepare.outputs.targets) }}
