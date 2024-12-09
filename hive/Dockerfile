@@ -35,9 +35,22 @@ RUN <<EOF
         https://github.com/apache/hive/archive/refs/tags/rel/release-${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
-    mvn --no-transfer-progress clean package -DskipTests --projects standalone-metastore
 
-    cp -r standalone-metastore/target/apache-hive-metastore-${PRODUCT_VERSION}-bin/apache-hive-metastore-${PRODUCT_VERSION}-bin /kubedoop/
+    # When the version is less than 4.0.0, we need to build the standalone-metastore
+    if [ "$(printf '%s\n' "4.0.0" "${PRODUCT_VERSION}" | sort -V | head -n1)" != "4.0.0" ]; then
+        mvn --no-transfer-progress clean package -DskipTests --projects standalone-metastore
+        cp -r standalone-metastore/target/apache-hive-metastore-${PRODUCT_VERSION}-bin/apache-hive-metastore-${PRODUCT_VERSION}-bin /kubedoop/
+    else
+        # https://issues.apache.org/jira/browse/HIVE-20451
+        mvn --batch-mode --no-transfer-progress clean package -DskipTests --projects metastore-server
+        tar -xzf standalone-metastore/target/apache-hive-standalone-metastore-${PRODUCT_VERSION}-src.tar.gz -C /build
+        pushd /build/apache-hive-standalone-metastore-${PRODUCT_VERSION}-src
+
+        mvn --batch-mode --no-transfer-progress clean package -DskipTests --projects metastore-server
+        tar -xf metastore-server/target/apache-hive-metastore-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
+        popd
+    fi
+
     mv /kubedoop/apache-hive-metastore-${PRODUCT_VERSION}-bin /kubedoop/apache-hive-metastore-${PRODUCT_VERSION}
     cp /build/bin/start-metastore /kubedoop/apache-hive-metastore-${PRODUCT_VERSION}/bin/
 
@@ -74,9 +87,7 @@ EOF
 
 ENV HADOOP_HOME=/kubedoop/hadoop \
     HIVE_HOME=/kubedoop/hive-metastore
-ENV HADOOP_YARN_HOME="${HADOOP_HOME}" \
-    HADOOP_MAPRED_HOME="${HADOOP_HOME}" \
-    PATH="${PATH}:${HIVE_HOME}/bin:${HADOOP_HOME}/bin"
+ENV PATH="${PATH}:${HIVE_HOME}/bin:${HADOOP_HOME}/bin"
 
 USER kubedoop
 
