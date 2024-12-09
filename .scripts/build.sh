@@ -37,7 +37,7 @@ Options:
   local push=false
   local sign=false
   # Change target to array
-  declare -a targets=()
+  local -a targets=()
 
   # Parse arguments
   while [ "$1" != "" ]; do
@@ -166,7 +166,7 @@ function build_sign_image () {
   cmd+=("--metadata-file" $image_digest_file)
   cmd+=("--file" "-")
 
-  local to_build_targets=declare -a()
+  local -a to_build_targets=()
   # Add all targets to command
   for target in $targets; do
     if [ -n "$target" ]; then
