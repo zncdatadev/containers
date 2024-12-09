@@ -37,7 +37,7 @@ Options:
   local push=false
   local sign=false
   # Change target to array
-  declare -a targets=()
+  local -a targets=()
 
   # Parse arguments
   while [ "$1" != "" ]; do
@@ -166,6 +166,7 @@ function build_sign_image () {
   cmd+=("--metadata-file" $image_digest_file)
   cmd+=("--file" "-")
 
+  local -a to_build_targets=()
   # Add all targets to command
   for target in $targets; do
     if [ -n "$target" ]; then
@@ -173,14 +174,21 @@ function build_sign_image () {
       if [[ "$target" == *:* ]]; then
         target=$(echo "$target" | sed 's/:/-/g' | sed 's/\./_/g')
       fi
-      cmd+=("$target")
+      to_build_targets+=("$target")
     fi
   done
+
+  if [ ${#to_build_targets[@]} -gt 0 ]; then
+    echo "INFO: Building targets: ${to_build_targets[*]}" >&2
+    cmd+=("${to_build_targets[@]}")
+  else
+    echo "INFO: Building all targets" >&2
+  fi
 
   echo "INFO: Building image: ${cmd[*]}" >&2
   echo "$bakefile" | "${cmd[@]}"
 
-
+  echo "INFO: Signing images" >&2
   if [ -f $image_digest_file ] && [ "$sign" = true ]; then
     for key in $(jq -r 'keys[]' $image_digest_file); do
       local image_digest=$(jq -r --arg key "$key" '.[$key]["containerimage.digest"]' $image_digest_file)
@@ -219,7 +227,7 @@ function get_bakefile () {
 
   for product_name in $(echo "$products" | jq -r '.[]'); do
     local versions_file="${product_name}/versions.yaml"
-    echo "Product versions file: $versions_file" >&2
+    echo "INFO: Process product versions file: $versions_file" >&2
     if [ -f $versions_file ]; then
 
       # add product to default_groups
@@ -297,6 +305,7 @@ function get_bakefile () {
 
       done
     fi
+    echo "INFO: Processed product targets: $product_name: $(echo "$product_groups" | jq -c '.')" >&2
     # Add product groups to group
     bakefile=$(echo "$bakefile" | jq --arg k "$product_name" --argjson v "$product_groups" '.group |= . + {($k): {targets: $v}}')
 
@@ -304,6 +313,7 @@ function get_bakefile () {
     bakefile=$(echo "$bakefile" | jq --argjson v "$targets" '.target |= . + $v')
   done
 
+  echo "INFO: default targets: $(echo "$default_groups" | jq -c '.')" >&2
   # Add default groups to bakefile
   bakefile=$(echo "$bakefile" | jq --arg k "default" --argjson v "$default_groups" '.group |= . + {($k): {targets: $v}}')
 

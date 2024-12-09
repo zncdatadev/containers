@@ -74,6 +74,7 @@ function get_changed_versions () {
   fi
 
 
+  # Get changed products, it is JSON array
   local changed_products=$(get_changed_products $base_sha $compare_sha)
   local product_versions=$(get_product_versions)
 
@@ -81,7 +82,7 @@ function get_changed_versions () {
   local result="[]"
 
   # Loop through each changed product
-  for product in $changed_products; do
+  for product in $(echo $changed_products | jq -r '.[]'); do
     # Get versions for the product
     local versions=$(jq -r --arg prod "$product" '.[$prod] | .[]' <<< $product_versions)
 
@@ -135,6 +136,7 @@ function get_product_versions () {
     fi
   done
 
+  echo "INFO: Product versions: $(echo "$result" | jq -c '.')" >&2
   # return converted JSON object
   echo $(jq -c <<< $result)
 }
@@ -145,7 +147,7 @@ function get_product_versions () {
 #   $1: base_sha, the base commit
 #   $2: compare_sha, the compare commit
 # Returns:
-#   String: The changed products, eg: "kubedoop-base vector"
+#   JSON: The changed products, it is JSON array, eg: ["kubedoop-base","vector"]
 function get_changed_products () {
   local base_sha=$1
   local compare_sha=$2
@@ -157,10 +159,10 @@ function get_changed_products () {
   fi
 
   # Read products and global paths from project.yaml
-  local products=$(yq -r '.products[]' project.yaml | grep -v '^#')
-  echo "INFO: All products: $products" >&2
-  local global_paths=$(yq -r '.global-paths[]' project.yaml | grep -v '^#')
-  echo "INFO: Global paths: $global_paths" >&2
+  local products=$(yq -r -o=json '.products' project.yaml | grep -v '^#')
+  echo "INFO: All products: $(echo "$products" | jq -c '.')" >&2
+  local global_paths=$(yq -r -o=json '.global-paths' project.yaml | grep -v '^#')
+  echo "INFO: Global paths: $(echo "$global_paths" | jq -c '.')" >&2
 
   # Get the changed path
   echo "INFO: Comparing $base_sha and $compare_sha" >&2
@@ -169,7 +171,7 @@ function get_changed_products () {
 
   # Check if any changed path matches global paths
   for changed_path in $changed_paths; do
-    for global_path in $global_paths; do
+    for global_path in $(echo $global_paths | jq -r '.[]'); do
       echo "INFO: Comparing with $changed_path =~ $global_path" >&2
       if [[ "$changed_path" =~ ^$global_path ]]; then
         # If matches global path, return all products
@@ -182,16 +184,13 @@ function get_changed_products () {
   # If no global path matches, check product matches
   local changed_products=""
   for changed_path in $changed_paths; do
-    for product in $products; do
-      echo "INFO: Comparing with $changed_path = $product" >&2
-      if [ "$changed_path" = "$product" ]; then
-        if [ -z "$changed_products" ]; then
-          changed_products="$product"
-        else
-          changed_products="$changed_products $product"
-        fi
+    if echo "$products" | jq -e --arg path "$changed_path" '.[] | select(. == $path)' > /dev/null; then
+      if [ -z "$changed_products" ]; then
+        changed_products="$changed_path"
+      else
+        changed_products="$changed_products $changed_path"
       fi
-    done
+    fi
   done
 
   echo "INFO: Changed products: $changed_products" >&2
