@@ -90,7 +90,7 @@ Options:
   fi
 
   # Get the bakefile configuration
-  local bakefile=$(get_bakefile $platforms)
+  local bakefile=$(get_bakefile "$platforms")
 
   # Check debug mode
   if [ "$debug" = true ] || [ "$CI_DEBUG" = "true" ]; then
