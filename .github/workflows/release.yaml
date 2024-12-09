@@ -21,7 +21,7 @@ jobs:
 
 
   publish:
-    name: Test products
+    name: Release
     needs:
       - prepare
     uses: ./.github/workflows/reusable-build-publish.yaml
