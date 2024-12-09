@@ -181,20 +181,18 @@ function get_changed_products () {
     done
   done
 
+  # Initialize empty JSON array for changed products
+  local result="[]"
+
   # If no global path matches, check product matches
-  local changed_products=""
   for changed_path in $changed_paths; do
     if echo "$products" | jq -e --arg path "$changed_path" '.[] | select(. == $path)' > /dev/null; then
-      if [ -z "$changed_products" ]; then
-        changed_products="$changed_path"
-      else
-        changed_products="$changed_products $changed_path"
-      fi
+      result=$(echo $result | jq --arg prod "$changed_path" '. + [$prod]')
     fi
   done
 
-  echo "INFO: Changed products: $changed_products" >&2
-  echo $changed_products
+  echo "INFO: Changed products: $(echo $result | jq -c '.')" >&2
+  echo $result
 }
 
 
