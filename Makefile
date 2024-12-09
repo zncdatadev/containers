@@ -73,134 +73,134 @@ endif
 
 .PHONY:
 kubedoop-base-build: jq ## Build kubedoop-base image
-	.scripts/build.sh -t kubedoop-base
+	.scripts/build.sh kubedoop-base
 
 .PHONY:
 kubedoop-base-buildx: jq ## Build kubedoop-base image with buildx
-	.scripts/build.sh -t kubedoop-base --push
+	.scripts/build.sh kubedoop-base --push
 
 .PHONY:
 vector-build: ## Build Vector image
-	.scripts/build.sh -t vector
+	.scripts/build.sh vector
 
 .PHONY:
 vector-buildx: jq ## Build Vector image with buildx
-	.scripts/build.sh -t vector --push
+	.scripts/build.sh vector --push
 
 ##@ develop environment
 
 .PHONY:
 go-devel-build: jq ## Build Go development image
-	.scripts/build.sh -t go-devel
+	.scripts/build.sh go-devel
 
 .PHONY:
 go-devel-buildx: jq ## Build Go development image with buildx
-	.scripts/build.sh -t go-devel --push
+	.scripts/build.sh go-devel --push
 
 .PHONY:
 java-build: jq ## Build Java base image
-	.scripts/build.sh -t java
+	.scripts/build.sh java
 
 .PHONY:
 java-buildx: jq ## Build Java base image with buildx
-	.scripts/build.sh -t java --push
+	.scripts/build.sh java --push
 
 .PHONY:
 java-devel-build: jq ## Build Java development image
-	.scripts/build.sh -t java-devel
+	.scripts/build.sh java-devel
 
 .PHONY:
 java-devel-buildx: jq ## Build Java development image with buildx
-	.scripts/build.sh -t java-devel --push
+	.scripts/build.sh java-devel --push
 
 ##@ tools
 
 .PHONY:
 krb5-build: jq ## Build krb5 image
-	.scripts/build.sh -t krb5
+	.scripts/build.sh krb5
 
 .PHONY:
 krb5-buildx: jq ## Build krb5 image with buildx
-	.scripts/build.sh -t krb5 --push
+	.scripts/build.sh krb5 --push
 
 ##@ app
 
 .PHONY:
 airflow-build: jq ## Build Airflow image
-	.scripts/build.sh -t airflow
+	.scripts/build.sh airflow
 
 .PHONY:
 airflow-buildx: jq ## Build Airflow image with buildx
-	.scripts/build.sh -t airflow --push
+	.scripts/build.sh airflow --push
 
 .PHONY:
 dolphinscheduler-build: jq ## Build DolphinScheduler image
-	.scripts/build.sh -t dolphinscheduler
+	.scripts/build.sh dolphinscheduler
 
 .PHONY:
 dolphinscheduler-buildx: jq ## Build DolphinScheduler image with buildx
-	.scripts/build.sh -t dolphinscheduler --push
+	.scripts/build.sh dolphinscheduler --push
 
 .PHONY:
 hadoop-build: jq ## Build Hadoop image
-	.scripts/build.sh -t hadoop
+	.scripts/build.sh hadoop
 
 .PHONY:
 hadoop-buildx: jq ## Build Hadoop image with buildx
-	.scripts/build.sh -t hadoop --push
+	.scripts/build.sh hadoop --push
 
 .PHONY:
 hbase-build: jq ## Build HBase image
-	.scripts/build.sh -t hbase
+	.scripts/build.sh hbase
 
 .PHONY:
 hbase-buildx: jq ## Build HBase image with buildx
-	.scripts/build.sh -t hbase --push
+	.scripts/build.sh hbase --push
 
 .PHONY:
 hive-build: jq ## Build Hive image
-	.scripts/build.sh -t hive
+	.scripts/build.sh hive
 
 .PHONY:
 hive-buildx: jq ## Build Hive image with buildx
-	.scripts/build.sh -t hive --push
+	.scripts/build.sh hive --push
 
 .PHONY:
 zookeeper-build: jq ## Build Zookeeper image
-	.scripts/build.sh -t zookeeper
+	.scripts/build.sh zookeeper
 
 .PHONY:
 zookeeper-buildx: jq ## Build Zookeeper image with buildx
-	.scripts/build.sh -t zookeeper --push
+	.scripts/build.sh zookeeper --push
 
 .PHONY:
 kafka-build: jq ## Build Kafka image
-	.scripts/build.sh -t kafka
+	.scripts/build.sh kafka
 
 .PHONY:
 kafka-buildx: jq ## Build Kafka image with buildx
-	.scripts/build.sh -t kafka --push
+	.scripts/build.sh kafka --push
 
 .PHONY:
 spark-build: jq ## Build Spark image
-	.scripts/build.sh -t spark
+	.scripts/build.sh spark
 
 .PHONY:
 spark-buildx: jq ## Build Spark image with buildx
-	.scripts/build.sh -t spark --push
+	.scripts/build.sh spark --push
 
 .PHONY:
 superset-build: jq ## Build Superset image
-	.scripts/build.sh -t superset
+	.scripts/build.sh superset
 
 .PHONY:
 superset-buildx: jq ## Build Superset image with buildx
-	.scripts/build.sh -t superset --push
+	.scripts/build.sh superset --push
 
 .PHONY:
 trino-build: jq ## Build Trino image
-	.scripts/build.sh -t trino
+	.scripts/build.sh trino
 
 .PHONY:
 trino-buildx: jq ## Build Trino image with buildx
-	.scripts/build.sh -t trino --push
+	.scripts/build.sh trino --push
