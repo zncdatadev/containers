@@ -3,5 +3,11 @@ versions:
     python: 3.12
     go-devel: 1.22.9
     git-sync: 4.2.4
-    statsd-exporter: 0.26.1
-    vector: 0.39.0
+    statsd-exporter: 0.27.1
+    vector: 0.41.1
+  - product: 2.9.3
+    python: 3.9
+    go-devel: 1.22.9
+    git-sync: 4.2.4
+    statsd-exporter: 0.27.1
+    vector: 0.41.1
