@@ -61,7 +61,8 @@ docker run --rm -it \
 
 #### more info
 
-After running the container with minimal parameters, the initialization process will create some default values. Most files and configurations still follow the official Kerberos documentation. Here are some pre-configured contents:
+After running the container with minimal parameters, the initialization process will create some default values.
+Most files and configurations still follow the official Kerberos documentation. Here are some pre-configured contents:
 
 - kadmin configuration file location: `/etc/krb5.conf`
 - kdc configuration file location: `/var/kerberos/krb5kdc/kdc.conf`
@@ -203,7 +204,8 @@ spec:
 
 ```
 
-**Note:** The current container design does not take into account the potential data loss caused by container restarts or changes in container names. Therefore, it is recommended to only use it in a development environment!
+**Note:** The current container design does not take into account the potential data loss caused by container restarts or changes in container names.
+Therefore, it is recommended to only use it in a development environment!
 
 ## Build
 
