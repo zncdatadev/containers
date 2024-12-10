@@ -14,7 +14,7 @@ jobs:
     uses: ./.github/workflows/reusable-prepare.yaml
 
   publish:
-    name: Test products
+    name: Publish
     needs:
       - prepare
     uses: ./.github/workflows/reusable-build-publish.yaml
