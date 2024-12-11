@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# check=error=true
 
 
 ## stage: builder
@@ -31,7 +32,6 @@ EOF
 WORKDIR /kubedoop
 
 RUN <<EOF
-    set -ex
     python${PYTHON_VERSION} -m venv app
     source app/bin/activate
     pip install --upgrade --no-cache-dir pip setuptools wheel
@@ -69,7 +69,6 @@ EOF
 
 # download and build statsd-exporter
 RUN <<EOF
-    set -ex
     mkdir -p /build/statsd-exporter-src
     pushd /build/statsd-exporter-src
     curl -sSfL \
@@ -92,7 +91,6 @@ ARG GIT_SYNC_VERSION
 WORKDIR /build
 
 RUN <<EOF
-    set -ex
     export VERSION=${GIT_SYNC_VERSION}
     git clone --branch v${GIT_SYNC_VERSION} --depth 1 https://github.com/kubernetes/git-sync.git
     cd git-sync
