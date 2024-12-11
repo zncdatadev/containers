@@ -317,10 +317,8 @@ function get_bakefile () {
   # Add default groups to bakefile
   bakefile=$(echo "$bakefile" | jq --arg k "default" --argjson v "$default_groups" '.group |= . + {($k): {targets: $v}}')
 
-  # If CI_DEBUG is true, save bakefile to /tmp/bakefile.json
-  if [ "$CI_DEBUG" = "true" ]; then
-    jq -r '.' <<< $bakefile > /tmp/bakefile.json
-  fi
+  # Save bakefile to bakefile.json
+  jq -r '.' <<< $bakefile > ./bakefile.json
 
   echo $(jq -c '.' <<< $bakefile)
 }
