@@ -124,6 +124,14 @@ krb5-buildx: jq ## Build krb5 image with buildx
 	.scripts/build.sh krb5 --push
 
 .PHONY:
+tools-build: jq ## Build tools image
+	.scripts/build.sh tools
+
+.PHONY:
+tools-buildx: jq ## Build tools image with buildx
+	.scripts/build.sh tools --push
+
+.PHONY:
 testing-tools-build: jq ## Build testing-tools image
 	.scripts/build.sh testing-tools
 
