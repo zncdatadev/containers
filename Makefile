@@ -123,6 +123,14 @@ krb5-build: jq ## Build krb5 image
 krb5-buildx: jq ## Build krb5 image with buildx
 	.scripts/build.sh krb5 --push
 
+.PHONY:
+testing-tools-build: jq ## Build testing-tools image
+	.scripts/build.sh testing-tools
+
+.PHONY:
+testing-tools-buildx: jq ## Build testing-tools image with buildx
+	.scripts/build.sh testing-tools --push
+
 ##@ app
 
 .PHONY:

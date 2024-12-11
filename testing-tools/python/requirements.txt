@@ -1,0 +1,16 @@
+beautifulsoup4==4.12.3
+requests==2.32.3
+charset-normalizer==3.3.2
+hive-metastore-client==1.0.9
+kafka-python3==3.0.0
+nipyapi==0.20.0
+pandas==2.2.3
+trino==0.331.0
+gssapi==1.9.0
+kerberos==1.3.1
+pure-sasl==0.6.2
+pytest==8.3.4
+thrift==0.13.0  # dependent on hive-metastore-client
+urllib3==2.2.3
+semver==3.0.2
+certifi==2024.8.30
