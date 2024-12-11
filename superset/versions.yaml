@@ -1,11 +1,11 @@
 versions:
   - product: 3.1.3
     python: 3.11
-    vector: 0.39.0
-    statsd-exporter: 0.26.1
+    vector: 0.41.1
+    statsd-exporter: 0.27.1
     authlib: 1.2.1
   - product: 4.0.2
     python: 3.11
-    vector: 0.39.0
-    statsd-exporter: 0.26.1
+    vector: 0.41.1
+    statsd-exporter: 0.27.1
     authlib: 1.2.1
