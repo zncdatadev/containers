@@ -1,14 +1,16 @@
 FROM quay.io/rockylinux/rockylinux:9
 
+ARG PRODUCT_VERSION
+
 RUN groupadd -g 288 kdcproxy ; useradd -u 288 -g 288 -c 'IPA KDC Proxy User' -r -d / -s '/sbin/nologin' kdcproxy
 
 RUN ln -s /bin/false /usr/sbin/systemd-machine-id-setup
 RUN dnf -y install --setopt=install_weak_deps=False \
     patch \
     vim \
-    krb5-server \
-    krb5-server-ldap \
-    krb5-workstation \
+    krb5-server-${PRODUCT_VERSION} \
+    krb5-server-ldap-${PRODUCT_VERSION} \
+    krb5-workstation-${PRODUCT_VERSION} \
     krb5-libs \
     procps \
     net-tools && \
