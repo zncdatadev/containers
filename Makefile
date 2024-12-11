@@ -204,3 +204,11 @@ trino-build: jq ## Build Trino image
 .PHONY:
 trino-buildx: jq ## Build Trino image with buildx
 	.scripts/build.sh trino --push
+
+.PHONY:
+nifi-build: jq ## Build Nifi image
+	.scripts/build.sh nifi
+
+.PHONY:
+nifi-buildx: jq ## Build Nifi image with buildx
+	.scripts/build.sh nifi --push

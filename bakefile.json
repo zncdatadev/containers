@@ -1,0 +1,1190 @@
+{
+  "group": {
+    "kubedoop-base": {
+      "targets": [
+        "kubedoop-base-1_0_0"
+      ]
+    },
+    "vector": {
+      "targets": [
+        "vector-0_39_0",
+        "vector-0_41_1"
+      ]
+    },
+    "java-base": {
+      "targets": [
+        "java-base-8",
+        "java-base-11",
+        "java-base-17",
+        "java-base-21",
+        "java-base-22"
+      ]
+    },
+    "java-devel": {
+      "targets": [
+        "java-devel-8",
+        "java-devel-11",
+        "java-devel-17",
+        "java-devel-21",
+        "java-devel-22"
+      ]
+    },
+    "airflow": {
+      "targets": [
+        "airflow-2_10_2"
+      ]
+    },
+    "dolphinscheduler": {
+      "targets": [
+        "dolphinscheduler-3_2_2"
+      ]
+    },
+    "go-devel": {
+      "targets": [
+        "go-devel-1_23_2",
+        "go-devel-1_22_9"
+      ]
+    },
+    "hadoop": {
+      "targets": [
+        "hadoop-3_3_4",
+        "hadoop-3_3_6",
+        "hadoop-3_4_0"
+      ]
+    },
+    "hbase": {
+      "targets": [
+        "hbase-2_4_18",
+        "hbase-2_6_0"
+      ]
+    },
+    "hive": {
+      "targets": [
+        "hive-3_1_3"
+      ]
+    },
+    "kafka": {
+      "targets": [
+        "kafka-3_7_1"
+      ]
+    },
+    "nifi": {
+      "targets": [
+        "nifi-1_27_0",
+        "nifi-2_0_0"
+      ]
+    },
+    "spark-k8s": {
+      "targets": [
+        "spark-k8s-3_5_1"
+      ]
+    },
+    "superset": {
+      "targets": [
+        "superset-3_1_3",
+        "superset-4_0_2"
+      ]
+    },
+    "trino": {
+      "targets": [
+        "trino-451"
+      ]
+    },
+    "zookeeper": {
+      "targets": [
+        "zookeeper-3_8_4",
+        "zookeeper-3_9_2"
+      ]
+    },
+    "krb5": {
+      "targets": [
+        "krb5-1_0_0"
+      ]
+    },
+    "default": {
+      "targets": [
+        "kubedoop-base",
+        "vector",
+        "java-base",
+        "java-devel",
+        "airflow",
+        "dolphinscheduler",
+        "go-devel",
+        "hadoop",
+        "hbase",
+        "hive",
+        "kafka",
+        "nifi",
+        "spark-k8s",
+        "superset",
+        "trino",
+        "zookeeper",
+        "krb5"
+      ]
+    }
+  },
+  "target": {
+    "kubedoop-base-1_0_0": {
+      "args": {
+        "PRODUCT_VERSION": "1.0.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/kubedoop-base:1.0.0-kubedoop0.0.0-dev"
+      ],
+      "context": "kubedoop-base",
+      "dockerfile": "Dockerfile",
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/kubedoop-base:1.0.0-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "kubedoop-base",
+        "org.opencontainers.image.version": "1.0.0",
+        "org.opencontainers.image.created": "2024-12-11T02:31:39Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:39Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "vector-0_39_0": {
+      "args": {
+        "INOTIFY_TOOLS_VERSION": "4.23.9.0",
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "0.39.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/vector:0.39.0-kubedoop0.0.0-dev"
+      ],
+      "context": "vector",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/vector:0.39.0-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "vector",
+        "org.opencontainers.image.version": "0.39.0",
+        "org.opencontainers.image.created": "2024-12-11T02:31:39Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:39Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "vector-0_41_1": {
+      "args": {
+        "INOTIFY_TOOLS_VERSION": "4.23.9.0",
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "0.41.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/vector:0.41.1-kubedoop0.0.0-dev"
+      ],
+      "context": "vector",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/vector:0.41.1-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "vector",
+        "org.opencontainers.image.version": "0.41.1",
+        "org.opencontainers.image.created": "2024-12-11T02:31:39Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:39Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-base-8": {
+      "args": {
+        "PRODUCT_VERSION": "8",
+        "VECTOR_VERSION": "0.41.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-base:8-kubedoop0.0.0-dev"
+      ],
+      "context": "java-base",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/vector": "target:vector-0_41_1"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-base:8-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-base",
+        "org.opencontainers.image.version": "8",
+        "org.opencontainers.image.created": "2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-base-11": {
+      "args": {
+        "PRODUCT_VERSION": "11",
+        "VECTOR_VERSION": "0.41.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-base:11-kubedoop0.0.0-dev"
+      ],
+      "context": "java-base",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/vector": "target:vector-0_41_1"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-base:11-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-base",
+        "org.opencontainers.image.version": "11",
+        "org.opencontainers.image.created": "2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-base-17": {
+      "args": {
+        "PRODUCT_VERSION": "17",
+        "VECTOR_VERSION": "0.41.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-base:17-kubedoop0.0.0-dev"
+      ],
+      "context": "java-base",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/vector": "target:vector-0_41_1"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-base:17-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-base",
+        "org.opencontainers.image.version": "17",
+        "org.opencontainers.image.created": "2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-base-21": {
+      "args": {
+        "PRODUCT_VERSION": "21",
+        "VECTOR_VERSION": "0.41.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-base:21-kubedoop0.0.0-dev"
+      ],
+      "context": "java-base",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/vector": "target:vector-0_41_1"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-base:21-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-base",
+        "org.opencontainers.image.version": "21",
+        "org.opencontainers.image.created": "2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-base-22": {
+      "args": {
+        "PRODUCT_VERSION": "22",
+        "VECTOR_VERSION": "0.41.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-base:22-kubedoop0.0.0-dev"
+      ],
+      "context": "java-base",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/vector": "target:vector-0_41_1"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-base:22-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-base",
+        "org.opencontainers.image.version": "22",
+        "org.opencontainers.image.created": "2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:40Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-devel-8": {
+      "args": {
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "8"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-devel:8-kubedoop0.0.0-dev"
+      ],
+      "context": "java-devel",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-devel:8-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-devel",
+        "org.opencontainers.image.version": "8",
+        "org.opencontainers.image.created": "2024-12-11T02:31:41Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:41Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-devel-11": {
+      "args": {
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "11"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-devel:11-kubedoop0.0.0-dev"
+      ],
+      "context": "java-devel",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-devel:11-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-devel",
+        "org.opencontainers.image.version": "11",
+        "org.opencontainers.image.created": "2024-12-11T02:31:41Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:41Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-devel-17": {
+      "args": {
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "17"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-devel:17-kubedoop0.0.0-dev"
+      ],
+      "context": "java-devel",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-devel:17-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-devel",
+        "org.opencontainers.image.version": "17",
+        "org.opencontainers.image.created": "2024-12-11T02:31:41Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:41Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-devel-21": {
+      "args": {
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "21"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-devel:21-kubedoop0.0.0-dev"
+      ],
+      "context": "java-devel",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-devel:21-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-devel",
+        "org.opencontainers.image.version": "21",
+        "org.opencontainers.image.created": "2024-12-11T02:31:41Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:41Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "java-devel-22": {
+      "args": {
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "22"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/java-devel:22-kubedoop0.0.0-dev"
+      ],
+      "context": "java-devel",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/java-devel:22-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "java-devel",
+        "org.opencontainers.image.version": "22",
+        "org.opencontainers.image.created": "2024-12-11T02:31:42Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:42Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "airflow-2_10_2": {
+      "args": {
+        "GIT_SYNC_VERSION": "4.2.4",
+        "GO_DEVEL_VERSION": "1.22.9",
+        "PRODUCT_VERSION": "2.10.2",
+        "PYTHON_VERSION": "3.12",
+        "STATSD_EXPORTER_VERSION": "0.26.1",
+        "VECTOR_VERSION": "0.39.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/airflow:2.10.2-kubedoop0.0.0-dev"
+      ],
+      "context": "airflow",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/go-devel": "target:go-devel-1_22_9",
+        "zncdatadev/image/vector": "target:vector-0_39_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/airflow:2.10.2-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "airflow",
+        "org.opencontainers.image.version": "2.10.2",
+        "org.opencontainers.image.created": "2024-12-11T02:31:42Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:42Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "dolphinscheduler-3_2_2": {
+      "args": {
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "PRODUCT_VERSION": "3.2.2"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/dolphinscheduler:3.2.2-kubedoop0.0.0-dev"
+      ],
+      "context": "dolphinscheduler",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/dolphinscheduler:3.2.2-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "dolphinscheduler",
+        "org.opencontainers.image.version": "3.2.2",
+        "org.opencontainers.image.created": "2024-12-11T02:31:42Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:42Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "go-devel-1_23_2": {
+      "args": {
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "1.23.2"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/go-devel:1.23.2-kubedoop0.0.0-dev"
+      ],
+      "context": "go-devel",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/go-devel:1.23.2-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "go-devel",
+        "org.opencontainers.image.version": "1.23.2",
+        "org.opencontainers.image.created": "2024-12-11T02:31:43Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:43Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "go-devel-1_22_9": {
+      "args": {
+        "KUBEDOOP_BASE_VERSION": "1.0.0",
+        "PRODUCT_VERSION": "1.22.9"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/go-devel:1.22.9-kubedoop0.0.0-dev"
+      ],
+      "context": "go-devel",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/kubedoop-base": "target:kubedoop-base-1_0_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/go-devel:1.22.9-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "go-devel",
+        "org.opencontainers.image.version": "1.22.9",
+        "org.opencontainers.image.created": "2024-12-11T02:31:43Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:43Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "hadoop-3_3_4": {
+      "args": {
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "OAUTH2_PROXY_VERSION": "7.6.0",
+        "PRODUCT_VERSION": "3.3.4",
+        "PROTOBUF_VERSION": "3.7.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/hadoop:3.3.4-kubedoop0.0.0-dev"
+      ],
+      "context": "hadoop",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/hadoop:3.3.4-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "hadoop",
+        "org.opencontainers.image.version": "3.3.4",
+        "org.opencontainers.image.created": "2024-12-11T02:31:43Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:43Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "hadoop-3_3_6": {
+      "args": {
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "OAUTH2_PROXY_VERSION": "7.6.0",
+        "PRODUCT_VERSION": "3.3.6",
+        "PROTOBUF_VERSION": "3.7.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/hadoop:3.3.6-kubedoop0.0.0-dev"
+      ],
+      "context": "hadoop",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/hadoop:3.3.6-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "hadoop",
+        "org.opencontainers.image.version": "3.3.6",
+        "org.opencontainers.image.created": "2024-12-11T02:31:43Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:43Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "hadoop-3_4_0": {
+      "args": {
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "OAUTH2_PROXY_VERSION": "7.6.0",
+        "PRODUCT_VERSION": "3.4.0",
+        "PROTOBUF_VERSION": "3.7.1"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/hadoop:3.4.0-kubedoop0.0.0-dev"
+      ],
+      "context": "hadoop",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/hadoop:3.4.0-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "hadoop",
+        "org.opencontainers.image.version": "3.4.0",
+        "org.opencontainers.image.created": "2024-12-11T02:31:44Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:44Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "hbase-2_4_18": {
+      "args": {
+        "HADOOP_VERSION": "3.3.6",
+        "HBASE_OPERATOR_TOOLS_VERSION": "1.2.0",
+        "HBASE_THIRDPARTY_VERSION": "4.1.5",
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "OAUTH2_PROXY_VERSION": "7.6.0",
+        "PRODUCT_VERSION": "2.4.18"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/hbase:2.4.18-kubedoop0.0.0-dev"
+      ],
+      "context": "hbase",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/hadoop": "target:hadoop-3_3_6",
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/hbase:2.4.18-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "hbase",
+        "org.opencontainers.image.version": "2.4.18",
+        "org.opencontainers.image.created": "2024-12-11T02:31:44Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:44Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "hbase-2_6_0": {
+      "args": {
+        "HADOOP_VERSION": "3.3.6",
+        "HBASE_OPERATOR_TOOLS_VERSION": "1.3.0-075ec30",
+        "HBASE_THIRDPARTY_VERSION": "4.1.5",
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "OAUTH2_PROXY_VERSION": "7.6.0",
+        "PRODUCT_VERSION": "2.6.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/hbase:2.6.0-kubedoop0.0.0-dev"
+      ],
+      "context": "hbase",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/hadoop": "target:hadoop-3_3_6",
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/hbase:2.6.0-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "hbase",
+        "org.opencontainers.image.version": "2.6.0",
+        "org.opencontainers.image.created": "2024-12-11T02:31:45Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:45Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "hive-3_1_3": {
+      "args": {
+        "HADOOP_VERSION": "3.3.6",
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "8",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "PRODUCT_VERSION": "3.1.3"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/hive:3.1.3-kubedoop0.0.0-dev"
+      ],
+      "context": "hive",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/hadoop": "target:hadoop-3_3_6",
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-8"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/hive:3.1.3-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "hive",
+        "org.opencontainers.image.version": "3.1.3",
+        "org.opencontainers.image.created": "2024-12-11T02:31:45Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:45Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "kafka-3_7_1": {
+      "args": {
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "KCAT_VERSION": "1.7.0",
+        "PRODUCT_VERSION": "3.7.1",
+        "SCALA_VERSION": "2.13"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/kafka:3.7.1-kubedoop0.0.0-dev"
+      ],
+      "context": "kafka",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/kafka:3.7.1-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "kafka",
+        "org.opencontainers.image.version": "3.7.1",
+        "org.opencontainers.image.created": "2024-12-11T02:31:45Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:45Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "nifi-1_27_0": {
+      "args": {
+        "JAVA_BASE_VERSION": "21",
+        "JAVA_DEVEL_VERSION": "21",
+        "PRODUCT_VERSION": "1.27.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/nifi:1.27.0-kubedoop0.0.0-dev"
+      ],
+      "context": "nifi",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-21",
+        "zncdatadev/image/java-devel": "target:java-devel-21"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/nifi:1.27.0-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "nifi",
+        "org.opencontainers.image.version": "1.27.0",
+        "org.opencontainers.image.created": "2024-12-11T02:31:46Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:46Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "nifi-2_0_0": {
+      "args": {
+        "JAVA_BASE_VERSION": "21",
+        "JAVA_DEVEL_VERSION": "21",
+        "PRODUCT_VERSION": "2.0.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/nifi:2.0.0-kubedoop0.0.0-dev"
+      ],
+      "context": "nifi",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-21",
+        "zncdatadev/image/java-devel": "target:java-devel-21"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/nifi:2.0.0-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "nifi",
+        "org.opencontainers.image.version": "2.0.0",
+        "org.opencontainers.image.created": "2024-12-11T02:31:46Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:46Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "spark-k8s-3_5_1": {
+      "args": {
+        "AWS_JAVA_SDK_BUNDLE_VERSION": "1.12.367",
+        "AZURE_KEYVAULT_CORE_VERSION": "1.0.0",
+        "AZURE_STORAGE_VERSION": "7.0.1",
+        "HADOOP_VERSION": "3.3.4",
+        "JAVA_BASE_VERSION": "17",
+        "JAVA_DEVEL_VERSION": "17",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "OAUTH2_PROXY_VERSION": "7.6.0",
+        "PRODUCT_VERSION": "3.5.1",
+        "PYTHON_VERSION": "3.11"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/spark-k8s:3.5.1-kubedoop0.0.0-dev"
+      ],
+      "context": "spark-k8s",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/hadoop": "target:hadoop-3_3_4",
+        "zncdatadev/image/java-base": "target:java-base-17",
+        "zncdatadev/image/java-devel": "target:java-devel-17"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/spark-k8s:3.5.1-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "spark-k8s",
+        "org.opencontainers.image.version": "3.5.1",
+        "org.opencontainers.image.created": "2024-12-11T02:31:46Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:46Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "superset-3_1_3": {
+      "args": {
+        "AUTHLIB_VERSION": "1.2.1",
+        "PRODUCT_VERSION": "3.1.3",
+        "PYTHON_VERSION": "3.11",
+        "STATSD_EXPORTER_VERSION": "0.26.1",
+        "VECTOR_VERSION": "0.39.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/superset:3.1.3-kubedoop0.0.0-dev"
+      ],
+      "context": "superset",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/vector": "target:vector-0_39_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/superset:3.1.3-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "superset",
+        "org.opencontainers.image.version": "3.1.3",
+        "org.opencontainers.image.created": "2024-12-11T02:31:47Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:47Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "superset-4_0_2": {
+      "args": {
+        "AUTHLIB_VERSION": "1.2.1",
+        "PRODUCT_VERSION": "4.0.2",
+        "PYTHON_VERSION": "3.11",
+        "STATSD_EXPORTER_VERSION": "0.26.1",
+        "VECTOR_VERSION": "0.39.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/superset:4.0.2-kubedoop0.0.0-dev"
+      ],
+      "context": "superset",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/vector": "target:vector-0_39_0"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/superset:4.0.2-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "superset",
+        "org.opencontainers.image.version": "4.0.2",
+        "org.opencontainers.image.created": "2024-12-11T02:31:47Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:47Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "trino-451": {
+      "args": {
+        "JAVA_BASE_VERSION": "22",
+        "JAVA_DEVEL_VERSION": "22",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "PRODUCT_VERSION": "451",
+        "STORAGE_CONNECTOR_VERSION": "451"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/trino:451-kubedoop0.0.0-dev"
+      ],
+      "context": "trino",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-22",
+        "zncdatadev/image/java-devel": "target:java-devel-22"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/trino:451-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "trino",
+        "org.opencontainers.image.version": "451",
+        "org.opencontainers.image.created": "2024-12-11T02:31:47Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:47Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "zookeeper-3_8_4": {
+      "args": {
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "PRODUCT_VERSION": "3.8.4"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/zookeeper:3.8.4-kubedoop0.0.0-dev"
+      ],
+      "context": "zookeeper",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/zookeeper:3.8.4-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "zookeeper",
+        "org.opencontainers.image.version": "3.8.4",
+        "org.opencontainers.image.created": "2024-12-11T02:31:48Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:48Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "zookeeper-3_9_2": {
+      "args": {
+        "JAVA_BASE_VERSION": "11",
+        "JAVA_DEVEL_VERSION": "11",
+        "JMX_EXPORTER_VERSION": "1.0.1",
+        "PRODUCT_VERSION": "3.9.2"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/zookeeper:3.9.2-kubedoop0.0.0-dev"
+      ],
+      "context": "zookeeper",
+      "dockerfile": "Dockerfile",
+      "contexts": {
+        "zncdatadev/image/java-base": "target:java-base-11",
+        "zncdatadev/image/java-devel": "target:java-devel-11"
+      },
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/zookeeper:3.9.2-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "zookeeper",
+        "org.opencontainers.image.version": "3.9.2",
+        "org.opencontainers.image.created": "2024-12-11T02:31:48Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:48Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    },
+    "krb5-1_0_0": {
+      "args": {
+        "PRODUCT_VERSION": "1.0.0"
+      },
+      "platforms": [
+        "linux/arm64"
+      ],
+      "tags": [
+        "quay.io/zncdatadev/krb5:1.0.0-kubedoop0.0.0-dev"
+      ],
+      "context": "krb5",
+      "dockerfile": "Dockerfile",
+      "cache-from": [
+        "type=registry,ignore-err=true,mode=max,ref=quay.io/zncdatadev/krb5:1.0.0-kubedoop0.0.0-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "krb5",
+        "org.opencontainers.image.version": "1.0.0",
+        "org.opencontainers.image.created": "2024-12-11T02:31:48Z",
+        "org.opencontainers.image.revision": "d41f3c522535a06794ccd599a01dec732d924c97"
+      },
+      "annotations": [
+        "org.opencontainers.image.created=2024-12-11T02:31:48Z",
+        "org.opencontainers.image.revision=d41f3c522535a06794ccd599a01dec732d924c97"
+      ]
+    }
+  }
+}
