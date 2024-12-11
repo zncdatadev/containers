@@ -9,7 +9,7 @@ on:
 
 jobs:
   prepare:
-    if: github.repository_owner == 'zncdatadev'
+    # if: github.repository_owner == 'zncdatadev'
     name: Prepare Updated data
     uses: ./.github/workflows/reusable-prepare.yaml
 

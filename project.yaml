@@ -1,29 +1,29 @@
 # Define the project configuration
 products:
-  - kubedoop-base
-  - vector
-  # devel
-  - java-base
-  - java-devel
-  # apps
-  - airflow
-  - dolphinscheduler
-  - go-devel
-  - hadoop
+  # - kubedoop-base
+  # - vector
+  # # devel
+  # - java-base
+  # - java-devel
+  # # apps
+  # - airflow
+  # - dolphinscheduler
+  # - go-devel
+  # - hadoop
   - hbase
-  - hive
-  - kafka
-  - nifi
-  - spark-k8s
-  - superset
-  - trino
-  - zookeeper
-  # tools
-  - krb5
-  - tools
-  - testing-tools
+  # - hive
+  # - kafka
+  # - nifi
+  # - spark-k8s
+  # - superset
+  # - trino
+  # - zookeeper
+  # # tools
+  # - krb5
+  # - tools
+  # - testing-tools
 # If file under the path is changed, the all product will be rebuilt
 global-paths:
-  - .github/workflows
+  # - .github/workflows
   - .github/scripts
   - .scripts
