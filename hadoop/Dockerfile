@@ -1,3 +1,59 @@
+# syntax=docker/dockerfile:1
+# check=error=true
+
+## stage: async-profiler-builder
+FROM zncdatadev/image/java-devel AS async-profiler-builder
+
+ARG ASYNC_PROFILER_VERSION
+
+WORKDIR /build
+
+# setup async-profiler
+RUN <<EOF
+    ARCH=$(uname -m)
+    microdnf update
+
+    # build musl-gcc
+    # ref: https://github.com/async-profiler/async-profiler/blob/master/Dockerfile
+    microdnf install kernel-headers
+    mkdir /build/musl-gcc
+    pushd /build/musl-gcc
+    # https://musl.libc.org/releases/musl-1.2.5.tar.gz
+    curl -sSfL \
+        https://musl.libc.org/releases/musl-1.2.5.tar.gz \
+        | tar xzf - --strip-components=1
+    ./configure --disable-shared --prefix=/usr/local/musl
+    make -j$(nproc) && make install && make clean
+    ln -s /usr/include/{asm,asm-generic,linux} /usr/local/musl/include/
+    popd
+
+    # build patchelf
+    # ref: https://github.com/NixOS/patchelf?tab=readme-ov-file#compiling-and-testing
+    microdnf install autoconf automake
+    mkdir /build/patchelf
+    pushd /build/patchelf
+    # https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz
+    curl -sSfL \
+        https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz \
+        | tar xzf - --strip-components=1
+    ./bootstrap.sh
+    ./configure
+    make -j$(nproc) && make check && make install
+    popd
+
+    # build async-profiler
+    # ref: https://github.com/async-profiler/async-profiler/blob/master/.github/workflows/test-and-publish-nightly.yml
+    mkdir -p /build/async-profiler
+    pushd /build/async-profiler
+    # https://github.com/async-profiler/async-profiler/archive/refs/tags/v3.0.tar.gz
+    curl -sSfL \
+        httphttps://github.com/async-profiler/async-profiler/archive/refs/tags/v${ASYNC_PROFILER_VERSION}.tar.gz \
+        | tar xzf - --strip-components=1
+    make CC=/usr/local/musl/bin/musl-gcc release
+    # artifact loaction: ./async-profiler-3.0-linux-arm64.tar.gz
+    tar zx ./async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz -C /kubedoop/
+    popd
+EOF
 
 
 ## stage: builder
@@ -14,24 +70,17 @@ COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
 
 # setup jmx_exporter
 RUN <<EOF
-    set -e
-    # check JMX_EXPORTER_VERSION
-    if [ -n "${JMX_EXPORTER_VERSION}" ]; then
-        curl -sSfL \
-            https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
-            -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+    curl -sSfL \
+        https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+        -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
 
-        ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
-    else
-        echo "JMX_EXPORTER_VERSION is not set"
-    fi
+    ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
 EOF
 
 # Setup protobuf
 # ref: https://github.com/apache/hadoop/blob/trunk/dev-support/docker/pkg-resolver/install-protobuf.sh
 ENV PROTOBUF_HOME=/opt/protobuf
 RUN <<EOF
-    set -e
     mkdir -p /build/protobuf-src
     pushd /build/protobuf-src
     PROTOBUF_LANGUAGE_VERSION=$PROTOBUF_VERSION
@@ -65,7 +114,6 @@ EOF
 COPY kubedoop /build/
 
 RUN <<EOF
-    set -ex
     mkdir -p /build/hadoop-src
     pushd /build/hadoop-src
     curl -sSfL \
@@ -86,7 +134,6 @@ RUN HADOOP_HOME=/kubedoop/hadoop HADOOP_YARN_HOME=/kubedoop/hadoop HADOOP_MAPRED
 
 # Fix log4j vulnerability
 RUN <<EOF
-    set -e
     ARCH=$(uname -m)
     ARCH="${ARCH/amd64/x86_64}"
     ARCH="${ARCH/aarch64/arm64}"
@@ -122,22 +169,19 @@ ARG PRODUCT_VERSION
 
 WORKDIR /kubedoop
 
+COPY --from=async-profiler-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV HADOOP_HOME=/kubedoop/hadoop
 ENV HADOOP_CONF_DIR="${HADOOP_HOME}/etc/hadoop" \
     HADOOP_YARN_HOME="${HADOOP_HOME}" \
     HADOOP_MAPRED_HOME="${HADOOP_HOME}" \
-    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HADOOP_HOME}/lib/native:/usr/lib/jvm/jre/lib/server" \
+    LD_LIBRARY_PATH="${HADOOP_HOME}/lib/native:/usr/lib/jvm/jre/lib/server" \
     PATH="${PATH}:${HADOOP_HOME}/bin"
 
-RUN <<EOT
-    set -e
-    cat > /etc/profile.d/hadoop.sh <<'EOF'
+RUN cat > /etc/profile.d/hadoop.sh <<'EOF'
 export CLASSPATH=${CLASSPATH}:$(hadoop classpath --glob)
 EOF
-
-EOT
 
 USER kubedoop
 

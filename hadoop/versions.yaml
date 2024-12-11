@@ -4,6 +4,7 @@ versions:
     java-devel: 11
     protobuf: 3.7.1
     jmx-exporter: 1.0.1
+    async-profiler: 2.9
     oauth2-proxy: 7.6.0
   - product: 3.3.6
     java-base: 11
@@ -16,4 +17,5 @@ versions:
     java-devel: 11
     protobuf: 3.7.1
     jmx-exporter: 1.0.1
+    async-profiler: 2.9
     oauth2-proxy: 7.6.0
