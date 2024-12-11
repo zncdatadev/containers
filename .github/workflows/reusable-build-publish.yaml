@@ -53,52 +53,68 @@ jobs:
           docker info
       - name: Free Space
         run: |
+          echo "::group::Show disk space before"
           echo "INFO: show free space"
           free -h
           df -h
           lsblk
           lscpu
 
-          echo "INFO: clean useless files"
+          echo "::endgroup::"
 
-          # Option: Remove Android library
-          sudo rm -rf /usr/local/lib/android
 
-          # Option: Remove .NET runtime
-          sudo rm -rf /usr/share/dotnet || true
+          echo "::group::Free up space"
 
-          # Option: Remove Haskell runtime
-          sudo rm -rf /opt/ghc || true
-          sudo rm -rf /usr/local/.ghcup || true
+          echo "INFO: Remove Android SDK"
+          sudo rm -rf /usr/local/lib/android || true
 
-          # Option: Remove large packages
-
+          echo "INFO: Remove apt cache"
           sudo apt-get remove -y --fix-missing \
+            '^aspnetcore-.*' \
+            '^dotnet-.*' \
+            '^llvm-.*' \
             'php.*' \
             '^mongodb-.*' \
             '^mysql-.*' \
+            azure-cli \
             google-cloud-sdk \
             google-cloud-cli \
-            azure-cli \
             google-chrome-stable \
             firefox \
-            powershell
+            powershell \
+            mono-devel \
+            libgl1-mesa-dri
           sudo apt-get autoremove -y
+          sudo apt-get clean -y
 
-          # Option: Remove Docker images
+          echo "INFO: Remove .NET runtime"
+          sudo rm -rf /usr/share/dotnet || true
+
+          echo "INFO: Remove Haskell runtime"
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/.ghcup || true
+
+          echo "INFO: Remove Docker images"
           sudo docker image prune --all --force || true
 
-          # Option: Remove tool cache
+          echo "INFO: Remove Agent tool cache"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
 
-          # Option: Remove Swap storage
+          echo "INFO: Remove Swap storage"
           sudo swapoff -a || true
           sudo rm -f /mnt/swapfile || true
           free -h
 
+          echo "::endgroup::"
+
+
+          echo "::group::Show disk space after"
           echo "INFO: show free space"
           free -h
           df -h
+          lsblk
+          echo "::endgroup::"
+
       - name: Login to Quay.io
         run: |
           if [ -n "${{ secrets.QUAY_USERNAME }}" ] && [ -n "${{ secrets.QUAY_PASSWORD }}" ]; then
