@@ -321,7 +321,6 @@ fabric.properties
 output.json
 test.sh
 
-!.github/actions/build
-
+bakefile.json
 docker-bake-digests.json
 *-digest.json

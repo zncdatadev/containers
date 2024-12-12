@@ -73,10 +73,9 @@ function get_changed_versions () {
     exit 1
   fi
 
-
+  local product_versions=$(get_product_versions)
   # Get changed products, it is JSON array
   local changed_products=$(get_changed_products $base_sha $compare_sha)
-  local product_versions=$(get_product_versions)
 
   # Initialize empty JSON array
   local result="[]"
@@ -96,6 +95,7 @@ function get_changed_versions () {
     result=$(jq --argjson vers "$versions_json" '. + $vers' <<< $result)
   done
 
+  echo "INFO: Changed product versions: $(echo "$result" | jq -c '.')" >&2
   # return converted JSON array
   echo $(jq -c <<< $result)
 }
