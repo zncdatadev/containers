@@ -1,4 +1,5 @@
-
+# syntax=docker/dockerfile:1
+# check=error=true
 
 ## stage: java-builder
 FROM zncdatadev/image/java-devel AS java-builder
@@ -12,7 +13,6 @@ COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
 
 # setup jmx_exporter
 RUN <<EOF
-    set -e
     # check JMX_EXPORTER_VERSION
     if [ -n "${JMX_EXPORTER_VERSION}" ]; then
         curl -sSfL \
@@ -28,7 +28,6 @@ EOF
 COPY kubedoop/ /build/
 
 RUN <<EOF
-    set -ex
     mkdir -p /build/hive-src
     pushd /build/hive-src
     curl -sSfL \
@@ -80,7 +79,6 @@ COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 COPY --from=hadoop --chown=kubedoop:kubedoop /kubedoop/hadoop-${HADOOP_VERSION} /kubedoop/hadoop-${HADOOP_VERSION}
 
 RUN <<EOF
-    set -e
     ln -s /kubedoop/hadoop-${HADOOP_VERSION} /kubedoop/hadoop
     find /kubedoop/hadoop/share/ -name *.jar | grep 'aws\|azure' | xargs -I {} ln -s {} /kubedoop/hive-metastore/lib/
 EOF
