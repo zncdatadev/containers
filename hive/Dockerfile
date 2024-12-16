@@ -87,7 +87,9 @@ EOF
 
 ENV HADOOP_HOME=/kubedoop/hadoop \
     HIVE_HOME=/kubedoop/hive-metastore
-ENV PATH="${PATH}:${HIVE_HOME}/bin:${HADOOP_HOME}/bin"
+ENV PATH="${PATH}:${HIVE_HOME}/bin:${HADOOP_HOME}/bin" \
+    HADOOP_YARN_HOME="${HADOOP_HOME}" \
+    HADOOP_MAPRED_HOME="${HADOOP_HOME}"
 
 USER kubedoop
 
