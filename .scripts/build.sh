@@ -6,6 +6,7 @@ set -o pipefail
 
 CI_DEBUG=${CI_DEBUG:-false}
 REGISTRY=${REGISTRY:-"quay.io/zncdatadev"}
+CACHE_REGISTRY=${CACHE_REGISTRY:-"quay.io/zncdatadev-test"}
 KUBEDOOP_VERSION=${KUBEDOOP_VERSION:-"0.0.0-dev"}
 KUBEDOOP_TAG="kubedoop${KUBEDOOP_VERSION}"
 
@@ -283,8 +284,11 @@ function get_bakefile () {
           target=$(echo "$target" | jq --arg k "contexts" --argjson v "$contexts" '. + {($k): $v}')
         fi
 
-        local cache_from="type=registry,ignore-err=true,mode=max,ref=$REGISTRY/$product_name:$product_version-kubedoop0.0.0-dev"
+        # https://docs.docker.com/build/cache/backends/registry/
+        local cache_from="type=registry,mode=max,ref=$CACHE_REGISTRY/cache:$product_name-$product_version"
         target=$(echo "$target" | jq --arg k "cache-from" --arg v "$cache_from" '. + {($k): [$v]}')
+        local cache_to="type=registry,mode=max,compression=zstd,ignore-error=true,oci-mediatypes=true,image-manifest=true,ref=$CACHE_REGISTRY/cache:$product_name-$product_version"
+        target=$(echo "$target" | jq --arg k "cache-to" --arg v "$cache_to" '. + {($k): [$v]}')
 
         local datetime=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 

@@ -20,6 +20,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       registry: quay.io/zncdatadev
+      cache-registry: quay.io/zncdatadev
       kubedoop_version: 0.0.0-dev
       targets: ${{ matrix.targets }}
       push: true
@@ -28,3 +29,4 @@ jobs:
     strategy:
       matrix:
         targets: ${{ fromjson(needs.prepare.outputs.targets) }}
+    if: ${{ needs.prepare.outputs.targets != '' }}

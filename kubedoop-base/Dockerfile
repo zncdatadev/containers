@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.8
+# syntax=docker/dockerfile:1
 
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194
@@ -24,6 +24,7 @@ RUN <<EOF
         kubedoop
 
     microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
 ENV PATH=$PATH:/kubedoop

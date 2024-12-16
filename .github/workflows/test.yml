@@ -20,7 +20,9 @@ jobs:
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       registry: quay.io/zncdatadev
+      cache-registry: quay.io/zncdatadev
       targets: ${{ matrix.targets }}
     strategy:
       matrix:
         targets: ${{ fromjson(needs.prepare.outputs.targets) }}
+    if: ${{ needs.prepare.outputs.targets != '' }}

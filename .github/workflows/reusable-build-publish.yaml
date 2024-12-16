@@ -9,6 +9,11 @@ on:
         required: false
         type: string
         default: 'quay.io/zncdatadev'
+      cache-registry:
+        description: 'The cache registry to login to'
+        required: false
+        type: string
+        default: 'quay.io/zncdatadev-test'
       kubedoop_version:
         description: 'The kubedoop version'
         required: false
@@ -129,9 +134,10 @@ jobs:
 
       - name: Build and Publish
         env:
+          REGISTRY: ${{ inputs.registry }}
+          CACHE_REGISTRY: ${{ inputs.cache-registry }}
           PUSH: ${{ inputs.push }}
           SIGN: ${{ inputs.sign }}
-          REGISTRY: ${{ inputs.registry }}
           TARGETS: ${{ inputs.targets }}
         run: |
           cmd=('.scripts/build.sh')

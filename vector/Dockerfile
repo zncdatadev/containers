@@ -17,6 +17,8 @@ RUN <<EOF
         libtool \
         tar \
         xz
+    microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
 WORKDIR /build
@@ -34,7 +36,7 @@ RUN <<EOF
     curl -sSfL --proto '=https' --tlsv1.2 \
         -o vector-${PRODUCT_VERSION}-1.${ARCH}.rpm \
         https://packages.timber.io/vector/${PRODUCT_VERSION}/vector-${PRODUCT_VERSION}-1.${ARCH}.rpm
-
+    popd
 EOF
 
 # smoke test
@@ -52,6 +54,9 @@ RUN <<EOF
     ./configure --prefix=/usr/local/inotify-tools
     make -j$(nproc)
     make install
+    popd
+
+    rm -rf inotify-tools
 EOF
 
 # smoke test
