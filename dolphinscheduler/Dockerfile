@@ -8,7 +8,7 @@ ARG PRODUCT_VERSION
 
 WORKDIR /build
 
-RUN <<EOF
+RUN --mount=type=cache,target=/root/.m2 <<EOF
     set -ex
     mkdir -p /build/dolphinscheduler-src
     pushd /build/dolphinscheduler-src
@@ -29,6 +29,16 @@ RUN <<EOF
 
     ln -s /kubedoop/apache-dolphinscheduler-${PRODUCT_VERSION}-bin /kubedoop/dolphinscheduler
     popd
+
+    # smoke test
+    /kubedoop/dolphinscheduler/bin/dolphinscheduler-version.sh
+
+    # cleanup source
+    rm -rf /build/dolphinscheduler-src
+
+    # cleanup cache
+    rm -rf /root/.npm
+    rm -rf /root/.cache
 EOF
 
 

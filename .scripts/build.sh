@@ -6,7 +6,7 @@ set -o pipefail
 
 CI_DEBUG=${CI_DEBUG:-false}
 REGISTRY=${REGISTRY:-"quay.io/zncdatadev"}
-CACHE_REGISTRY=${CACHE_REGISTRY:-"quay.io/zncdatadev-test"}
+CACHE_REGISTRY=${CACHE_REGISTRY:-$REGISTRY}
 KUBEDOOP_VERSION=${KUBEDOOP_VERSION:-"0.0.0-dev"}
 KUBEDOOP_TAG="kubedoop${KUBEDOOP_VERSION}"
 

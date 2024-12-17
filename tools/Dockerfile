@@ -20,6 +20,7 @@ RUN <<EOF
         zip
 
     microdnf clean all
+    rm -rf /var/cache/yum
 
 EOF
 

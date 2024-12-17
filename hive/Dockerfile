@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
+
 ## stage: java-builder
 FROM zncdatadev/image/java-devel AS java-builder
 
@@ -27,7 +28,7 @@ EOF
 
 COPY kubedoop/ /build/
 
-RUN <<EOF
+RUN --mount=type=cache,target=/root/.m2 <<EOF
     mkdir -p /build/hive-src
     pushd /build/hive-src
     curl -sSfL \
@@ -55,6 +56,9 @@ RUN <<EOF
 
     ln -s /kubedoop/apache-hive-metastore-${PRODUCT_VERSION}-bin /kubedoop/hive-metastore
     popd
+
+    # cleanup source
+    rm -rf /build/hive-src
 EOF
 
 COPY kubedoop/bin/start-metastore /kubedoop/hive-metastore/bin/
@@ -63,6 +67,7 @@ COPY kubedoop/bin/start-metastore /kubedoop/hive-metastore/bin/
 RUN /kubedoop/hive-metastore/bin/start-metastore --help
 
 
+## stage: hadoop
 FROM zncdatadev/image/hadoop AS hadoop
 
 

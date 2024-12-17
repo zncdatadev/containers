@@ -49,10 +49,9 @@ EOF
 
     microdnf clean all
     rm -rf /var/cache/yum
-EOT
 
-# smoke test
-RUN java -version
+    java -version
+EOT
 
 ENV JAVA_HOME=/usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk
 ENV JAVA_VERSION=${PRODUCT_VERSION}

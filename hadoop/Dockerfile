@@ -6,17 +6,29 @@ FROM zncdatadev/image/java-devel AS async-profiler-builder
 
 ARG ASYNC_PROFILER_VERSION
 
+RUN <<EOF
+    microdnf update
+    microdnf install \
+        autoconf \
+        automake \
+        kernel-headers \
+
+    microdnf clean all
+    rm -rf /var/cache/yum
+EOF
+
 WORKDIR /build
 
 # setup async-profiler
 RUN <<EOF
     ARCH=$(uname -m)
-    microdnf update
+    ARCH="${ARCH/x86_64/amd64}"
+    ARCH="${ARCH/aarch64/arm64}"
 
     # build musl-gcc
     # ref: https://github.com/async-profiler/async-profiler/blob/master/Dockerfile
-    microdnf install kernel-headers
-    mkdir /build/musl-gcc
+    # Required install kernel-headers
+    mkdir -p /build/musl-gcc
     pushd /build/musl-gcc
     # https://musl.libc.org/releases/musl-1.2.5.tar.gz
     curl -sSfL \
@@ -27,10 +39,12 @@ RUN <<EOF
     ln -s /usr/include/{asm,asm-generic,linux} /usr/local/musl/include/
     popd
 
+    rm -rf /build/musl-gcc
+
     # build patchelf
     # ref: https://github.com/NixOS/patchelf?tab=readme-ov-file#compiling-and-testing
-    microdnf install autoconf automake
-    mkdir /build/patchelf
+    # Required install autoconf automake
+    mkdir -p /build/patchelf
     pushd /build/patchelf
     # https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz
     curl -sSfL \
@@ -41,18 +55,25 @@ RUN <<EOF
     make -j$(nproc) && make check && make install
     popd
 
+    rm -rf /build/patchelf
+
     # build async-profiler
     # ref: https://github.com/async-profiler/async-profiler/blob/master/.github/workflows/test-and-publish-nightly.yml
     mkdir -p /build/async-profiler
     pushd /build/async-profiler
     # https://github.com/async-profiler/async-profiler/archive/refs/tags/v3.0.tar.gz
     curl -sSfL \
-        httphttps://github.com/async-profiler/async-profiler/archive/refs/tags/v${ASYNC_PROFILER_VERSION}.tar.gz \
+        https://github.com/async-profiler/async-profiler/archive/refs/tags/v${ASYNC_PROFILER_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     make CC=/usr/local/musl/bin/musl-gcc release
-    # artifact loaction: ./async-profiler-3.0-linux-arm64.tar.gz
-    tar zx ./async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz -C /kubedoop/
+    # artifact location: ./async-profiler-3.0-linux-arm64.tar.gz
+    tar -zxf ./async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz -C /kubedoop/
     popd
+
+    rm -rf /build/async-profiler
+
+    # Delete dependencies cache
+    rm -rf /root/.cache
 EOF
 
 
@@ -95,12 +116,17 @@ RUN <<EOF
     ./configure --prefix=${PROTOBUF_HOME}
     make -j$(nproc)
     make install
-    ln -s ${PROTOBUF_HOME}/bin/protoc /usr/bin/protoc
     popd
+
+    # smoke test
+    protoc --version
+
+    # cleanup source
+    rm -rf /build/protobuf-src
+
 EOF
 
-# smoke test
-RUN protoc --version
+ENV PATH="${PATH}:${PROTOBUF_HOME}/bin"
 
 # Setup boost
 # ref: https://github.com/apache/hadoop/blob/trunk/dev-support/docker/pkg-resolver/install-boost.sh
@@ -109,11 +135,13 @@ RUN <<EOF
     microdnf update
     microdnf install boost1.78-devel
     microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
 COPY kubedoop /build/
 
-RUN <<EOF
+# Setup hadoop
+RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<EOF
     mkdir -p /build/hadoop-src
     pushd /build/hadoop-src
     curl -sSfL \
@@ -127,10 +155,15 @@ RUN <<EOF
 
     ln -s /kubedoop/hadoop-${PRODUCT_VERSION} /kubedoop/hadoop
     popd
-EOF
 
-# smoke test
-RUN HADOOP_HOME=/kubedoop/hadoop HADOOP_YARN_HOME=/kubedoop/hadoop HADOOP_MAPRED_HOME=/kubedoop/hadoop /kubedoop/hadoop/bin/hadoop version
+    # smoke test
+    HADOOP_HOME=/kubedoop/hadoop HADOOP_YARN_HOME=/kubedoop/hadoop HADOOP_MAPRED_HOME=/kubedoop/hadoop /kubedoop/hadoop/bin/hadoop version
+
+    # cleanup source
+    rm -rf /build/hadoop-src
+
+    rm -rf /root/.cache
+EOF
 
 # Fix log4j vulnerability
 RUN <<EOF
@@ -144,22 +177,20 @@ RUN <<EOF
 EOF
 
 RUN <<EOF
-set -ex
-ARCH=$(uname -m)
-ARCH="${ARCH/x86_64/amd64}"
-ARCH="${ARCH/aarch64/arm64}"
+    ARCH=$(uname -m)
+    ARCH="${ARCH/x86_64/amd64}"
+    ARCH="${ARCH/aarch64/arm64}"
 
-mkdir /kubedoop/oauth2-proxy
-cd /kubedoop/oauth2-proxy
+    mkdir /kubedoop/oauth2-proxy
+    cd /kubedoop/oauth2-proxy
 
-curl -sSfL \
-    https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
-    | tar xzf - --strip-components=1
+    curl -sSfL \
+        https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
+        | tar xzf - --strip-components=1
 
+    # smoke test
+    /kubedoop/oauth2-proxy/oauth2-proxy --version
 EOF
-
-# smoke test
-RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
 
 
 ## stage: final

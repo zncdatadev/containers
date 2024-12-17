@@ -1,6 +1,81 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
+
+## stage: async-profiler-builder
+FROM zncdatadev/image/java-devel AS async-profiler-builder
+
+ARG ASYNC_PROFILER_VERSION
+
+RUN <<EOF
+    microdnf update
+    microdnf install \
+        autoconf \
+        automake \
+        kernel-headers \
+
+    microdnf clean all
+    rm -rf /var/cache/yum
+EOF
+
+WORKDIR /build
+
+# setup async-profiler
+RUN <<EOF
+    ARCH=$(uname -m)
+
+    # build musl-gcc
+    # ref: https://github.com/async-profiler/async-profiler/blob/master/Dockerfile
+    # Required install kernel-headers
+    mkdir -p /build/musl-gcc
+    pushd /build/musl-gcc
+    # https://musl.libc.org/releases/musl-1.2.5.tar.gz
+    curl -sSfL \
+        https://musl.libc.org/releases/musl-1.2.5.tar.gz \
+        | tar xzf - --strip-components=1
+    ./configure --disable-shared --prefix=/usr/local/musl
+    make -j$(nproc) && make install && make clean
+    ln -s /usr/include/{asm,asm-generic,linux} /usr/local/musl/include/
+    popd
+
+    rm -rf /build/musl-gcc
+
+    # build patchelf
+    # ref: https://github.com/NixOS/patchelf?tab=readme-ov-file#compiling-and-testing
+    # Required install autoconf automake
+    mkdir -p /build/patchelf
+    pushd /build/patchelf
+    # https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz
+    curl -sSfL \
+        https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz \
+        | tar xzf - --strip-components=1
+    ./bootstrap.sh
+    ./configure
+    make -j$(nproc) && make check && make install
+    popd
+
+    rm -rf /build/patchelf
+
+    # build async-profiler
+    # ref: https://github.com/async-profiler/async-profiler/blob/master/.github/workflows/test-and-publish-nightly.yml
+    mkdir -p /build/async-profiler
+    pushd /build/async-profiler
+    # https://github.com/async-profiler/async-profiler/archive/refs/tags/v3.0.tar.gz
+    curl -sSfL \
+        https://github.com/async-profiler/async-profiler/archive/refs/tags/v${ASYNC_PROFILER_VERSION}.tar.gz \
+        | tar xzf - --strip-components=1
+    make CC=/usr/local/musl/bin/musl-gcc release
+    # artifact location: ./async-profiler-3.0-linux-arm64.tar.gz
+    tar -zxf ./async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz -C /kubedoop/
+    popd
+
+    rm -rf /build/async-profiler
+
+    # Delete dependencies cache
+    rm -rf /root/.cache
+EOF
+
+
 ## stage: hbase-builder
 FROM zncdatadev/image/java-devel AS java-builder
 
@@ -33,7 +108,7 @@ EOF
 WORKDIR /build
 COPY /kubedoop/ /build/
 
-RUN <<EOF
+RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<EOF
     set -e
     mkdir -p /build/hbase-src
     pushd /build/hbase-src
@@ -48,82 +123,31 @@ RUN <<EOF
     ln -s /kubedoop/hbase-${PRODUCT_VERSION} /kubedoop/hbase
     popd
 
-EOF
+    # smoke test
+    /kubedoop/hbase/bin/hbase version
 
-# smoke test
-RUN /kubedoop/hbase-${PRODUCT_VERSION}/bin/hbase version
+    # cleanup source
+    rm -rf /build/hbase-src
 
-RUN <<EOF
-set -ex
-ARCH=$(uname -m)
-ARCH="${ARCH/x86_64/amd64}"
-ARCH="${ARCH/aarch64/arm64}"
-
-mkdir /kubedoop/oauth2-proxy
-cd /kubedoop/oauth2-proxy
-
-curl -sSfL \
-    https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
-    | tar xzf - --strip-components=1
+    # cleanup cache
+    rm -rf /root/.cache
 
 EOF
 
-# smoke test
-RUN /kubedoop/oauth2-proxy/oauth2-proxy --version
-
-
-## stage: async-profiler-builder
-FROM zncdatadev/image/java-devel AS async-profiler-builder
-
-ARG ASYNC_PROFILER_VERSION
-
-WORKDIR /build
-
-# setup async-profiler
 RUN <<EOF
     ARCH=$(uname -m)
-    microdnf update
+    ARCH="${ARCH/x86_64/amd64}"
+    ARCH="${ARCH/aarch64/arm64}"
 
-    # build musl-gcc
-    # ref: https://github.com/async-profiler/async-profiler/blob/master/Dockerfile
-    microdnf install kernel-headers
-    mkdir /build/musl-gcc
-    pushd /build/musl-gcc
-    # https://musl.libc.org/releases/musl-1.2.5.tar.gz
-    curl -sSfL \
-        https://musl.libc.org/releases/musl-1.2.5.tar.gz \
-        | tar xzf - --strip-components=1
-    ./configure --disable-shared --prefix=/usr/local/musl
-    make -j$(nproc) && make install && make clean
-    ln -s /usr/include/{asm,asm-generic,linux} /usr/local/musl/include/
-    popd
+    mkdir /kubedoop/oauth2-proxy
+    cd /kubedoop/oauth2-proxy
 
-    # build patchelf
-    # ref: https://github.com/NixOS/patchelf?tab=readme-ov-file#compiling-and-testing
-    microdnf install autoconf automake
-    mkdir /build/patchelf
-    pushd /build/patchelf
-    # https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz
     curl -sSfL \
-        https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz \
+        https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
         | tar xzf - --strip-components=1
-    ./bootstrap.sh
-    ./configure
-    make -j$(nproc) && make check && make install
-    popd
 
-    # build async-profiler
-    # ref: https://github.com/async-profiler/async-profiler/blob/master/.github/workflows/test-and-publish-nightly.yml
-    mkdir -p /build/async-profiler
-    pushd /build/async-profiler
-    # https://github.com/async-profiler/async-profiler/archive/refs/tags/v3.0.tar.gz
-    curl -sSfL \
-        httphttps://github.com/async-profiler/async-profiler/archive/refs/tags/v${ASYNC_PROFILER_VERSION}.tar.gz \
-        | tar xzf - --strip-components=1
-    make CC=/usr/local/musl/bin/musl-gcc release
-    # artifact loaction: ./async-profiler-3.0-linux-arm64.tar.gz
-    tar zx ./async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz -C /kubedoop/
-    popd
+    # smoke test
+    /kubedoop/oauth2-proxy/oauth2-proxy --version
 EOF
 
 
@@ -136,8 +160,8 @@ ARG HBASE_THIRDPARTY_VERSION
 
 WORKDIR /build
 
-RUN <<EOF
-    set -ex
+# setup hbase-operator-tools
+RUN --mount=type=cache,target=/root/.m2 <<EOF
     mkdir -p /build/hbase-operator-tools-src
     pushd /build/hbase-operator-tools-src
 
@@ -156,6 +180,8 @@ RUN <<EOF
             https://github.com/apache/hbase-operator-tools/archive/refs/tags/rel/${HBASE_OPERATOR_TOOLS_VERSION}.tar.gz \
             | tar xzf - --strip-components=1
     fi
+
+    # build hbase-operator-tools
     mvn \
         --batch-mode \
         --no-transfer-progress \
@@ -167,6 +193,12 @@ RUN <<EOF
     tar -xzf hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz -C /kubedoop
     ln -s /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
     popd
+
+    # cleanup source
+    rm -rf /build/hbase-operator-tools-src
+
+    # cleanup cache
+    rm -rf /root/.cache
 EOF
 
 
@@ -179,7 +211,8 @@ ARG PHOENIX_VERSION
 ARG HBASE_PROFILE_VERSION
 
 WORKDIR /build
-RUN <<EOF
+# setup phoenix
+RUN --mount=type=cache,target=/root/.m2 <<EOF
     set -ex
     mkdir -p /build/phoenix-src
     pushd /build/phoenix-src
@@ -202,6 +235,7 @@ RUN <<EOF
             | tar xzf - --strip-components=1
     fi
 
+    # build phoenix
     mvn \
         --batch-mode \
         --no-transfer-progress \
@@ -217,6 +251,12 @@ RUN <<EOF
     tar -xzf phoenix-assembly/target/phoenix-hbase-*-bin.tar.gz -C /kubedoop/phoenix-${HBASE_PROFILE_VERSION}-${PHOENIX_VERSION}-bin --strip-components=1
     ln -s /kubedoop/phoenix-${HBASE_PROFILE_VERSION}-${PHOENIX_VERSION}-bin /kubedoop/phoenix
     popd
+
+    # cleanup source
+    rm -rf /build/phoenix-src
+
+    # cleanup cache
+    rm -rf /root/.cache
 
 EOF
 
@@ -243,37 +283,7 @@ ARG PRODUCT_VERSION
 ARG HBASE_PROFILE_VERSION
 
 RUN <<EOF
-    set -e
     microdnf update
-    microdnf install \
-        gzip \
-        python \
-        python-pip \
-        tar \
-        zip
-    microdnf clean all
-EOF
-
-WORKDIR /kubedoop
-
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-
-# setup hbase-operator-tools
-COPY --from=hbase-operator-tools-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-
-# setup async-profiler
-COPY --from=async-profiler-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-
-# setup phoenix
-COPY --from=phoenix-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-
-# setup hadoop-s3
-COPY --from=hadoop-s3-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-
-
-RUN <<EOF
-    microdnf update
-
     microdnf install \
         findutils \
         gzip \
@@ -284,10 +294,22 @@ RUN <<EOF
 
     microdnf clean all
     rm -rf /var/cache/yum
-
-    find /kubedoop/hadoop/share/ -name *.jar | grep 'aws' | xargs -I {} ln -s {} /kubedoop/hbase/lib/
-    ln -s /kubedoop/phoenix/phoenix-server-hbase-${HBASE_PROFILE_VERSION}.jar /kubedoop/hbase/lib/
 EOF
+
+WORKDIR /kubedoop
+
+COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+# setup hbase-operator-tools
+COPY --from=hbase-operator-tools-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+# setup async-profiler
+COPY --from=async-profiler-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+# setup phoenix
+COPY --from=phoenix-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+# setup hadoop-s3
+COPY --from=hadoop-s3-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+
+RUN find /kubedoop/hadoop/share/ -name *.jar | grep 'aws' | xargs -I {} ln -s {} /kubedoop/hbase/lib/ \
+    && ln -s /kubedoop/phoenix/phoenix-server-hbase-${HBASE_PROFILE_VERSION}.jar /kubedoop/hbase/lib/
 
 ENV HBASE_HOME=/kubedoop/hbase
 

@@ -27,6 +27,7 @@ RUN <<EOF
         python${PYTHON_VERSION}-wheel \
 
     microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
 WORKDIR /kubedoop
@@ -64,7 +65,7 @@ RUN <<EOF
         xz
 
     microdnf clean all
-
+    rm -rf /var/cache/yum
 EOF
 
 # download and build statsd-exporter
@@ -77,10 +78,17 @@ RUN <<EOF
 
     go build -o /kubedoop/bin/statsd-exporter
     popd
-EOF
 
-# smoke test
-RUN /kubedoop/bin/statsd-exporter --version
+    # smoke test
+    /kubedoop/bin/statsd-exporter --version
+
+    # cleanup source
+    rm -rf /build/statsd-exporter-src
+
+    # cleanup cache
+    go clean -modcache
+    rm -rf /root/.cache/go-build
+EOF
 
 
 # stage: git-sync-builder
@@ -91,9 +99,12 @@ ARG GIT_SYNC_VERSION
 WORKDIR /build
 
 RUN <<EOF
-    export VERSION=${GIT_SYNC_VERSION}
-    git clone --branch v${GIT_SYNC_VERSION} --depth 1 https://github.com/kubernetes/git-sync.git
-    cd git-sync
+    mkdir -p /build/git-sync-src
+    pushd /build/git-sync-src
+    # https://github.com/kubernetes/git-sync/archive/refs/tags/v4.4.0.tar.gz
+    curl -sSfL \
+        https://github.com/kubernetes/git-sync/archive/refs/tags/v${GIT_SYNC_VERSION}.tar.gz \
+        | tar xzf - --strip-components=1
 
     export OS=$(go env GOOS)
     export ARCH=$(go env GOARCH)
@@ -103,10 +114,14 @@ RUN <<EOF
 
     mkdir -p /kubedoop/bin
     mv bin/git-sync /kubedoop/bin
-EOF
+    popd
 
-# smoke test
-RUN /kubedoop/bin/git-sync --version
+    # smoke test
+    /kubedoop/bin/git-sync --version
+
+    # cleanup source
+    rm -rf /build/git-sync-src
+EOF
 
 
 # stage: final
@@ -114,7 +129,6 @@ FROM zncdatadev/image/vector
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
-
 
 RUN <<EOF
     set -ex
@@ -132,15 +146,18 @@ RUN <<EOF
         python${PYTHON_VERSION} \
         python${PYTHON_VERSION}-pip \
         socat \
-        unixODBC \
+        unixODBC
 
     microdnf clean all
+    rm -rf /var/cache/yum
 EOF
+
+COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
 
 COPY --from=builder --chown=kubedoop:kubedoop /kubedoop /kubedoop
 COPY --from=statsd-exporter-builder --chown=kubedoop:kubedoop /kubedoop/bin/statsd-exporter /kubedoop/bin/statsd-exporter
 COPY --from=git-sync-builder --chown=kubedoop:kubedoop /kubedoop/bin/git-sync /kubedoop/bin/git-sync
-COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
+
 
 ENV VIRTUAL_ENV=/kubedoop/app
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}" \

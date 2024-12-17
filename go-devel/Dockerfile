@@ -46,8 +46,10 @@ RUN <<EOF
     curl -sSfL --proto '=https' --tlsv1.2 \
         https://go.dev/dl/go${PRODUCT_VERSION}.${OS}-${ARCH}.tar.gz | \
         tar xz -C /usr/local
+
 EOF
 
-ENV PATH=$PATH:/usr/local/go/bin
+ENV GOROOT="/usr/local/go"
+ENV PATH="$PATH:$GOROOT/bin"
 
 RUN go version
