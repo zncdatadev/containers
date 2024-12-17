@@ -1,5 +1,5 @@
 versions:
-  - product: 4.0.0
+  - product: 4.0.1
     java-base: 11
     java-devel: 8
     hadoop: 3.3.6
