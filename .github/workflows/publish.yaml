@@ -5,11 +5,12 @@ on:
   push:
     branches:
       - main
+      - ci/add-cache-to
 
 
 jobs:
   prepare:
-    if: github.repository_owner == 'zncdatadev'
+    # if: github.repository_owner == 'zncdatadev'
     name: Prepare Updated data
     uses: ./.github/workflows/reusable-prepare.yaml
 
@@ -29,4 +30,5 @@ jobs:
     strategy:
       matrix:
         targets: ${{ fromjson(needs.prepare.outputs.targets) }}
+      max-parallel: 2
     if: ${{ needs.prepare.outputs.targets != '' }}

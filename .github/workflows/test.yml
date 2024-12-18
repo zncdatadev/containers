@@ -25,4 +25,5 @@ jobs:
     strategy:
       matrix:
         targets: ${{ fromjson(needs.prepare.outputs.targets) }}
+      max-parallel: 2
     if: ${{ needs.prepare.outputs.targets != '' }}
