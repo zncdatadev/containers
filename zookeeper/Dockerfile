@@ -2,7 +2,8 @@
 # check=error=true
 
 
-FROM zncdatadev/image/java-devel AS java-builder
+# stage: zookeeper-builder
+FROM zncdatadev/image/java-devel AS zookeeper-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
@@ -58,7 +59,7 @@ ARG PRODUCT_VERSION
 
 WORKDIR /kubedoop
 
-COPY --chown=kubedoop:kubedoop --from=java-builder /kubedoop/ /kubedoop/
+COPY --from=zookeeper-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV ZOOKEEPER_HOME=/kubedoop/zookeeper
 ENV PATH="$ZOOKEEPER_HOME/bin:$PATH"

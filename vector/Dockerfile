@@ -3,7 +3,7 @@
 
 
 ## stage: builder
-FROM zncdatadev/image/kubedoop-base AS builder
+FROM zncdatadev/image/kubedoop-base AS vector-builder
 
 ARG PRODUCT_VERSION
 ARG INOTIFY_TOOLS_VERSION
@@ -66,8 +66,8 @@ EOF
 ## stage: final
 FROM zncdatadev/image/kubedoop-base
 
-COPY --from=builder /build/vector /tmp/vector
-COPY --from=builder /usr/local/inotify-tools /usr/local/inotify-tools
+COPY --from=vector-builder /build/vector /tmp/vector
+COPY --from=vector-builder /usr/local/inotify-tools /usr/local/inotify-tools
 
 # setup inotify-tools
 RUN ln -s /usr/local/inotify-tools/bin/inotifywait /usr/local/bin/inotifywait \

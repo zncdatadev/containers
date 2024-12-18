@@ -2,8 +2,8 @@
 # check=error=true
 
 
-## stage: builder
-FROM zncdatadev/image/vector AS builder
+## stage: airflow-builder
+FROM zncdatadev/image/vector AS airflow-builder
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
@@ -154,7 +154,7 @@ EOF
 
 COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
 
-COPY --from=builder --chown=kubedoop:kubedoop /kubedoop /kubedoop
+COPY --from=airflow-builder --chown=kubedoop:kubedoop /kubedoop /kubedoop
 COPY --from=statsd-exporter-builder --chown=kubedoop:kubedoop /kubedoop/bin/statsd-exporter /kubedoop/bin/statsd-exporter
 COPY --from=git-sync-builder --chown=kubedoop:kubedoop /kubedoop/bin/git-sync /kubedoop/bin/git-sync
 

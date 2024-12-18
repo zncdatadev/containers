@@ -45,8 +45,8 @@ EOF
 EOT
 
 
-## stage: java-builder
-FROM zncdatadev/image/java-devel AS java-builder
+## stage: spark-builder
+FROM zncdatadev/image/java-devel AS spark-builder
 
 ARG PRODUCT_VERSION
 ARG HADOOP_VERSION
@@ -139,7 +139,7 @@ RUN <<EOF
     ln -s /usr/bin/pip-${PYTHON_VERSION} /usr/bin/pip
 EOF
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=spark-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV SPARK_HOME=/kubedoop/spark
 ENV PATH="${SPARK_HOME}/bin:${PATH}" \

@@ -2,8 +2,8 @@
 # check=error=true
 
 
-## stage: java-builder
-FROM zncdatadev/image/java-devel AS java-builder
+## stage: hive-builder
+FROM zncdatadev/image/java-devel AS hive-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
@@ -79,7 +79,7 @@ ARG HADOOP_VERSION
 
 WORKDIR /kubedoop
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=hive-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 # When start the hive-metastore, it will try to load the hadoop configuration from the classpath.
 COPY --from=hadoop --chown=kubedoop:kubedoop /kubedoop/hadoop-${HADOOP_VERSION} /kubedoop/hadoop-${HADOOP_VERSION}
 

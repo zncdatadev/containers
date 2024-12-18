@@ -2,7 +2,8 @@
 # check=error=true
 
 
-FROM zncdatadev/image/java-devel AS java-builder
+# stage: nifi-builder
+FROM zncdatadev/image/java-devel AS nifi-builder
 
 ARG PRODUCT_VERSION
 
@@ -50,7 +51,7 @@ EOF
 ## Final stage
 FROM zncdatadev/image/java-base
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=nifi-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV NIFI_HOME=/kubedoop/nifi
 ENV PATH="${NIFI_HOME}/bin:${PATH}"

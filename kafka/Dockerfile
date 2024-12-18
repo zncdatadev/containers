@@ -2,8 +2,8 @@
 # check=error=true
 
 
-# stage: java-builder
-FROM zncdatadev/image/java-devel AS java-builder
+# stage: kafka-builder
+FROM zncdatadev/image/java-devel AS kafka-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
@@ -70,7 +70,7 @@ ARG PRODUCT_VERSION
 
 WORKDIR /kubedoop
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=kafka-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV KAFKA_HOME=/kubedoop/kafka
 ENV PATH="${KAFKA_HOME}/bin:${PATH}"
@@ -78,7 +78,7 @@ ENV PATH="${KAFKA_HOME}/bin:${PATH}"
 USER kubedoop
 
 # smoke test
-RUN source /etc/profile.d/kafka.sh && kafka-server-start.sh --version
+RUN kafka-server-start.sh --version
 
 WORKDIR /kubedoop/kafka
 

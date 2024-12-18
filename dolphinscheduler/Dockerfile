@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
 
-## stage: java-builder
-FROM zncdatadev/image/java-devel AS java-builder
+## stage: dolphin-builder
+FROM zncdatadev/image/java-devel AS dolphin-builder
 
 ARG PRODUCT_VERSION
 
@@ -45,7 +45,7 @@ EOF
 ## stage: final
 FROM zncdatadev/image/java-base
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=dolphin-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 USER kubedoop
 

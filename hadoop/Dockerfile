@@ -1,87 +1,13 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-## stage: async-profiler-builder
-FROM zncdatadev/image/java-devel AS async-profiler-builder
 
-ARG ASYNC_PROFILER_VERSION
-
-RUN <<EOF
-    microdnf update
-    microdnf install \
-        autoconf \
-        automake \
-        kernel-headers \
-
-    microdnf clean all
-    rm -rf /var/cache/yum
-EOF
-
-WORKDIR /build
-
-# setup async-profiler
-RUN <<EOF
-    ARCH=$(uname -m)
-    ARCH="${ARCH/x86_64/amd64}"
-    ARCH="${ARCH/aarch64/arm64}"
-
-    # build musl-gcc
-    # ref: https://github.com/async-profiler/async-profiler/blob/master/Dockerfile
-    # Required install kernel-headers
-    mkdir -p /build/musl-gcc
-    pushd /build/musl-gcc
-    # https://musl.libc.org/releases/musl-1.2.5.tar.gz
-    curl -sSfL \
-        https://musl.libc.org/releases/musl-1.2.5.tar.gz \
-        | tar xzf - --strip-components=1
-    ./configure --disable-shared --prefix=/usr/local/musl
-    make -j$(nproc) && make install && make clean
-    ln -s /usr/include/{asm,asm-generic,linux} /usr/local/musl/include/
-    popd
-
-    rm -rf /build/musl-gcc
-
-    # build patchelf
-    # ref: https://github.com/NixOS/patchelf?tab=readme-ov-file#compiling-and-testing
-    # Required install autoconf automake
-    mkdir -p /build/patchelf
-    pushd /build/patchelf
-    # https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz
-    curl -sSfL \
-        https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz \
-        | tar xzf - --strip-components=1
-    ./bootstrap.sh
-    ./configure
-    make -j$(nproc) && make check && make install
-    popd
-
-    rm -rf /build/patchelf
-
-    # build async-profiler
-    # ref: https://github.com/async-profiler/async-profiler/blob/master/.github/workflows/test-and-publish-nightly.yml
-    mkdir -p /build/async-profiler
-    pushd /build/async-profiler
-    # https://github.com/async-profiler/async-profiler/archive/refs/tags/v3.0.tar.gz
-    curl -sSfL \
-        https://github.com/async-profiler/async-profiler/archive/refs/tags/v${ASYNC_PROFILER_VERSION}.tar.gz \
-        | tar xzf - --strip-components=1
-    make CC=/usr/local/musl/bin/musl-gcc release
-    # artifact location: ./async-profiler-3.0-linux-arm64.tar.gz
-    tar -zxf ./async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz -C /kubedoop/
-    popd
-
-    rm -rf /build/async-profiler
-
-    # Delete dependencies cache
-    rm -rf /root/.cache
-EOF
-
-
-## stage: builder
-FROM zncdatadev/image/java-devel AS java-builder
+## stage: hadoop-builder
+FROM zncdatadev/image/java-devel AS hadoop-builder
 
 ARG PRODUCT_VERSION
 ARG PROTOBUF_VERSION
+ARG ASYNC_PROFILER_VERSION
 ARG JMX_EXPORTER_VERSION
 ARG OAUTH2_PROXY_VERSION
 
@@ -96,6 +22,39 @@ RUN <<EOF
         -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
 
     ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
+EOF
+
+# setup async-profiler
+RUN <<EOF
+    ARCH=$(uname -m)
+    ARCH="${ARCH/x86_64/x64}"
+    ARCH="${ARCH/amd64/x64}"
+    ARCH="${ARCH/aarch64/arm64}"
+
+    # build async-profiler
+    # https://github.com/async-profiler/async-profiler/releases/download/v3.0/async-profiler-3.0-linux-x64.tar.gz
+    curl -sSfL \
+        https://github.com/async-profiler/async-profiler/releases/download/v${ASYNC_PROFILER_VERSION}/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz \
+        | tar -zxfC - /kubedoop
+
+    ln -s /kubedoop/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH} /kubedoop/async-profiler
+EOF
+
+# setup oauth2-proxy
+RUN <<EOF
+    ARCH=$(uname -m)
+    ARCH="${ARCH/x86_64/amd64}"
+    ARCH="${ARCH/aarch64/arm64}"
+
+    mkdir /kubedoop/oauth2-proxy
+    cd /kubedoop/oauth2-proxy
+
+    curl -sSfL \
+        https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
+        | tar xzf - --strip-components=1
+
+    # smoke test
+    /kubedoop/oauth2-proxy/oauth2-proxy --version
 EOF
 
 # Setup protobuf
@@ -141,7 +100,7 @@ EOF
 COPY kubedoop /build/
 
 # Setup hadoop
-RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<EOF
+RUN --mount=type=cache,target=/root/.m2 <<EOF
     mkdir -p /build/hadoop-src
     pushd /build/hadoop-src
     curl -sSfL \
@@ -161,8 +120,6 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
 
     # cleanup source
     rm -rf /build/hadoop-src
-
-    rm -rf /root/.cache
 EOF
 
 # Fix log4j vulnerability
@@ -176,22 +133,6 @@ RUN <<EOF
     /usr/local/bin/log4shell patch --backup --force-patch --json hadoop-${PRODUCT_VERSION}
 EOF
 
-RUN <<EOF
-    ARCH=$(uname -m)
-    ARCH="${ARCH/x86_64/amd64}"
-    ARCH="${ARCH/aarch64/arm64}"
-
-    mkdir /kubedoop/oauth2-proxy
-    cd /kubedoop/oauth2-proxy
-
-    curl -sSfL \
-        https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
-        | tar xzf - --strip-components=1
-
-    # smoke test
-    /kubedoop/oauth2-proxy/oauth2-proxy --version
-EOF
-
 
 ## stage: final
 FROM zncdatadev/image/java-base
@@ -200,8 +141,7 @@ ARG PRODUCT_VERSION
 
 WORKDIR /kubedoop
 
-COPY --from=async-profiler-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=hadoop-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV HADOOP_HOME=/kubedoop/hadoop
 ENV HADOOP_CONF_DIR="${HADOOP_HOME}/etc/hadoop" \

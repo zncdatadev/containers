@@ -24,7 +24,7 @@ EOF
 
 
 ## stage: trino-builder
-FROM zncdatadev/image/java-devel AS java-builder
+FROM zncdatadev/image/java-devel AS trino-builder
 
 ARG PRODUCT_VERSION
 ARG STORAGE_CONNECTOR_VERSION
@@ -91,7 +91,7 @@ RUN <<EOF
     microdnf clean all
 EOF
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=trino-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV TRINO_HOME=/kubedoop/trino-server
 ENV PATH="${TRINO_HOME}/bin:${PATH}"

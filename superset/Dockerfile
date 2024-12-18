@@ -3,7 +3,7 @@
 
 
 ## stage: builder
-FROM zncdatadev/image/vector AS builder
+FROM zncdatadev/image/vector AS superset-builder
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
@@ -126,7 +126,7 @@ EOF
 WORKDIR /kubedoop
 
 COPY --from=statsd-exporter-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-COPY --from=builder --chown=kubedoop:kubedoop /kubedoop/app /kubedoop/app
+COPY --from=superset-builder --chown=kubedoop:kubedoop /kubedoop/app /kubedoop/app
 
 COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
 
