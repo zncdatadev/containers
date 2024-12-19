@@ -15,6 +15,7 @@ ARG OAUTH2_PROXY_VERSION
 
 # setup async-profiler
 RUN <<EOF
+    set -ex
     ARCH=$(uname -m)
     ARCH="${ARCH/x86_64/x64}"
     ARCH="${ARCH/amd64/x64}"
@@ -24,7 +25,7 @@ RUN <<EOF
     # https://github.com/async-profiler/async-profiler/releases/download/v3.0/async-profiler-3.0-linux-x64.tar.gz
     curl -sSfL \
         https://github.com/async-profiler/async-profiler/releases/download/v${ASYNC_PROFILER_VERSION}/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz \
-        | tar -zxfC - /kubedoop
+        | tar -zxf - -C /kubedoop
 
     ln -s /kubedoop/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH} /kubedoop/async-profiler
 EOF
@@ -70,6 +71,7 @@ WORKDIR /build
 COPY /kubedoop/ /build/
 
 RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<EOF
+    set -ex
     mkdir -p /build/hbase-src
     pushd /build/hbase-src
     curl -sSfL \
@@ -83,9 +85,6 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
     ln -s /kubedoop/hbase-${PRODUCT_VERSION} /kubedoop/hbase
     popd
 
-    # smoke test
-    /kubedoop/hbase/bin/hbase version
-
     # cleanup source
     rm -rf /build/hbase-src
 
@@ -93,6 +92,9 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
     rm -rf /root/.cache
 
 EOF
+
+# smoke test
+RUN /kubedoop/hbase/bin/hbase version
 
 
 ## stage: hbase-operator-tools-builder
@@ -106,6 +108,7 @@ WORKDIR /build
 
 # setup hbase-operator-tools
 RUN --mount=type=cache,target=/root/.m2 <<EOF
+    set -ex
     mkdir -p /build/hbase-operator-tools-src
     pushd /build/hbase-operator-tools-src
 
@@ -157,6 +160,7 @@ ARG HBASE_PROFILE_VERSION
 WORKDIR /build
 # setup phoenix
 RUN --mount=type=cache,target=/root/.m2 <<EOF
+    set -ex
     mkdir -p /build/phoenix-src
     pushd /build/phoenix-src
 

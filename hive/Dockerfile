@@ -29,6 +29,7 @@ EOF
 COPY kubedoop/ /build/
 
 RUN --mount=type=cache,target=/root/.m2 <<EOF
+    set -ex
     mkdir -p /build/hive-src
     pushd /build/hive-src
     curl -sSfL \

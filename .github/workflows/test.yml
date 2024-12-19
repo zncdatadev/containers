@@ -22,6 +22,7 @@ jobs:
       registry: quay.io/zncdatadev
       cache-registry: quay.io/zncdatadev
       targets: ${{ matrix.targets }}
+      push: false
     strategy:
       matrix:
         targets: ${{ fromjson(needs.prepare.outputs.targets) }}

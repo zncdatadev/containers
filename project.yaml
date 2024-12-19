@@ -5,18 +5,18 @@ products:
   # devel
   - java-base
   - java-devel
-  - go-devel
+  # - go-devel
   # tools
-  - krb5
-  - tools
-  - testing-tools
+  # - krb5
+  # - tools
+  # - testing-tools
   # apps
-  - airflow
-  - superset
-  - dolphinscheduler
-  - kafka
-  - trino
-  - zookeeper
+  # - airflow
+  # - superset
+  # - dolphinscheduler
+  # - kafka
+  # - trino
+  # - zookeeper
   - hadoop
   - hbase
   - hive

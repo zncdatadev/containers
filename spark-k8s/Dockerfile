@@ -1,11 +1,9 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-
 FROM docker.io/library/gradle:8 AS gradle-builder
 
-ARG PRODUCT_VERSION
-ARG JMX_EXPORTER_VERSION
+ARG JACKSON_DATAFORMAT_XML_VERSION
 
 WORKDIR /build
 
@@ -23,10 +21,7 @@ configurations {
 }
 
 dependencies {
-    toCopy('org.apache.spark:spark-hadoop-cloud_2.13:${PRODUCT_VERSION}') {
-        exclude group: 'org.slf4j', module: 'slf4j-api' // exclude slf4j-api to avoid conflict
-    }
-    toCopy 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.2'
+    toCopy 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${JACKSON_DATAFORMAT_XML_VERSION}'
 }
 
 task download(type: Copy) {
@@ -43,6 +38,14 @@ EOF
     gradle download --no-daemon
 
 EOT
+
+
+## stage: spark-builder
+FROM zncdatadev/image/hadoop AS hadoop
+
+
+## stage: spark-builder
+FROM zncdatadev/image/hbase AS hbase
 
 
 ## stage: spark-builder
@@ -67,7 +70,6 @@ EOF
 
 # build spark
 RUN --mount=type=cache,target=/root/.m2 <<EOF
-    set -e
     mkdir -p /build/spark-src
     pushd /build/spark-src
     curl -sSfL \
@@ -88,18 +90,42 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     ln -s /kubedoop/spark/jars/spark-examples_*.jar /kubedoop/spark/examples.jar
     popd
 
-    # smoke test
-    /kubedoop/spark/bin/spark-shell --version
+
 
     # cleanup source
     rm -rf /build/spark-src
 EOF
 
-COPY --from=gradle-builder /jars/ /kubedoop/spark/jars/
+# smoke test
+RUN SPARK_HOME=/kubedoop/spark /kubedoop/spark/bin/spark-shell --version
+
+COPY --from=hadoop \
+    /kubedoop/hadoop/share/hadoop/tools/lib/hadoop-aws-*.jar \
+    /kubedoop/hadoop/share/hadoop/tools/lib/aws-java-sdk-bundle-*.jar \
+    /kubedoop/spark/jars/
+
+COPY --from=hadoop \
+    /kubedoop/hadoop/share/hadoop/tools/lib/hadoop-azure-*.jar \
+    /kubedoop/hadoop/share/hadoop/tools/lib/azure-storage-*.jar \
+    /kubedoop/hadoop/share/hadoop/tools/lib/azure-keyvault-core-*.jar \
+    /kubedoop/spark/jars/
+
+COPY --from=hbase \
+    /kubedoop/hbase/lib/shaded-clients/hbase-shared-client-byo-hadoop-*.jar \
+    /kubedoop/hbase/lib/shaded-clients/hbase-shared-mapreduce-*.jar \
+    /kubedoop/spark/jars/
+
+COPY --from=hbase \
+    /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-api-*.jar \
+    /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-context-*.jar \
+    /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-semconv-*.jar \
+    /kubedoop/spark/jars/
+
+# download extra-jars
+COPY --from=gradle-builder /jars /kubedoop/spark/extra-jars
 
 # setup oauth2-proxy
 RUN <<EOF
-    set -ex
     ARCH=$(uname -m)
     ARCH="${ARCH/x86_64/amd64}"
     ARCH="${ARCH/aarch64/arm64}"
@@ -144,11 +170,8 @@ COPY --from=spark-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 ENV SPARK_HOME=/kubedoop/spark
 ENV PATH="${SPARK_HOME}/bin:${PATH}" \
     PYSPARK_PYTHON=/usr/bin/python \
-    PYTHONPATH="${SPARK_HOME}/python:${PYTHONPATH}"
+    PYTHONPATH="${SPARK_HOME}/python"
 
 WORKDIR /kubedoop/spark
 
 USER kubedoop
-
-# smoke test
-RUN source /etc/profile.d/spark.sh && spark-shell --version

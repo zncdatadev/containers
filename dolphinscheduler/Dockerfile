@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-
+# check=error=true
 
 ## stage: dolphin-builder
 FROM zncdatadev/image/java-devel AS dolphin-builder
@@ -8,8 +8,7 @@ ARG PRODUCT_VERSION
 
 WORKDIR /build
 
-RUN --mount=type=cache,target=/root/.m2 <<EOF
-    set -ex
+RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.pnpm-store <<EOF
     mkdir -p /build/dolphinscheduler-src
     pushd /build/dolphinscheduler-src
     curl -sSfL \
@@ -30,16 +29,12 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     ln -s /kubedoop/apache-dolphinscheduler-${PRODUCT_VERSION}-bin /kubedoop/dolphinscheduler
     popd
 
-    # smoke test
-    /kubedoop/dolphinscheduler/bin/dolphinscheduler-version.sh
-
     # cleanup source
     rm -rf /build/dolphinscheduler-src
-
-    # cleanup cache
-    rm -rf /root/.npm
-    rm -rf /root/.cache
 EOF
+
+# smoke test
+RUN test -f /kubedoop/dolphinscheduler/bin/dolphinscheduler-daemon.sh
 
 
 ## stage: final

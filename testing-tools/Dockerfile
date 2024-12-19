@@ -26,6 +26,7 @@ RUN <<EOF
         build-essential \
         ca-certificates \
         curl \
+        diffutils \
         gzip \
         jq \
         krb5-user \
@@ -34,6 +35,7 @@ RUN <<EOF
         libssl-dev \
         libxml2-dev \
         libxslt1-dev \
+        openssl \
         pkg-config \
         tar \
         zip \

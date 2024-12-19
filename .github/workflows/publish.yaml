@@ -24,11 +24,11 @@ jobs:
       cache-registry: quay.io/zncdatadev
       kubedoop_version: 0.0.0-dev
       targets: ${{ matrix.targets }}
-      push: true
+      push: false
       sign: false
     secrets: inherit
     strategy:
       matrix:
         targets: ${{ fromjson(needs.prepare.outputs.targets) }}
-      max-parallel: 2
+      max-parallel: 6
     if: ${{ needs.prepare.outputs.targets != '' }}

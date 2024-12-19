@@ -133,7 +133,7 @@ COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
 ENV VIRTUAL_ENV=/kubedoop/app
 ENV SUPERSET_ENV=production \
     FLASK_APP="superset.app:create_app()" \
-    PYTHONPATH="/kubedoop/app/pythonpath:$PYTHONPATH" \
+    PYTHONPATH="/kubedoop/app/pythonpath" \
     PATH="${VIRTUAL_ENV}/bin:$PATH" \
     SUPERSET_PORT=8088
 

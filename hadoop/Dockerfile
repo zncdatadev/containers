@@ -13,19 +13,9 @@ ARG OAUTH2_PROXY_VERSION
 
 WORKDIR /build
 
-COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
-
-# setup jmx_exporter
-RUN <<EOF
-    curl -sSfL \
-        https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
-        -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
-
-    ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
-EOF
-
 # setup async-profiler
 RUN <<EOF
+    set -ex
     ARCH=$(uname -m)
     ARCH="${ARCH/x86_64/x64}"
     ARCH="${ARCH/amd64/x64}"
@@ -35,9 +25,20 @@ RUN <<EOF
     # https://github.com/async-profiler/async-profiler/releases/download/v3.0/async-profiler-3.0-linux-x64.tar.gz
     curl -sSfL \
         https://github.com/async-profiler/async-profiler/releases/download/v${ASYNC_PROFILER_VERSION}/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz \
-        | tar -zxfC - /kubedoop
+        | tar -zxf - -C /kubedoop
 
     ln -s /kubedoop/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH} /kubedoop/async-profiler
+EOF
+
+COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
+
+# setup jmx_exporter
+RUN <<EOF
+    curl -sSfL \
+        https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+        -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+
+    ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
 EOF
 
 # setup oauth2-proxy
@@ -61,6 +62,7 @@ EOF
 # ref: https://github.com/apache/hadoop/blob/trunk/dev-support/docker/pkg-resolver/install-protobuf.sh
 ENV PROTOBUF_HOME=/opt/protobuf
 RUN <<EOF
+    set -ex
     mkdir -p /build/protobuf-src
     pushd /build/protobuf-src
     PROTOBUF_LANGUAGE_VERSION=$PROTOBUF_VERSION
@@ -77,15 +79,15 @@ RUN <<EOF
     make install
     popd
 
-    # smoke test
-    protoc --version
-
     # cleanup source
     rm -rf /build/protobuf-src
 
 EOF
 
 ENV PATH="${PATH}:${PROTOBUF_HOME}/bin"
+
+# smoke test
+RUN protoc --version
 
 # Setup boost
 # ref: https://github.com/apache/hadoop/blob/trunk/dev-support/docker/pkg-resolver/install-boost.sh
@@ -101,6 +103,7 @@ COPY kubedoop /build/
 
 # Setup hadoop
 RUN --mount=type=cache,target=/root/.m2 <<EOF
+    set -ex
     mkdir -p /build/hadoop-src
     pushd /build/hadoop-src
     curl -sSfL \
@@ -115,12 +118,12 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     ln -s /kubedoop/hadoop-${PRODUCT_VERSION} /kubedoop/hadoop
     popd
 
-    # smoke test
-    HADOOP_HOME=/kubedoop/hadoop HADOOP_YARN_HOME=/kubedoop/hadoop HADOOP_MAPRED_HOME=/kubedoop/hadoop /kubedoop/hadoop/bin/hadoop version
-
     # cleanup source
-    rm -rf /build/hadoop-src
+    # rm -rf /build/hadoop-src
 EOF
+
+# smoke test
+RUN HADOOP_HOME=/kubedoop/hadoop HADOOP_YARN_HOME=/kubedoop/hadoop HADOOP_MAPRED_HOME=/kubedoop/hadoop /kubedoop/hadoop/bin/hadoop version
 
 # Fix log4j vulnerability
 RUN <<EOF
