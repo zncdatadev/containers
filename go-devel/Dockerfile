@@ -16,7 +16,7 @@ RUN <<EOF
         gcc-c++ \
         gettext \
         git \
-        gzip
+        gzip \
         hostname \
         krb5-devel \
         libcurl-devel \

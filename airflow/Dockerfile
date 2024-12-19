@@ -79,8 +79,7 @@ RUN <<EOF
     go build -o /kubedoop/bin/statsd-exporter
     popd
 
-    # smoke test
-    /kubedoop/bin/statsd-exporter --version
+
 
     # cleanup source
     rm -rf /build/statsd-exporter-src
@@ -89,6 +88,9 @@ RUN <<EOF
     go clean -modcache
     rm -rf /root/.cache/go-build
 EOF
+
+# smoke test
+RUN /kubedoop/bin/statsd-exporter --version
 
 
 # stage: git-sync-builder
@@ -109,6 +111,7 @@ RUN <<EOF
     export OS=$(go env GOOS)
     export ARCH=$(go env GOARCH)
     export GOBIN=$(pwd)/bin
+    export VERSION=${GIT_SYNC_VERSION}
 
     ./build/build.sh
 
@@ -116,12 +119,16 @@ RUN <<EOF
     mv bin/git-sync /kubedoop/bin
     popd
 
-    # smoke test
-    /kubedoop/bin/git-sync --version
-
     # cleanup source
     rm -rf /build/git-sync-src
+
+    # cleanup cache
+    go clean -modcache
+    rm -rf /root/.cache/go-build
 EOF
+
+# smoke test
+RUN /kubedoop/bin/git-sync --version
 
 
 # stage: final
@@ -131,7 +138,6 @@ ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
 
 RUN <<EOF
-    set -ex
     microdnf update
     microdnf install \
         cyrus-sasl \
