@@ -107,7 +107,7 @@ ARG HBASE_THIRDPARTY_VERSION
 WORKDIR /build
 
 # setup hbase-operator-tools
-RUN --mount=type=cache,target=/root/.m2 <<EOF
+RUN <<EOF
     set -ex
     mkdir -p /build/hbase-operator-tools-src
     pushd /build/hbase-operator-tools-src
@@ -145,7 +145,7 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     rm -rf /build/hbase-operator-tools-src
 
     # cleanup cache
-    rm -rf /root/.cache
+    rm -rf /root/.m2
 EOF
 
 
@@ -159,7 +159,7 @@ ARG HBASE_PROFILE_VERSION
 
 WORKDIR /build
 # setup phoenix
-RUN --mount=type=cache,target=/root/.m2 <<EOF
+RUN <<EOF
     set -ex
     mkdir -p /build/phoenix-src
     pushd /build/phoenix-src
@@ -203,8 +203,7 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     rm -rf /build/phoenix-src
 
     # cleanup cache
-    rm -rf /root/.cache
-
+    rm -rf /root/.m2
 EOF
 
 
