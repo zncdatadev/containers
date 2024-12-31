@@ -37,6 +37,8 @@ EOF
     # download dependencies
     gradle download --no-daemon
 
+    # cleanup cache
+    rm -rf /root/.gradle
 EOT
 
 
