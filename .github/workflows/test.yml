@@ -21,10 +21,10 @@ jobs:
     with:
       registry: quay.io/zncdatadev
       cache-registry: quay.io/zncdatadev
-      targets: ${{ matrix.targets }}
+      target: ${{ matrix.target }}
       push: false
     strategy:
       matrix:
-        targets: ${{ fromjson(needs.prepare.outputs.targets) }}
-      max-parallel: 2
+        target: ${{ fromjson(needs.prepare.outputs.targets) }}
+      max-parallel: 6
     if: ${{ needs.prepare.outputs.targets != '' }}

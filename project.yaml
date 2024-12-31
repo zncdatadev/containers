@@ -5,21 +5,21 @@ products:
   # devel
   - java-base
   - java-devel
-  # - go-devel
+  - go-devel
   # tools
-  # - krb5
-  # - tools
-  # - testing-tools
+  - krb5
+  - tools
+  - testing-tools
   # apps
-  # - airflow
-  # - superset
-  # - dolphinscheduler
-  # - kafka
-  # - trino
-  # - zookeeper
-  # - hadoop
+  - airflow
+  - superset
+  - dolphinscheduler
+  - kafka
+  - trino
+  - zookeeper
+  - hadoop
+  - hive
   # - hbase
-  # - hive
   # - spark-k8s
   - nifi
 # If file under the path is changed, the all product will be rebuilt

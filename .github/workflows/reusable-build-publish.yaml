@@ -19,10 +19,9 @@ on:
         required: false
         type: string
         default: '0.0.0-dev'
-      targets:
+      target:
         description: |
-          The targets to build, the name sperated by space. e.g. "name1:version1 name1:version1" or "name1" or "name1, name2"
-          If build a tag without version, just use the name. we will build all versions of the container.
+          The target to build. If build a tag without version, just use the name. we will build all versions of the container.
         required: true
         type: string
       push:
@@ -132,13 +131,47 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Start Resource Monitor
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          # 处理 TARGET 名称，替换特殊字符
+          SAFE_TARGET=$(echo "$TARGET" | tr ':/' '_')
+          MONITOR_FILE="${SAFE_TARGET}_monitor.csv"
+
+          # create a script to monitor resource usage
+          cat << 'EOF' > monitor.sh
+          #!/bin/bash
+          OUTPUT_FILE="${1:-resource_monitor.csv}"
+          echo "timestamp,cpu_usage,memory_used,memory_total,disk_used,disk_total" > "$OUTPUT_FILE"
+          while true; do
+            timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+            cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}')
+            memory_info=$(free -m | grep Mem)
+            memory_used=$(echo $memory_info | awk '{print $3}')
+            memory_total=$(echo $memory_info | awk '{print $2}')
+            disk_info=$(df -m / | tail -1)
+            disk_used=$(echo $disk_info | awk '{print $3}')
+            disk_total=$(echo $disk_info | awk '{print $2}')
+            echo "$timestamp,$cpu_usage,$memory_used,$memory_total,$disk_used,$disk_total" >> "$OUTPUT_FILE"
+            sleep 5
+          done
+          EOF
+
+          chmod +x monitor.sh
+          ./monitor.sh "$MONITOR_FILE" &
+
+          echo "SAFE_TARGET=$SAFE_TARGET" >> $GITHUB_ENV
+          echo "MONITOR_FILE=$MONITOR_FILE" >> $GITHUB_ENV
+          echo "MONITOR_PID=$!" >> $GITHUB_ENV
+
       - name: Build and Publish
         env:
           REGISTRY: ${{ inputs.registry }}
           CACHE_REGISTRY: ${{ inputs.cache-registry }}
           PUSH: ${{ inputs.push }}
           SIGN: ${{ inputs.sign }}
-          TARGETS: ${{ inputs.targets }}
+          TARGET: ${{ inputs.target }}
         run: |
           cmd=('.scripts/build.sh')
 
@@ -150,9 +183,29 @@ jobs:
             cmd+=('--sign')
           fi
 
-          for target in $TARGETS; do
-            cmd+=("$target")
-          done
+          # check target is blank
+          if [ -z "$TARGET" ]; then
+            echo "ERROR: Target is blank"
+            exit 1
+          fi
 
+          cmd+=("$TARGET")
+
+          echo "::group::Build and Publish"
           echo "INFO: Running ${cmd[@]}"
           "${cmd[@]}"
+          echo "::endgroup::"
+
+      - name: Stop Resource Monitor
+        if: always()
+        run: |
+          kill ${{ env.MONITOR_PID }} || true
+          sleep 1
+
+      - name: Upload Resource Monitor Results
+        if: always()
+        uses: actions/upload-artifact@v4.5.0
+        with:
+          name: ${{ env.SAFE_TARGET }}-monitor-results
+          path: ${{ env.MONITOR_FILE }}
+          retention-days: 5

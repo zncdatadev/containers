@@ -5,12 +5,11 @@ on:
   push:
     branches:
       - main
-      - ci/add-cache-to
 
 
 jobs:
   prepare:
-    # if: github.repository_owner == 'zncdatadev'
+    if: github.repository_owner == 'zncdatadev'
     name: Prepare Updated data
     uses: ./.github/workflows/reusable-prepare.yaml
 
@@ -23,12 +22,12 @@ jobs:
       registry: quay.io/zncdatadev
       cache-registry: quay.io/zncdatadev
       kubedoop_version: 0.0.0-dev
-      targets: ${{ matrix.targets }}
-      push: false
+      target: ${{ matrix.target }}
+      push: true
       sign: false
     secrets: inherit
     strategy:
       matrix:
-        targets: ${{ fromjson(needs.prepare.outputs.targets) }}
+        target: ${{ fromjson(needs.prepare.outputs.targets) }}
       max-parallel: 6
     if: ${{ needs.prepare.outputs.targets != '' }}

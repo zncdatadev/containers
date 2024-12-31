@@ -102,7 +102,7 @@ EOF
 COPY kubedoop /build/
 
 # Setup hadoop
-RUN --mount=type=cache,target=/root/.m2 <<EOF
+RUN <<EOF
     set -ex
     mkdir -p /build/hadoop-src
     pushd /build/hadoop-src
@@ -110,7 +110,16 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
         https://github.com/apache/hadoop/archive/refs/tags/rel/release-${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
     /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
-    mvn --no-transfer-progress clean package -Pdist,native -pl '!hadoop-tools/hadoop-pipes,!hadoop-yarn-project,!hadoop-mapreduce-project,!hadoop-minicluster' -Drequire.fuse=true -DskipTests -Dmaven.javadoc.skip=true
+    mvn \
+        --batch-mode \
+        --no-transfer-progress \
+        clean \
+        package \
+        -Pdist,native \
+        -pl '!hadoop-tools/hadoop-pipes,!hadoop-yarn-project,!hadoop-mapreduce-project,!hadoop-minicluster' \
+        -Drequire.fuse=true \
+        -DskipTests \
+        -Dmaven.javadoc.skip=true
 
     cp -r hadoop-dist/target/hadoop-${PRODUCT_VERSION} /kubedoop/hadoop-${PRODUCT_VERSION}
     cp hadoop-hdfs-project/hadoop-hdfs-native-client/target/main/native/fuse-dfs/fuse_dfs /kubedoop/hadoop-${PRODUCT_VERSION}/bin
@@ -119,7 +128,10 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     popd
 
     # cleanup source
-    # rm -rf /build/hadoop-src
+    rm -rf /build/hadoop-src
+
+    # cleanup cache
+    rm -rf /root/.m2
 EOF
 
 # smoke test

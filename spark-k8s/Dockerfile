@@ -71,7 +71,7 @@ RUN <<EOF
 EOF
 
 # build spark
-RUN --mount=type=cache,target=/root/.m2 <<EOF
+RUN <<EOF
     mkdir -p /build/spark-src
     pushd /build/spark-src
     curl -sSfL \
@@ -96,6 +96,9 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
 
     # cleanup source
     rm -rf /build/spark-src
+
+    # cleanup cache
+    rm -rf /root/.m2
 EOF
 
 # smoke test
