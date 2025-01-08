@@ -135,7 +135,7 @@ jobs:
         env:
           TARGET: ${{ inputs.target }}
         run: |
-          # 处理 TARGET 名称，替换特殊字符
+          # handle target with special characters
           SAFE_TARGET=$(echo "$TARGET" | tr ':/' '_')
           MONITOR_FILE="${SAFE_TARGET}_monitor.csv"
 
