@@ -20,7 +20,11 @@ jobs:
     uses: ./.github/workflows/reusable-build-publish.yaml
     with:
       registry: quay.io/zncdatadev
-      targets: ${{ matrix.targets }}
+      cache-registry: quay.io/zncdatadev
+      target: ${{ matrix.target }}
+      push: false
     strategy:
       matrix:
-        targets: ${{ fromjson(needs.prepare.outputs.targets) }}
+        target: ${{ fromjson(needs.prepare.outputs.targets) }}
+      max-parallel: 6
+    if: ${{ needs.prepare.outputs.targets != '' }}

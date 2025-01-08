@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
-# check=skip=InvalidDefaultArgInFrom;error=true
+# check=error=true
 
 
-FROM zncdatadev/image/java-devel AS java-builder
+# stage: zookeeper-builder
+FROM zncdatadev/image/java-devel AS zookeeper-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
@@ -12,7 +13,6 @@ WORKDIR /build
 # setup jmx_exporter
 COPY kubedoop/jmx/config /kubedoop/jmx
 RUN <<EOF
-    set -e
     curl -sSfL \
         https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
         -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
@@ -21,7 +21,7 @@ RUN <<EOF
 EOF
 
 # build zookeeper
-RUN <<EOF
+RUN --mount=type=cache,target=/root/.m2 <<EOF
     mkdir -p /build/zookeeper-src
     pushd /build/zookeeper-src
     curl -sSfL \
@@ -31,16 +31,17 @@ RUN <<EOF
     tar -xzf zookeeper-assembly/target/apache-zookeeper-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
     mv /kubedoop/apache-zookeeper-${PRODUCT_VERSION}-bin /kubedoop/apache-zookeeper-${PRODUCT_VERSION}
     ln -s /kubedoop/apache-zookeeper-${PRODUCT_VERSION} /kubedoop/zookeeper
-
     popd
-EOF
 
-# smoke test
-RUN /kubedoop/zookeeper/bin/zkServer.sh version
+    # smoke test
+    /kubedoop/zookeeper/bin/zkServer.sh version
+
+    # cleanup source
+    rm -rf /build/zookeeper-src
+EOF
 
 # Fix log4j vulnerability
 RUN <<EOF
-    set -e
     ARCH=$(uname -m)
     ARCH="${ARCH/amd64/x86_64}"
     ARCH="${ARCH/aarch64/arm64}"
@@ -58,7 +59,7 @@ ARG PRODUCT_VERSION
 
 WORKDIR /kubedoop
 
-COPY --chown=kubedoop:kubedoop --from=java-builder /kubedoop/ /kubedoop/
+COPY --from=zookeeper-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV ZOOKEEPER_HOME=/kubedoop/zookeeper
 ENV PATH="$ZOOKEEPER_HOME/bin:$PATH"

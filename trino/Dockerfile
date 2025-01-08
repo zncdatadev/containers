@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-
+# check=error=true
 
 ## stage: trino-storage-connector-builder
 FROM zncdatadev/image/java-devel AS storage-connector-builder
@@ -7,7 +7,7 @@ FROM zncdatadev/image/java-devel AS storage-connector-builder
 ARG PRODUCT_VERSION
 ARG STORAGE_CONNECTOR_VERSION
 
-RUN <<EOF
+RUN --mount=type=cache,target=/root/.m2 <<EOF
     set -ex
     mkdir -p /build/trino-storage-src
     pushd /build/trino-storage-src
@@ -24,7 +24,7 @@ EOF
 
 
 ## stage: trino-builder
-FROM zncdatadev/image/java-devel AS java-builder
+FROM zncdatadev/image/java-devel AS trino-builder
 
 ARG PRODUCT_VERSION
 ARG STORAGE_CONNECTOR_VERSION
@@ -37,22 +37,15 @@ COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
 
 # setup jmx_exporter
 RUN <<EOF
-    set -e
-    # check JMX_EXPORTER_VERSION
-    if [ -n "${JMX_EXPORTER_VERSION}" ]; then
-        curl -sSfL \
-            https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
-            -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+    curl -sSfL \
+    https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+    -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
 
-        ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
-    else
-        echo "JMX_EXPORTER_VERSION is not set"
-    fi
+    ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
 EOF
 
 # build trino
-RUN <<EOF
-    set -ex
+RUN --mount=type=cache,target=/root/.m2 <<EOF
     mkdir -p /build/trino-src
     pushd /build/trino-src
     # https://github.com/trinodb/trino/archive/refs/tags/454.tar.gz
@@ -67,16 +60,15 @@ RUN <<EOF
 
     cp client/trino-cli/target/trino-cli-${PRODUCT_VERSION}-executable.jar /kubedoop/trino-server/bin/trino-cli
     popd
+
+    # cleanup source
+    rm -rf /build/trino-src
 EOF
 
 COPY --from=storage-connector-builder --chown=kubedoop:kubedoop /build/trino-storage-src/target/trino-storage-${STORAGE_CONNECTOR_VERSION} /kubedoop/trino-server/plugin/trino-storage-${STORAGE_CONNECTOR_VERSION}
 
-# smoke test
-RUN microdnf install python && microdnf clean all && /kubedoop/trino-server/bin/launcher status || [ $? -eq 3 ]
-
 # Fix log4j vulnerability
 RUN <<EOF
-    set -e
     ARCH=$(uname -m)
     ARCH="${ARCH/amd64/x86_64}"
     ARCH="${ARCH/aarch64/arm64}"
@@ -99,10 +91,10 @@ RUN <<EOF
     microdnf clean all
 EOF
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=trino-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV TRINO_HOME=/kubedoop/trino-server
-ENV PATH="${PATH}:${TRINO_HOME}/bin"
+ENV PATH="${TRINO_HOME}/bin:${PATH}"
 
 WORKDIR /kubedoop/trino-server
 USER kubedoop

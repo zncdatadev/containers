@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
+# check=error=true
 
 
-# stage: java-builder
-FROM zncdatadev/image/java-devel AS java-builder
+# stage: kafka-builder
+FROM zncdatadev/image/java-devel AS kafka-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
@@ -42,10 +43,13 @@ RUN --mount=type=cache,sharing=locked,target=/root/.gradle <<EOF
     tar -xzf core/build/distributions/kafka_${SCALA_VERSION}-${PRODUCT_VERSION}.tgz -C /kubedoop
     ln -s /kubedoop/kafka_${SCALA_VERSION}-${PRODUCT_VERSION} /kubedoop/kafka
     popd
-EOF
 
-# smoke test
-RUN /kubedoop/kafka/bin/kafka-server-start.sh --version
+    # smoke test
+    /kubedoop/kafka/bin/kafka-server-start.sh --version
+
+    # cleanup source
+    rm -rf /build/kafka-src
+EOF
 
 RUN <<EOF
     set -e
@@ -66,22 +70,15 @@ ARG PRODUCT_VERSION
 
 WORKDIR /kubedoop
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=kafka-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV KAFKA_HOME=/kubedoop/kafka
-
-RUN <<EOT
-    set -e
-    cat > /etc/profile.d/kafka.sh <<'EOF'
-export PATH=${PATH}:${KAFKA_HOME}/bin
-EOF
-
-EOT
+ENV PATH="${KAFKA_HOME}/bin:${PATH}"
 
 USER kubedoop
 
 # smoke test
-RUN source /etc/profile.d/kafka.sh && kafka-server-start.sh --version
+RUN kafka-server-start.sh --version
 
 WORKDIR /kubedoop/kafka
 

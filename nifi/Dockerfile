@@ -1,15 +1,16 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-FROM zncdatadev/image/java-devel AS java-builder
+
+# stage: nifi-builder
+FROM zncdatadev/image/java-devel AS nifi-builder
 
 ARG PRODUCT_VERSION
 
 WORKDIR /build
 
 # Build apache nifi from github tag
-RUN <<EOF
-
+RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<EOF
     mkdir -p /build/nifi-src
     pushd /build/nifi-src
     # Download apache nifi source from https://github.com/apache/nifi/releases/tag/rel%2Fnifi-1.27.0
@@ -38,15 +39,19 @@ RUN <<EOF
     rm -rf /kubedoop/nifi/docs
     popd
 
+    # smoke test
+    /kubedoop/nifi/bin/nifi.sh --help
+
+    # cleanup source
+    rm -rf /build/nifi-src
+
 EOF
 
-# smoke test
-RUN /kubedoop/nifi/bin/nifi.sh --help
 
 ## Final stage
 FROM zncdatadev/image/java-base
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=nifi-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
 ENV NIFI_HOME=/kubedoop/nifi
 ENV PATH="${NIFI_HOME}/bin:${PATH}"

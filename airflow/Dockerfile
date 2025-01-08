@@ -2,8 +2,8 @@
 # check=error=true
 
 
-## stage: builder
-FROM zncdatadev/image/vector AS builder
+## stage: airflow-builder
+FROM zncdatadev/image/vector AS airflow-builder
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
@@ -27,6 +27,7 @@ RUN <<EOF
         python${PYTHON_VERSION}-wheel \
 
     microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
 WORKDIR /kubedoop
@@ -64,7 +65,7 @@ RUN <<EOF
         xz
 
     microdnf clean all
-
+    rm -rf /var/cache/yum
 EOF
 
 # download and build statsd-exporter
@@ -77,6 +78,15 @@ RUN <<EOF
 
     go build -o /kubedoop/bin/statsd-exporter
     popd
+
+
+
+    # cleanup source
+    rm -rf /build/statsd-exporter-src
+
+    # cleanup cache
+    go clean -modcache
+    rm -rf /root/.cache/go-build
 EOF
 
 # smoke test
@@ -91,18 +101,30 @@ ARG GIT_SYNC_VERSION
 WORKDIR /build
 
 RUN <<EOF
-    export VERSION=${GIT_SYNC_VERSION}
-    git clone --branch v${GIT_SYNC_VERSION} --depth 1 https://github.com/kubernetes/git-sync.git
-    cd git-sync
+    mkdir -p /build/git-sync-src
+    pushd /build/git-sync-src
+    # https://github.com/kubernetes/git-sync/archive/refs/tags/v4.4.0.tar.gz
+    curl -sSfL \
+        https://github.com/kubernetes/git-sync/archive/refs/tags/v${GIT_SYNC_VERSION}.tar.gz \
+        | tar xzf - --strip-components=1
 
     export OS=$(go env GOOS)
     export ARCH=$(go env GOARCH)
     export GOBIN=$(pwd)/bin
+    export VERSION=${GIT_SYNC_VERSION}
 
     ./build/build.sh
 
     mkdir -p /kubedoop/bin
     mv bin/git-sync /kubedoop/bin
+    popd
+
+    # cleanup source
+    rm -rf /build/git-sync-src
+
+    # cleanup cache
+    go clean -modcache
+    rm -rf /root/.cache/go-build
 EOF
 
 # smoke test
@@ -115,9 +137,7 @@ FROM zncdatadev/image/vector
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
 
-
 RUN <<EOF
-    set -ex
     microdnf update
     microdnf install \
         cyrus-sasl \
@@ -132,15 +152,18 @@ RUN <<EOF
         python${PYTHON_VERSION} \
         python${PYTHON_VERSION}-pip \
         socat \
-        unixODBC \
+        unixODBC
 
     microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
-COPY --from=builder --chown=kubedoop:kubedoop /kubedoop /kubedoop
+COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
+
+COPY --from=airflow-builder --chown=kubedoop:kubedoop /kubedoop /kubedoop
 COPY --from=statsd-exporter-builder --chown=kubedoop:kubedoop /kubedoop/bin/statsd-exporter /kubedoop/bin/statsd-exporter
 COPY --from=git-sync-builder --chown=kubedoop:kubedoop /kubedoop/bin/git-sync /kubedoop/bin/git-sync
-COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
+
 
 ENV VIRTUAL_ENV=/kubedoop/app
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}" \

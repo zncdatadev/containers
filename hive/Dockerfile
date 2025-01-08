@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-## stage: java-builder
-FROM zncdatadev/image/java-devel AS java-builder
+
+## stage: hive-builder
+FROM zncdatadev/image/java-devel AS hive-builder
 
 ARG PRODUCT_VERSION
 ARG JMX_EXPORTER_VERSION
@@ -27,7 +28,8 @@ EOF
 
 COPY kubedoop/ /build/
 
-RUN <<EOF
+RUN --mount=type=cache,target=/root/.m2 <<EOF
+    set -ex
     mkdir -p /build/hive-src
     pushd /build/hive-src
     curl -sSfL \
@@ -55,6 +57,9 @@ RUN <<EOF
 
     ln -s /kubedoop/apache-hive-metastore-${PRODUCT_VERSION}-bin /kubedoop/hive-metastore
     popd
+
+    # cleanup source
+    rm -rf /build/hive-src
 EOF
 
 COPY kubedoop/bin/start-metastore /kubedoop/hive-metastore/bin/
@@ -63,6 +68,7 @@ COPY kubedoop/bin/start-metastore /kubedoop/hive-metastore/bin/
 RUN /kubedoop/hive-metastore/bin/start-metastore --help
 
 
+## stage: hadoop
 FROM zncdatadev/image/hadoop AS hadoop
 
 
@@ -74,7 +80,7 @@ ARG HADOOP_VERSION
 
 WORKDIR /kubedoop
 
-COPY --from=java-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+COPY --from=hive-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 # When start the hive-metastore, it will try to load the hadoop configuration from the classpath.
 COPY --from=hadoop --chown=kubedoop:kubedoop /kubedoop/hadoop-${HADOOP_VERSION} /kubedoop/hadoop-${HADOOP_VERSION}
 

@@ -38,8 +38,6 @@ RUN systemctl set-default container-krb5.target \
     && mkdir /etc/systemd/system/container-krb5.target.wants \
 	&& ln -s /etc/systemd/system/container-krb5.target.wants /etc/systemd/system/multi-user.target.wants
 
-COPY krb5-setup /usr/sbin/krb5-setup
-
 RUN echo 2.0 > /etc/volume-version
 VOLUME [ "/tmp", "/run", "/data" ]
 

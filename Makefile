@@ -98,12 +98,12 @@ go-devel-buildx: jq ## Build Go development image with buildx
 	.scripts/build.sh go-devel --push
 
 .PHONY:
-java-build: jq ## Build Java base image
-	.scripts/build.sh java
+java-base-build: jq ## Build Java base image
+	.scripts/build.sh java-base
 
 .PHONY:
-java-buildx: jq ## Build Java base image with buildx
-	.scripts/build.sh java --push
+java-base-buildx: jq ## Build Java base image with buildx
+	.scripts/build.sh java-base --push
 
 .PHONY:
 java-devel-build: jq ## Build Java development image

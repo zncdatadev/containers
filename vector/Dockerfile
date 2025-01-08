@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
+# check=error=true
 
 
 ## stage: builder
-FROM zncdatadev/image/kubedoop-base AS builder
+FROM zncdatadev/image/kubedoop-base AS vector-builder
 
 ARG PRODUCT_VERSION
 ARG INOTIFY_TOOLS_VERSION
@@ -17,12 +18,13 @@ RUN <<EOF
         libtool \
         tar \
         xz
+    microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
 WORKDIR /build
 
 RUN <<EOF
-    set -ex
     ARCH=$(uname -m)
     ARCH="${ARCH/amd64/x86_64}"
     ARCH="${ARCH/arm64/aarch64}"
@@ -34,7 +36,7 @@ RUN <<EOF
     curl -sSfL --proto '=https' --tlsv1.2 \
         -o vector-${PRODUCT_VERSION}-1.${ARCH}.rpm \
         https://packages.timber.io/vector/${PRODUCT_VERSION}/vector-${PRODUCT_VERSION}-1.${ARCH}.rpm
-
+    popd
 EOF
 
 # smoke test
@@ -42,9 +44,8 @@ RUN test -f /build/vector/vector-${PRODUCT_VERSION}-1.*.rpm
 
 # bunld inotify-tools
 RUN <<EOF
-    set -ex
-    mkdir -p inotify-tools
-    pushd inotify-tools
+    mkdir -p /build/inotify-tools
+    pushd /build/inotify-tools
     curl -sSfL \
         https://github.com/inotify-tools/inotify-tools/archive/refs/tags/${INOTIFY_TOOLS_VERSION}.tar.gz | \
         tar xzf - --strip-components=1
@@ -52,17 +53,21 @@ RUN <<EOF
     ./configure --prefix=/usr/local/inotify-tools
     make -j$(nproc)
     make install
-EOF
+    popd
 
-# smoke test
-RUN test -d /usr/local/inotify-tools
+    # smoke test
+    test -d /usr/local/inotify-tools
+
+    # cleanup source
+    rm -rf /build/inotify-tools
+EOF
 
 
 ## stage: final
 FROM zncdatadev/image/kubedoop-base
 
-COPY --from=builder /build/vector /tmp/vector
-COPY --from=builder /usr/local/inotify-tools /usr/local/inotify-tools
+COPY --from=vector-builder /build/vector /tmp/vector
+COPY --from=vector-builder /usr/local/inotify-tools /usr/local/inotify-tools
 
 # setup inotify-tools
 RUN ln -s /usr/local/inotify-tools/bin/inotifywait /usr/local/bin/inotifywait \

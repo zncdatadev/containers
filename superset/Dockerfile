@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
+# check=error=true
 
 
 ## stage: builder
-FROM zncdatadev/image/vector AS builder
+FROM zncdatadev/image/vector AS superset-builder
 
 ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
@@ -26,6 +27,7 @@ RUN <<EOF
         libpq-devel
 
     microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
 WORKDIR /kubedoop
@@ -50,10 +52,9 @@ RUN <<EOF
         pip install --no-cache-dir authlib==${AUTHLIB_VERSION}
     fi
 
+    # smoke test
+    SUPERSET_SECRET_KEY=$(openssl rand -hex 32) FLASK_APP="superset.app:create_app()" /kubedoop/app/bin/superset version
 EOF
-
-# smoke test
-RUN SUPERSET_SECRET_KEY=$(openssl rand -hex 32) FLASK_APP="superset.app:create_app()" /kubedoop/app/bin/superset version
 
 
 ## stage: statsd exporter
@@ -72,13 +73,12 @@ RUN <<EOF
         xz
 
     microdnf clean all
-
+    rm -rf /var/cache/yum
 EOF
 
 # download and build statsd-exporter
 
 RUN <<EOF
-    set -ex
     mkdir -p /build/statsd-exporter-src
     pushd /build/statsd-exporter-src
     curl -sSfL \
@@ -87,10 +87,18 @@ RUN <<EOF
 
     go build -o /kubedoop/bin/statsd-exporter
     popd
+
+    # smoke test
+    /kubedoop/bin/statsd-exporter --version
+
+    # cleanup source
+    rm -rf /build/statsd-exporter-src
+
+    # cleanup cache
+    go clean -modcache
+    rm -rf /root/.cache/go-build
 EOF
 
-# smoke test
-RUN /kubedoop/bin/statsd-exporter --version
 
 ## stage: final
 FROM zncdatadev/image/vector
@@ -99,7 +107,6 @@ ARG PRODUCT_VERSION
 ARG PYTHON_VERSION
 
 RUN <<EOF
-    set -ex
     microdnf update
     microdnf install \
         cyrus-sasl \
@@ -113,24 +120,22 @@ RUN <<EOF
         python${PYTHON_VERSION}-pip
 
     microdnf clean all
+    rm -rf /var/cache/yum
 EOF
 
 WORKDIR /kubedoop
 
 COPY --from=statsd-exporter-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-COPY --from=builder --chown=kubedoop:kubedoop /kubedoop/app /kubedoop/app
+COPY --from=superset-builder --chown=kubedoop:kubedoop /kubedoop/app /kubedoop/app
 
 COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
 
 ENV VIRTUAL_ENV=/kubedoop/app
 ENV SUPERSET_ENV=production \
     FLASK_APP="superset.app:create_app()" \
-    PYTHONPATH="/kubedoop/app/pythonpath:$PYTHONPATH" \
+    PYTHONPATH="/kubedoop/app/pythonpath" \
     PATH="${VIRTUAL_ENV}/bin:$PATH" \
     SUPERSET_PORT=8088
-
-# smoke test
-RUN SUPERSET_SECRET_KEY=$(openssl rand -hex 32) superset version
 
 EXPOSE ${SUPERSET_PORT}
 
