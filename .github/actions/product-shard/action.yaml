@@ -1,0 +1,26 @@
+name: Product Shard
+description: Get product shard from the product directory
+
+inputs:
+  product_name:
+    description: 'The product name'
+    required: true
+
+outputs:
+  versions:
+    description: 'The product versions'
+    value: ${{ steps.get_versions.outputs.VERSIONS }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get versions
+      id: get_versions
+      shell: bash
+      env:
+        PRODUCT_NAME: ${{ inputs.product_name }}
+      run: |
+        versions=$(yq -o=json '.' "$PRODUCT_NAME/versions.yaml" | jq -c '[.versions[].product]')
+        # example output: ["3.3.4", "3.3.5"]
+        echo "product '${PRODUCT_NAME}' has versions: ${versions}"
+        echo "VERSIONS=${versions}" >> "$GITHUB_OUTPUT"

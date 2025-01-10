@@ -1,0 +1,91 @@
+name: Build and push
+description: Build and push the image to the registry
+
+
+inputs:
+  product_name:
+    description: 'The product name'
+    required: true
+  product_version:
+    description: 'The product version'
+    required: true
+  registry:
+    description: 'The registry to login to'
+    required: false
+    default: 'quay.io/zncdatadev'
+  kubedoop_version:
+    description: 'The kubedoop version'
+    required: false
+    default: '0.0.0-dev'
+  push:
+    description: Push the image to registry after build.
+    required: false
+  sign:
+    description: Sign the image after build.
+    required: false
+  registry_username:
+    description: 'The registry username'
+    required: false
+  registry_password:
+    description: 'The registry password'
+    required: false
+
+
+runs:
+  using: composite
+  steps:
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Setup Cosign
+      uses: ./.github/actions/setup-cosign
+
+    - name: Login to registry
+      if: ${{ inputs.registry_username && inputs.registry_password }}
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry_username }}
+        password: ${{ inputs.registry_password }}
+
+    - name: Build and push
+      shell: bash
+      env:
+        REGISTRY: ${{ inputs.registry }}
+        KUBEDOOP_VERSION: ${{ inputs.kubedoop_version }}
+        PRODUCT_NAME: ${{ inputs.product_name }}
+        PRODUCT_VERSION: ${{ inputs.product_version }}
+        PUSH: ${{ inputs.push }}
+        SIGN: ${{ inputs.sign }}
+      run: |
+        echo "::group::Build command"
+        cmd=('.scripts/build.sh')
+
+        if [ -n "$PRODUCT_NAME" ]; then
+          PRODUCT="$PRODUCT_NAME"
+          if [ -n "$PRODUCT_VERSION" ]; then
+            PRODUCT="$PRODUCT_NAME:$PRODUCT_VERSION"
+          fi
+        fi
+
+        cmd+=("$PRODUCT")
+
+        if [ "$PUSH" = "true" ]; then
+          cmd+=("--push")
+        fi
+
+        if [ "$SIGN" = "true" ]; then
+          cmd+=("--sign")
+        fi
+
+        echo "${cmd[@]}"
+        echo "::endgroup::"
+
+
+        echo "::group::Build and Publish"
+        "${cmd[@]}"
+        echo "::endgroup::"

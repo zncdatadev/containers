@@ -1,0 +1,70 @@
+name: Free Disk Space
+description: Clean up disk space
+
+runs:
+  using: composite
+  steps:
+    - name: Free Space
+      shell: bash
+      run: |
+        echo "::group::Show disk space before"
+        echo "INFO: show free space"
+        free -h
+        df -h
+        lsblk
+        lscpu
+
+        echo "::endgroup::"
+
+
+        echo "::group::Free up space"
+
+        echo "INFO: Remove Android SDK"
+        sudo rm -rf /usr/local/lib/android || true
+
+        echo "INFO: Remove apt cache"
+        sudo apt-get remove -y --fix-missing \
+          '^aspnetcore-.*' \
+          '^dotnet-.*' \
+          '^llvm-.*' \
+          'php.*' \
+          '^mongodb-.*' \
+          '^mysql-.*' \
+          azure-cli \
+          google-cloud-sdk \
+          google-cloud-cli \
+          google-chrome-stable \
+          firefox \
+          powershell \
+          mono-devel \
+          libgl1-mesa-dri
+        sudo apt-get autoremove -y
+        sudo apt-get clean -y
+
+        echo "INFO: Remove .NET runtime"
+        sudo rm -rf /usr/share/dotnet || true
+
+        echo "INFO: Remove Haskell runtime"
+        sudo rm -rf /opt/ghc || true
+        sudo rm -rf /usr/local/.ghcup || true
+
+        echo "INFO: Remove Docker images"
+        sudo docker image prune --all --force || true
+
+        echo "INFO: Remove Agent tool cache"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
+
+        echo "INFO: Remove Swap storage"
+        sudo swapoff -a || true
+        sudo rm -f /mnt/swapfile || true
+        free -h
+
+        echo "::endgroup::"
+
+
+        echo "::group::Show disk space after"
+        echo "INFO: show free space"
+        free -h
+        df -h
+        lsblk
+        echo "::endgroup::"
