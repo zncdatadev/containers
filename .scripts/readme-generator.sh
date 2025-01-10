@@ -49,7 +49,6 @@ generate_table() {
 generate_links() {
     local content=""
     for product in "${products[@]}"; do
-        # 仅生成徽标图片链接，不再需要Build链接的引用
         content+="[Build ${product}]: https://github.com/zncdatadev/containers/actions/workflows/build_${product}.yaml/badge.svg\n"
         content+="[build_${product}.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_${product}.yaml\n"
     done
