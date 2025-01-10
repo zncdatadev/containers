@@ -20,31 +20,51 @@ fi
 
 
 function main () {
+  local cmd_name=$(basename $0)
   local usage="
-Usage: command [OPTIONS][TARGET...]
+Usage: ${cmd_name} [OPTIONS] [PRODUCT...]
 
 Build the image.
 
 Use docker buildx bake to build the image, and push the image to the registry.
 
+Examples:
+  Build all products:
+    ${cmd_name}
+  Build specified product:
+    ${cmd_name} java-base
+  Build specified products
+    ${cmd_name} java-base hadoop
+  Build specified product and specified version:
+    ${cmd_name} java-base:17 hadoop:3.3.1
+  Build and push the image:
+    ${cmd_name} --push hadoop
+
 Options:
-  -h,  --help                     Show this message
-  -d,  --debug                    Build in debug mode
-  -p,  --push                     Push the built image to the registry
+  -r,  --registry REGISTRY        Set the registry, default is 'quay.io/zncdatadev'
+  -p,  --push                     Push the built image to the registry, if not set, load the image to local docker
   -s,  --sign                     Sign the image with cosign
+
+  -h,  --help                     Show this message
 "
 
+  local registry=$REGISTRY
   local debug=false
   local push=false
   local sign=false
   # Change target to array
-  local -a targets=()
+  local -a products=()
 
   # Parse arguments
   while [ "$1" != "" ]; do
     case $1 in
-      -d | --debug )
-        debug=true
+      -r | --registry )
+        shift
+        registry=$1
+        ;;
+      -h | --help )
+        echo "$usage"
+        exit 0
         ;;
       -p | --push )
         push=true
@@ -52,14 +72,11 @@ Options:
       -s | --sign )
         sign=true
         ;;
-      -h | --help )
-        echo "$usage"
-        exit 0
-        ;;
+
       * )
         # Handle non-option argument as target
         if [[ $1 != -* ]]; then
-          targets+=("$1")
+          products+=("$1")
         else
           echo "Error: Invalid argument '$1'"
           echo "$usage"
@@ -69,6 +86,9 @@ Options:
     esac
     shift
   done
+
+  # Set registry
+  export REGISTRY=$registry
 
   # Print all specified targets
   if [ ${#targets[@]} -gt 0 ]; then
@@ -93,13 +113,8 @@ Options:
   # Get the bakefile configuration
   local bakefile=$(get_bakefile "$platforms")
 
-  # Check debug mode
-  if [ "$debug" = true ] || [ "$CI_DEBUG" = "true" ]; then
-    debug=true
-  fi
-
   # Update function call order of parameters
-  build_sign_image "$bakefile" $push $sign $debug "${targets[*]}"
+  build_sign_image "$bakefile" $push $sign $debug "${products[*]}"
 }
 
 
@@ -117,7 +132,7 @@ function system_requirements () {
   fi
 
   if [ "$sign" = true ] && ! command -v cosign > /dev/null; then
-    echo "cosignz is required, Please install it refer to <https://docs.sigstore.dev/cosign/system_config/installation/>" >&2
+    echo "cosign is required, Please install it refer to <https://docs.sigstore.dev/cosign/system_config/installation/>" >&2
     exit 1
   fi
 }
@@ -141,7 +156,9 @@ function sign_image () {
 #  $2: bool  push, if true, push image to registry, else load to local docker, default is false
 #  $3: bool  sign, if true, sign image with cosign, default is false
 #  $4: bool  debug, if true, print debug info, default is false
-#  $5: str   targets, target names in bakefile, space separated
+#  $5: str   products, products to build, if empty, build all products.
+#             A version can be specified with the product name.
+#             eg: 'java-base hadoop:3.3.1'
 # Returns:
 #  None
 function build_sign_image () {
@@ -149,7 +166,7 @@ function build_sign_image () {
   local push=$2
   local sign=$3
   local debug=$4
-  local targets=$5
+  local products=$5
 
   local image_digest_file="docker-bake-digests.json"
   local cmd=("docker" "buildx" "bake")
@@ -169,11 +186,11 @@ function build_sign_image () {
 
   local -a to_build_targets=()
   # Add all targets to command
-  for target in $targets; do
-    if [ -n "$target" ]; then
+  for product in $products; do
+    if [ -n "$product" ]; then
       # Transform target if it contains colon and dot
-      if [[ "$target" == *:* ]]; then
-        target=$(echo "$target" | sed 's/:/-/g' | sed 's/\./_/g')
+      if [[ "$product" == *:* ]]; then
+        target=$(echo "$product" | sed 's/:/-/g' | sed 's/\./_/g')
       fi
       to_build_targets+=("$target")
     fi
