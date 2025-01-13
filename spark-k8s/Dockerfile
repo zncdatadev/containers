@@ -46,8 +46,8 @@ EOT
 FROM zncdatadev/image/hadoop AS hadoop
 
 
-## stage: spark-builder
-FROM zncdatadev/image/hbase AS hbase
+# ## stage: spark-builder
+# FROM zncdatadev/image/hbase AS hbase
 
 
 ## stage: spark-builder
@@ -115,16 +115,16 @@ COPY --from=hadoop \
     /kubedoop/hadoop/share/hadoop/tools/lib/azure-keyvault-core-*.jar \
     /kubedoop/spark/jars/
 
-COPY --from=hbase \
-    /kubedoop/hbase/lib/shaded-clients/hbase-shared-client-byo-hadoop-*.jar \
-    /kubedoop/hbase/lib/shaded-clients/hbase-shared-mapreduce-*.jar \
-    /kubedoop/spark/jars/
+# COPY --from=hbase \
+#     /kubedoop/hbase/lib/shaded-clients/hbase-shared-client-byo-hadoop-*.jar \
+#     /kubedoop/hbase/lib/shaded-clients/hbase-shared-mapreduce-*.jar \
+#     /kubedoop/spark/jars/
 
-COPY --from=hbase \
-    /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-api-*.jar \
-    /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-context-*.jar \
-    /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-semconv-*.jar \
-    /kubedoop/spark/jars/
+# COPY --from=hbase \
+#     /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-api-*.jar \
+#     /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-context-*.jar \
+#     /kubedoop/hbase/lib/client-facing-thirdparty/opentelemetry-semconv-*.jar \
+#     /kubedoop/spark/jars/
 
 # download extra-jars
 COPY --from=gradle-builder /jars /kubedoop/spark/extra-jars
