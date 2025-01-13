@@ -20,7 +20,7 @@ products:
   - hadoop
   - hive
   # - hbase
-  # - spark-k8s
+  - spark-k8s
   - nifi
 # If file under the path is changed, the all product will be rebuilt
 global-paths:
