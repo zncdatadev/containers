@@ -1,0 +1,69 @@
+name: Build hbase
+
+
+env:
+  PRODUCT_NAME: hbase
+  KUBEDOOP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
+  REGISTRY: quay.io/zncdatadev
+
+on:
+  # workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - hbase/**
+      - .github/actions/**
+      - .github/workflows/build_hbase.yaml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - hbase/**
+      - .github/actions/**
+      - .github/workflows/build_hbase.yaml
+
+
+jobs:
+  product-shard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get product versions
+        id: product-shard
+        uses: ./.github/actions/product-shard
+        with:
+          product_name: ${{ env.PRODUCT_NAME }}
+    outputs:
+      versions: ${{ steps.product-shard.outputs.versions }}
+
+  # build job only runs on push
+  build:
+    name: Build on ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'zncdatadev' }}
+    needs:
+      - product-shard
+    strategy:
+      matrix:
+        version: ${{fromJson(needs.product-shard.outputs.versions)}}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: ./.github/actions/free-disk-space
+
+      - name: Run build
+        uses: ./.github/actions/build-and-push
+        with:
+          registry: ${{ env.REGISTRY }}
+          registry_username: ${{ secrets.QUAY_USERNAME }}
+          registry_password: ${{ secrets.QUAY_PASSWORD }}
+          kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
+          product_name: ${{ env.PRODUCT_NAME }}
+          product_version: ${{ matrix.version }}
+          push: ${{ github.event_name == 'push' }}
+          sign: ${{ github.ref_type == 'tag' }}
