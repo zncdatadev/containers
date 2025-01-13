@@ -106,55 +106,55 @@ EOF
 RUN /kubedoop/hbase/bin/hbase version
 
 
-# ## stage: hbase-operator-tools-builder
-# FROM zncdatadev/image/java-devel AS hbase-operator-tools-builder
+## stage: hbase-operator-tools-builder
+FROM zncdatadev/image/java-devel AS hbase-operator-tools-builder
 
-# ARG PRODUCT_VERSION
-# ARG HBASE_OPERATOR_TOOLS_VERSION
-# ARG HBASE_THIRDPARTY_VERSION
+ARG PRODUCT_VERSION
+ARG HBASE_OPERATOR_TOOLS_VERSION
+ARG HBASE_THIRDPARTY_VERSION
 
-# WORKDIR /build
+WORKDIR /build
 
-# # setup hbase-operator-tools
-# RUN <<EOF
-#     set -ex
-#     mkdir -p /build/hbase-operator-tools-src
-#     pushd /build/hbase-operator-tools-src
+# setup hbase-operator-tools
+RUN <<EOF
+    set -ex
+    mkdir -p /build/hbase-operator-tools-src
+    pushd /build/hbase-operator-tools-src
 
-#     # if HBASE_OPERATOR_TOOLS_VERSION contains '-', it is a snapshot version, we need to
-#     # split it. the first part is version, the second part is the commit hash
-#     # use the commit hash to download the source code.
-#     if [[ ${HBASE_OPERATOR_TOOLS_VERSION} == *-* ]]; then
-#         version=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 1)
-#         sha=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 2)
-#         HBASE_OPERATOR_TOOLS_VERSION="${version}-SNAPSHOT"
-#         curl -sSfL \
-#             https://github.com/apache/hbase-operator-tools/archive/${sha}.tar.gz \
-#             | tar xzf - --strip-components=1
-#     else
-#         curl -sSfL \
-#             https://github.com/apache/hbase-operator-tools/archive/refs/tags/rel/${HBASE_OPERATOR_TOOLS_VERSION}.tar.gz \
-#             | tar xzf - --strip-components=1
-#     fi
+    # if HBASE_OPERATOR_TOOLS_VERSION contains '-', it is a snapshot version, we need to
+    # split it. the first part is version, the second part is the commit hash
+    # use the commit hash to download the source code.
+    if [[ ${HBASE_OPERATOR_TOOLS_VERSION} == *-* ]]; then
+        version=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 1)
+        sha=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 2)
+        HBASE_OPERATOR_TOOLS_VERSION="${version}-SNAPSHOT"
+        curl -sSfL \
+            https://github.com/apache/hbase-operator-tools/archive/${sha}.tar.gz \
+            | tar xzf - --strip-components=1
+    else
+        curl -sSfL \
+            https://github.com/apache/hbase-operator-tools/archive/refs/tags/rel/${HBASE_OPERATOR_TOOLS_VERSION}.tar.gz \
+            | tar xzf - --strip-components=1
+    fi
 
-#     # build hbase-operator-tools
-#     mvn \
-#         --no-transfer-progress \
-#         -Dhbase.version=${PRODUCT_VERSION} \
-#         -Dhbase-thirdparty.version=${HBASE_THIRDPARTY_VERSION} \
-#         -DskipTests \
-#         package assembly:single
+    # build hbase-operator-tools
+    mvn \
+        --no-transfer-progress \
+        -Dhbase.version=${PRODUCT_VERSION} \
+        -Dhbase-thirdparty.version=${HBASE_THIRDPARTY_VERSION} \
+        -DskipTests \
+        package assembly:single
 
-#     tar -xzf hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz -C /kubedoop
-#     ln -s /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
-#     popd
+    tar -xzf hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz -C /kubedoop
+    ln -s /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
+    popd
 
-#     # cleanup source
-#     rm -rf /build/hbase-operator-tools-src
+    # cleanup source
+    rm -rf /build/hbase-operator-tools-src
 
-#     # cleanup cache
-#     rm -rf /root/.m2
-# EOF
+    # cleanup cache
+    rm -rf /root/.m2
+EOF
 
 
 # ## stage: phoenix-builder
@@ -252,8 +252,8 @@ EOF
 WORKDIR /kubedoop
 
 COPY --from=hbase-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-# # setup hbase-operator-tools
-# COPY --from=hbase-operator-tools-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+# setup hbase-operator-tools
+COPY --from=hbase-operator-tools-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 # # setup phoenix
 # COPY --from=phoenix-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 # setup hadoop-s3
