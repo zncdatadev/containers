@@ -7,8 +7,9 @@ This repository contains the Dockerfiles for the ZNCDataDev containers.
 | ---: | ---: | ---: | ---: |
 | [![Build airflow]][build_airflow.yaml] | [![Build dolphinscheduler]][build_dolphinscheduler.yaml] | [![Build go-devel]][build_go-devel.yaml] | [![Build hadoop]][build_hadoop.yaml] |
 | [![Build hive]][build_hive.yaml] | [![Build java-base]][build_java-base.yaml] | [![Build java-devel]][build_java-devel.yaml] | [![Build kafka]][build_kafka.yaml] |
-| [![Build krb5]][build_krb5.yaml] | [![Build kubedoop-base]][build_kubedoop-base.yaml] | [![Build nifi]][build_nifi.yaml] | [![Build superset]][build_superset.yaml] |
-| [![Build testing-tools]][build_testing-tools.yaml] | [![Build tools]][build_tools.yaml] | [![Build trino]][build_trino.yaml] | [![Build zookeeper]][build_zookeeper.yaml] |
+| [![Build krb5]][build_krb5.yaml] | [![Build kubedoop-base]][build_kubedoop-base.yaml] | [![Build nifi]][build_nifi.yaml] | [![Build spark-k8s]][build_spark-k8s.yaml] |
+| [![Build superset]][build_superset.yaml] | [![Build testing-tools]][build_testing-tools.yaml] | [![Build tools]][build_tools.yaml] | [![Build trino]][build_trino.yaml] |
+| [![Build zookeeper]][build_zookeeper.yaml] | | | |
 
 <!-- end:bages -->
 
@@ -20,12 +21,12 @@ TODO: ref docker doc
 
 ### Build
 
-Use the `build.sh` script to build the images.
+Use the [build.sh](./.scripts/build.sh) script to build the images.
 
 The following command will build the hadoop:3.3.4 and all variants of the zookeeper image.
 
 ```bash
-./scripts/build.sh hadoop:3.3.4 zookeeper
+./.scripts/build.sh hadoop:3.3.4 zookeeper
 ```
 
 ### Build and push
@@ -33,7 +34,7 @@ The following command will build the hadoop:3.3.4 and all variants of the zookee
 When enable push, multiple-arch images will be built and pushed to the registry.
 
 ```bash
-./scripts/build.sh hadoop:3.3.4 --push
+./.scripts/build.sh hadoop:3.3.4 --push
 ```
 
 ### Build and push with sign
@@ -41,12 +42,12 @@ When enable push, multiple-arch images will be built and pushed to the registry.
 When enable sign, the cosign tool should be installed and the image will be signed.
 
 ```bash
-./scripts/build.sh hadoop:3.3.4 --push --sign
+./.scripts/build.sh hadoop:3.3.4 --push --sign
 ```
 
 ### Set the registry and version
 
-[build.sh](./scripts/build.sh) script use environment variables to set the registry and version.
+The [build.sh](./.scripts/build.sh) script use environment variables to set the registry and version.
 
 ```bash
 export REGISTRY=registry.example.com/zncdatadev
@@ -77,6 +78,8 @@ export KUBEDOOP_VERSION=0.1.0
 [build_kubedoop-base.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_kubedoop-base.yaml
 [Build nifi]: https://github.com/zncdatadev/containers/actions/workflows/build_nifi.yaml/badge.svg
 [build_nifi.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_nifi.yaml
+[Build spark-k8s]: https://github.com/zncdatadev/containers/actions/workflows/build_spark-k8s.yaml/badge.svg
+[build_spark-k8s.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_spark-k8s.yaml
 [Build superset]: https://github.com/zncdatadev/containers/actions/workflows/build_superset.yaml/badge.svg
 [build_superset.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_superset.yaml
 [Build testing-tools]: https://github.com/zncdatadev/containers/actions/workflows/build_testing-tools.yaml/badge.svg
