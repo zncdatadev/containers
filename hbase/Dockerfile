@@ -105,108 +105,51 @@ EOF
 RUN /kubedoop/hbase/bin/hbase version
 
 
-# ## stage: hbase-operator-tools-builder
-# FROM zncdatadev/image/java-devel AS hbase-operator-tools-builder
-
-# ARG PRODUCT_VERSION
-# ARG HBASE_OPERATOR_TOOLS_VERSION
-# ARG HBASE_THIRDPARTY_VERSION
-
-# WORKDIR /build
-
-# # setup hbase-operator-tools
-# RUN <<EOF
-#     set -ex
-#     mkdir -p /build/hbase-operator-tools-src
-#     pushd /build/hbase-operator-tools-src
-
-#     # if HBASE_OPERATOR_TOOLS_VERSION contains '-', it is a snapshot version, we need to
-#     # split it. the first part is version, the second part is the commit hash
-#     # use the commit hash to download the source code.
-#     if [[ ${HBASE_OPERATOR_TOOLS_VERSION} == *-* ]]; then
-#         version=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 1)
-#         sha=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 2)
-#         HBASE_OPERATOR_TOOLS_VERSION="${version}-SNAPSHOT"
-#         curl -sSfL \
-#             https://github.com/apache/hbase-operator-tools/archive/${sha}.tar.gz \
-#             | tar xzf - --strip-components=1
-#     else
-#         curl -sSfL \
-#             https://github.com/apache/hbase-operator-tools/archive/refs/tags/rel/${HBASE_OPERATOR_TOOLS_VERSION}.tar.gz \
-#             | tar xzf - --strip-components=1
-#     fi
-
-#     # build hbase-operator-tools
-#     mvn \
-#         --no-transfer-progress \
-#         -Dhbase.version=${PRODUCT_VERSION} \
-#         -Dhbase-thirdparty.version=${HBASE_THIRDPARTY_VERSION} \
-#         -DskipTests \
-#         package assembly:single
-
-#     tar -xzf hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz -C /kubedoop
-#     ln -s /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
-#     popd
-
-#     # cleanup source
-#     rm -rf /build/hbase-operator-tools-src
-
-#     # cleanup cache
-#     rm -rf /root/.m2
-# EOF
-
-
-## stage: phoenix-builder
-FROM zncdatadev/image/java-devel AS phoenix-builder
+## stage: hbase-operator-tools-builder
+FROM zncdatadev/image/java-devel AS hbase-operator-tools-builder
 
 ARG PRODUCT_VERSION
-ARG HADOOP_VERSION
-ARG PHOENIX_VERSION
-ARG HBASE_PROFILE_VERSION
+ARG HBASE_OPERATOR_TOOLS_VERSION
+ARG HBASE_THIRDPARTY_VERSION
 
 WORKDIR /build
-# setup phoenix
+
+# setup hbase-operator-tools
 RUN <<EOF
     set -ex
-    mkdir -p /build/phoenix-src
-    pushd /build/phoenix-src
+    mkdir -p /build/hbase-operator-tools-src
+    pushd /build/hbase-operator-tools-src
 
-    # Phonix repoisotry is https://github.com/apache/phoenix,
-    # release download url is https://github.com/apache/phoenix/archive/refs/tags/5.2.1.tar.gz
-    # If PHONIX_VERSION contains '-', it is a snapshot version, we need to
+    # if HBASE_OPERATOR_TOOLS_VERSION contains '-', it is a snapshot version, we need to
     # split it. the first part is version, the second part is the commit hash
     # use the commit hash to download the source code.
-    if [[ ${PHOENIX_VERSION} == *-* ]]; then
-        version=$(echo ${PHOENIX_VERSION} | cut -d '-' -f 1)
-        sha=$(echo ${PHOENIX_VERSION} | cut -d '-' -f 2)
-        PHOENIX_VERSION="${version}-SNAPSHOT"
+    if [[ ${HBASE_OPERATOR_TOOLS_VERSION} == *-* ]]; then
+        version=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 1)
+        sha=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 2)
+        HBASE_OPERATOR_TOOLS_VERSION="${version}-SNAPSHOT"
         curl -sSfL \
-            https://github.com/apache/phoenix/archive/${sha}.tar.gz \
+            https://github.com/apache/hbase-operator-tools/archive/${sha}.tar.gz \
             | tar xzf - --strip-components=1
     else
         curl -sSfL \
-            https://github.com/apache/phoenix/archive/refs/tags/${PHOENIX_VERSION}.tar.gz \
+            https://github.com/apache/hbase-operator-tools/archive/refs/tags/rel/${HBASE_OPERATOR_TOOLS_VERSION}.tar.gz \
             | tar xzf - --strip-components=1
     fi
 
-    # build phoenix
+    # build hbase-operator-tools
     mvn \
         --no-transfer-progress \
         -Dhbase.version=${PRODUCT_VERSION} \
-        -Dhbase.profile=${HBASE_PROFILE_VERSION} \
-        -Dhadoop.version=${HADOOP_VERSION} \
+        -Dhbase-thirdparty.version=${HBASE_THIRDPARTY_VERSION} \
         -DskipTests \
-        -Dcheckstyle.skip=true \
-        clean \
-        package
+        package assembly:single
 
-    mkdir /kubedoop/phoenix-${HBASE_PROFILE_VERSION}-${PHOENIX_VERSION}-bin
-    tar -xzf phoenix-assembly/target/phoenix-hbase-*-bin.tar.gz -C /kubedoop/phoenix-${HBASE_PROFILE_VERSION}-${PHOENIX_VERSION}-bin --strip-components=1
-    ln -s /kubedoop/phoenix-${HBASE_PROFILE_VERSION}-${PHOENIX_VERSION}-bin /kubedoop/phoenix
+    tar -xzf hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz -C /kubedoop
+    ln -s /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
     popd
 
     # cleanup source
-    rm -rf /build/phoenix-src
+    rm -rf /build/hbase-operator-tools-src
 
     # cleanup cache
     rm -rf /root/.m2
@@ -251,15 +194,12 @@ EOF
 WORKDIR /kubedoop
 
 COPY --from=hbase-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-# # setup hbase-operator-tools
-# COPY --from=hbase-operator-tools-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
-# setup phoenix
-COPY --from=phoenix-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
+# setup hbase-operator-tools
+COPY --from=hbase-operator-tools-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 # setup hadoop-s3
 COPY --from=hadoop-s3-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
-RUN find /kubedoop/hadoop/share/ -name *.jar | grep 'aws' | xargs -I {} ln -s {} /kubedoop/hbase/lib/ \
-    && ln -s /kubedoop/phoenix/phoenix-server-hbase-${HBASE_PROFILE_VERSION}.jar /kubedoop/hbase/lib/
+RUN find /kubedoop/hadoop/share/ -name *.jar | grep 'aws' | xargs -I {} ln -s {} /kubedoop/hbase/lib/
 
 ENV HBASE_HOME=/kubedoop/hbase
 
