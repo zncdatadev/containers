@@ -78,7 +78,6 @@ RUN <<EOF
     /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
 
     mvn \
-        --batch-mode \
         --no-transfer-progress \
         -Dhadoop.profile=3.0 \
         -Dhadoop-three.version=${HADOOP_VERSION} \
