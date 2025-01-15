@@ -33,7 +33,7 @@ EOF
         krb5-devel \
         libcurl-devel \
         make \
-        maven \
+        maven-openjdk${JAVA_VERSION} \
         openssl-devel \
         patch \
         pkg-config \
