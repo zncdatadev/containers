@@ -8,6 +8,7 @@ ARG PRODUCT_VERSION
 ARG MAVEN_VERSION
 
 RUN <<EOT
+    set -ex
     # https://adoptium.net/en-GB/installation/linux/#_centosrhelfedora_instructions
     cat <<EOF > /etc/yum.repos.d/adoptium.repo
 [Adoptium]
@@ -33,7 +34,7 @@ EOF
         krb5-devel \
         libcurl-devel \
         make \
-        maven-openjdk${JAVA_VERSION} \
+        maven \
         openssl-devel \
         patch \
         pkg-config \
@@ -50,7 +51,13 @@ EOF
     microdnf clean all
     rm -rf /var/cache/yum
 
-    java -version
+    # Due to the maven default dependency jdk17, so two versions of jdk are installed if the PRODUCT_VERSION is not 17.
+    # Use alternatives to set the default Java version
+    alternatives --set java /usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk/bin/java
+    alternatives --set javac /usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk/bin/javac
+
+    # smoke test
+    java -version 2>&1 | grep -q "openjdk version \"${PRODUCT_VERSION}." || (echo "Java version mismatch" && exit 1)
 EOT
 
 ENV JAVA_HOME=/usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk
