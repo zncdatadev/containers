@@ -5,7 +5,6 @@
 FROM zncdatadev/image/kubedoop-base
 
 ARG PRODUCT_VERSION
-ARG MAVEN_VERSION
 
 RUN <<EOT
     set -ex
@@ -57,7 +56,11 @@ EOF
     alternatives --set javac /usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk/bin/javac
 
     # smoke test
-    java -version 2>&1 | grep -q "openjdk version \"${PRODUCT_VERSION}." || (echo "Java version mismatch" && exit 1)
+    if [ "${PRODUCT_VERSION}" != "8" ]; then
+        java -version 2>&1 | grep -q "openjdk version \"${PRODUCT_VERSION}\." || (echo "Java version mismatch" && exit 1)
+    else
+        java -version 2>&1 | grep -q "openjdk version \"1\.${PRODUCT_VERSION}\." || (echo "Java version mismatch" && exit 1)
+    fi
 EOT
 
 ENV JAVA_HOME=/usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk
