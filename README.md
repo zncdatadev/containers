@@ -6,10 +6,10 @@ This repository contains the Dockerfiles for the ZNCDataDev containers.
 |      |      |      |      |
 | ---: | ---: | ---: | ---: |
 | [![Build airflow]][build_airflow.yaml] | [![Build dolphinscheduler]][build_dolphinscheduler.yaml] | [![Build go-devel]][build_go-devel.yaml] | [![Build hadoop]][build_hadoop.yaml] |
-| [![Build hive]][build_hive.yaml] | [![Build java-base]][build_java-base.yaml] | [![Build java-devel]][build_java-devel.yaml] | [![Build kafka]][build_kafka.yaml] |
-| [![Build krb5]][build_krb5.yaml] | [![Build kubedoop-base]][build_kubedoop-base.yaml] | [![Build nifi]][build_nifi.yaml] | [![Build spark-k8s]][build_spark-k8s.yaml] |
-| [![Build superset]][build_superset.yaml] | [![Build testing-tools]][build_testing-tools.yaml] | [![Build tools]][build_tools.yaml] | [![Build trino]][build_trino.yaml] |
-| [![Build zookeeper]][build_zookeeper.yaml] | | | |
+| [![Build hbase]][build_hbase.yaml] | [![Build hive]][build_hive.yaml] | [![Build java-base]][build_java-base.yaml] | [![Build java-devel]][build_java-devel.yaml] |
+| [![Build kafka]][build_kafka.yaml] | [![Build krb5]][build_krb5.yaml] | [![Build kubedoop-base]][build_kubedoop-base.yaml] | [![Build nifi]][build_nifi.yaml] |
+| [![Build spark-k8s]][build_spark-k8s.yaml] | [![Build superset]][build_superset.yaml] | [![Build testing-tools]][build_testing-tools.yaml] | [![Build tools]][build_tools.yaml] |
+| [![Build trino]][build_trino.yaml] | [![Build zookeeper]][build_zookeeper.yaml] | | |
 
 <!-- end:bages -->
 
@@ -64,6 +64,8 @@ export KUBEDOOP_VERSION=0.1.0
 [build_go-devel.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_go-devel.yaml
 [Build hadoop]: https://github.com/zncdatadev/containers/actions/workflows/build_hadoop.yaml/badge.svg
 [build_hadoop.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_hadoop.yaml
+[Build hbase]: https://github.com/zncdatadev/containers/actions/workflows/build_hbase.yaml/badge.svg
+[build_hbase.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_hbase.yaml
 [Build hive]: https://github.com/zncdatadev/containers/actions/workflows/build_hive.yaml/badge.svg
 [build_hive.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_hive.yaml
 [Build java-base]: https://github.com/zncdatadev/containers/actions/workflows/build_java-base.yaml/badge.svg
