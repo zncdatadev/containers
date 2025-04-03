@@ -2,7 +2,7 @@ name: Release
 
 env:
   KUBEDOOP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
-  REGISTRY: quay.io/huagang
+  REGISTRY: quay.io/zncdatadev
 
 on:
   push:
