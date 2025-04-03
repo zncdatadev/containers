@@ -9,6 +9,11 @@ on:
     tags:
       - '**'
 
+# Enable oidc token permission for image sign tool cosign.
+permissions:
+  contents: read  # for checking out the code
+  id-token: write # required for OIDC if used in the build-and-push action
+
 jobs:
   products-shard:
     runs-on: ubuntu-latest
