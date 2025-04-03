@@ -2,7 +2,7 @@ name: Release
 
 env:
   KUBEDOOP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
-  REGISTRY: quay.io/zncdatadev
+  REGISTRY: quay.io/huagang
 
 on:
   push:
@@ -87,6 +87,6 @@ jobs:
           registry_password: ${{ secrets.QUAY_PASSWORD }}
           product_name: ${{ matrix.product.product_name }}
           product_version: ${{ matrix.product.product_version }}
-          kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
+          kubedoop_version: "0.2.0"
           push: ${{ github.event_name == 'push' }}
           sign: true
