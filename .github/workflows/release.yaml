@@ -25,7 +25,9 @@ jobs:
           # Create a JSON array to store product information
           json_array="[]"
 
-          for product_name in $product_names; do
+          # Loop through each product name
+          # use here-string to read product names
+          while IFS= read -r product_name; do
             # Check if versions.yaml exists
             if [ ! -f "$product_name/versions.yaml" ]; then
               echo "Warning: $product_name/versions.yaml does not exist, skipping"
@@ -41,7 +43,7 @@ jobs:
             for version in $(echo "${versions_json}" | jq -r '.[]'); do
               json_array=$(echo $json_array | jq --arg name "$product_name" --arg ver "$version" '. += [{"product_name": $name, "product_version": $ver}]')
             done
-          done
+          done <<< "$product_names"
 
           # Check if the array is empty
           if [ "$(echo $json_array | jq 'length')" -eq "0" ]; then
