@@ -226,6 +226,7 @@ function build_sign_image () {
     fi
 
     for key in $(jq -r 'keys[]' "$image_digest_file"); do
+      echo "INFO: Processing image entry for key: $key" >&2
       local image_digest=$(jq -r --arg key "$key" '.[$key]["containerimage.digest"] // empty' "$image_digest_file")
       local image_name=$(jq -r --arg key "$key" '.[$key]["image.name"] // empty' "$image_digest_file")
 
