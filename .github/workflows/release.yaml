@@ -6,6 +6,8 @@ env:
 
 on:
   push:
+    branches:
+      - ci/add-release
     tags:
       - '**'
 
@@ -59,7 +61,7 @@ jobs:
   build:
     name: Build ${{ matrix.product.product_name }}-${{ matrix.product.product_version }}
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'zncdatadev' }}
+    # if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
       - products-shard
     strategy:
