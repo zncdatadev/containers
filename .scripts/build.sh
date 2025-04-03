@@ -144,8 +144,17 @@ function sign_image () {
   local image=$1
   local upload=$2
 
-  if [ $upload = true ]; then
-    cosign sign -y $image
+  # Verify that image is not null before signing
+  if [[ -z "$image" || "$image" == *"null"* ]]; then
+    echo "ERROR: Invalid image reference for signing: '$image'" >&2
+    return 1
+  fi
+
+  if [ "$upload" = true ]; then
+    echo "INFO: Signing image with OIDC token: $image" >&2
+    cosign sign --yes $image
+  else
+    echo "INFO: Image signing skipped (upload=false): $image" >&2
   fi
 }
 
@@ -206,17 +215,31 @@ function build_sign_image () {
   echo "INFO: Building image: ${cmd[*]}" >&2
   echo "$bakefile" | "${cmd[@]}"
 
-  echo "INFO: Signing images" >&2
-  if [ -f $image_digest_file ] && [ "$sign" = true ]; then
-    for key in $(jq -r 'keys[]' $image_digest_file); do
-      local image_digest=$(jq -r --arg key "$key" '.[$key]["containerimage.digest"]' $image_digest_file)
-      local image_name=$(jq -r --arg key "$key" '.[$key]["image.name"]' $image_digest_file)
-      if [ -n "$image_digest" ] && [ -n "$image_name" ]; then
+  # Only attempt signing if requested and when pushing images
+  if [ -f "$image_digest_file" ] && [ "$sign" = true ] && [ "$push" = true ]; then
+    echo "INFO: Signing images from digest file: $image_digest_file" >&2
+
+    # First dump file content for debugging
+    if [ "$debug" = true ]; then
+      echo "DEBUG: Contents of $image_digest_file:" >&2
+      cat "$image_digest_file" >&2
+    fi
+
+    for key in $(jq -r 'keys[]' "$image_digest_file"); do
+      local image_digest=$(jq -r --arg key "$key" '.[$key]["containerimage.digest"] // empty' "$image_digest_file")
+      local image_name=$(jq -r --arg key "$key" '.[$key]["image.name"] // empty' "$image_digest_file")
+
+      # More comprehensive checks
+      if [[ -n "$image_digest" && "$image_digest" != "null" && -n "$image_name" && "$image_name" != "null" ]]; then
         local digest_tag="${image_name}@${image_digest}"
-        echo "INFO: Signing image: $digest_tag" >&2
-        sign_image $digest_tag $push
+        echo "INFO: Preparing to sign image: $digest_tag" >&2
+        sign_image "$digest_tag" "$push"
+      else
+        echo "WARNING: Skipping invalid image entry for key '$key'. Name: '$image_name', Digest: '$image_digest'" >&2
       fi
     done
+  else
+    [ "$sign" = true ] && echo "INFO: Image signing skipped (no digest file or push=false)" >&2
   fi
 }
 
