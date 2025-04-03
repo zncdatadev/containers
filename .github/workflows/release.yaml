@@ -24,8 +24,9 @@ jobs:
           # Get product names from project.yaml
           product_names=$(yq -o=json '.' project.yaml | jq -r '.products[]')
 
-          # Get versions for each product and store structured information
-          declare -a product_info=()
+          # 创建JSON数组来存储产品信息
+          json_array="[]"
+
           for product_name in $product_names; do
             # Check if versions.yaml exists
             if [ ! -f "$product_name/versions.yaml" ]; then
@@ -35,30 +36,27 @@ jobs:
 
             # Get versions from the product directory
             versions_json=$(yq -o=json '.' "$product_name/versions.yaml" | jq -c '[.versions[].product]')
-            # example output: ["3.3.4", "3.3.5"]
             echo "product '${product_name}' has versions: ${versions_json}"
 
-            # Append structured product info to array
+            # 直接使用jq添加到JSON数组中
             for version in $(echo "${versions_json}" | jq -r '.[]'); do
-              # Create JSON object with product_name and product_version fields
-              product_info+=("{\"product_name\":\"${product_name}\",\"product_version\":\"${version}\"}")
+              json_array=$(echo $json_array | jq --arg name "$product_name" --arg ver "$version" '. += [{"product_name": $name, "product_version": $ver}]')
             done
           done
 
-          # Convert the array to a JSON string and set it as an output
-          if [ ${#product_info[@]} -eq 0 ]; then
+          # 检查数组是否为空
+          if [ "$(echo $json_array | jq 'length')" -eq "0" ]; then
             echo "Error: No valid product versions found"
             exit 1
           fi
 
-          product_info_json=$(printf '%s\n' "${product_info[@]}" | jq -sc '.')
-          escaped_json=$(echo "$product_info_json" | jq -c -r @json)
-          echo "product_info=${escaped_json:1:-1}" >> "$GITHUB_OUTPUT"
+          # 将JSON数组直接设为输出，避免额外的转义和处理
+          echo "product_info=$(echo $json_array | jq -c .)" >> $GITHUB_OUTPUT
     outputs:
       product_info: ${{ steps.products-shard.outputs.product_info }}
 
   build:
-    name: Build
+    name: Build ${{ matrix.product.product_name }}-${{ matrix.product.product_version }}
     runs-on: ubuntu-latest
     # if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
