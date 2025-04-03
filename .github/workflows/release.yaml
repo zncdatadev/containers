@@ -6,6 +6,8 @@ env:
 
 on:
   push:
+    branches:
+      - ci/fix-release-sign
     tags:
       - '**'
 
@@ -64,7 +66,7 @@ jobs:
   build:
     name: Build ${{ matrix.product.product_name }}-${{ matrix.product.product_version }}
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'zncdatadev' }}
+    # if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
       - products-shard
     strategy:
@@ -87,4 +89,4 @@ jobs:
           product_version: ${{ matrix.product.product_version }}
           kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
           push: ${{ github.event_name == 'push' }}
-          sign: ${{ github.ref_type == 'tag' }}
+          sign: true
