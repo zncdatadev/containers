@@ -1,4 +1,4 @@
-name: release
+name: Release
 
 env:
   KUBEDOOP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
@@ -6,8 +6,6 @@ env:
 
 on:
   push:
-    branches:
-      - ci/add-release
     tags:
       - '**'
 
