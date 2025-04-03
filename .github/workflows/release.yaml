@@ -24,7 +24,7 @@ jobs:
           # Get product names from project.yaml
           product_names=$(yq -o=json '.' project.yaml | jq -r '.products[]')
 
-          # 创建JSON数组来存储产品信息
+          # Create a JSON array to store product information
           json_array="[]"
 
           for product_name in $product_names; do
@@ -36,21 +36,22 @@ jobs:
 
             # Get versions from the product directory
             versions_json=$(yq -o=json '.' "$product_name/versions.yaml" | jq -c '[.versions[].product]')
+            # version like: ["0.0.1", "0.0.2"]
             echo "product '${product_name}' has versions: ${versions_json}"
 
-            # 直接使用jq添加到JSON数组中
+            # Directly use jq to add to the JSON array
             for version in $(echo "${versions_json}" | jq -r '.[]'); do
               json_array=$(echo $json_array | jq --arg name "$product_name" --arg ver "$version" '. += [{"product_name": $name, "product_version": $ver}]')
             done
           done
 
-          # 检查数组是否为空
+          # Check if the array is empty
           if [ "$(echo $json_array | jq 'length')" -eq "0" ]; then
             echo "Error: No valid product versions found"
             exit 1
           fi
 
-          # 将JSON数组直接设为输出，避免额外的转义和处理
+          # Set the JSON array directly as output, avoiding additional escaping and processing
           echo "product_info=$(echo $json_array | jq -c .)" >> $GITHUB_OUTPUT
     outputs:
       product_info: ${{ steps.products-shard.outputs.product_info }}
@@ -58,7 +59,7 @@ jobs:
   build:
     name: Build ${{ matrix.product.product_name }}-${{ matrix.product.product_version }}
     runs-on: ubuntu-latest
-    # if: ${{ github.repository_owner == 'zncdatadev' }}
+    if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
       - products-shard
     strategy:
