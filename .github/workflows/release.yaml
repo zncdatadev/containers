@@ -58,7 +58,7 @@ jobs:
       product_info: ${{ steps.products-shard.outputs.product_info }}
 
   build:
-    name: Build ${{ matrix.product.product_name }}-${{ matrix.product.product_version }}
+    name: Build
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
