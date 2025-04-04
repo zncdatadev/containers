@@ -88,3 +88,4 @@ jobs:
           kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
           push: ${{ github.event_name == 'push' }}
           sign: ${{ github.ref_type == 'tag' }}
+          action_debug: ${{ env.ACTIONS_RUNNER_DEBUG || 'false' }} # Pass debug mode if set in env
