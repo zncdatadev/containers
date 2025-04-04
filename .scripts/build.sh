@@ -44,12 +44,14 @@ Options:
   -r,  --registry REGISTRY        Set the registry, default is 'quay.io/zncdatadev'
   -p,  --push                     Push the built image to the registry, if not set, load the image to local docker
   -s,  --sign                     Sign the image with cosign
+       --progress <plain|auto|tty>  Set the build progress output format. Default is 'auto'.
+                                   Use 'plain' for plain text output, useful for debugging.
 
   -h,  --help                     Show this message
 "
 
   local registry=$REGISTRY
-  local debug=false
+  local progress=false
   local push=false
   local sign=false
   # Change target to array
@@ -72,7 +74,16 @@ Options:
       -s | --sign )
         sign=true
         ;;
-
+      --progress )
+        shift
+        # Validate the progress option
+        if [[ "$1" =~ ^(plain|auto|tty)$ ]]; then
+          progress=$1
+        else
+          echo "Error: Invalid progress format '$1'. Valid options are 'plain', 'auto', or 'tty'."
+          exit 1
+        fi
+        ;;
       * )
         # Handle non-option argument as target
         if [[ $1 != -* ]]; then
@@ -114,7 +125,7 @@ Options:
   local bakefile=$(get_bakefile "$platforms")
 
   # Update function call order of parameters
-  build_sign_image "$bakefile" $push $sign $debug "${products[*]}"
+  build_sign_image "$bakefile" $push $sign $progress "${products[*]}"
 }
 
 
@@ -164,7 +175,8 @@ function sign_image () {
 #  $1: str   bakefile, docker bake file content, JSON object
 #  $2: bool  push, if true, push image to registry, else load to local docker, default is false
 #  $3: bool  sign, if true, sign image with cosign, default is false
-#  $4: bool  debug, if true, print debug info, default is false
+#  $4: str   progress, if set to 'plain', will show the build progress in plain text.
+#             This is useful for debugging purposes. Default is empty, which uses the default progress format.
 #  $5: str   products, products to build, if empty, build all products.
 #             A version can be specified with the product name.
 #             eg: 'java-base hadoop:3.3.1'
@@ -174,7 +186,7 @@ function build_sign_image () {
   local bakefile=$1
   local push=$2
   local sign=$3
-  local debug=$4
+  local progress=$4
   local products=$5
 
   local image_digest_file="docker-bake-digests.json"
@@ -186,8 +198,9 @@ function build_sign_image () {
     cmd+=("--load")
   fi
 
-  if [ "$debug" = true ]; then
-    cmd+=("--progress" "plain")
+  # Allow setting the progress mode, default is empty which uses the default progress format
+  if [ -n "$progress" ]; then
+    cmd+=("--progress" "$progress")
   fi
 
   cmd+=("--metadata-file" $image_digest_file)
@@ -220,7 +233,7 @@ function build_sign_image () {
     echo "INFO: Signing images from digest file: $image_digest_file" >&2
 
     # First dump file content for debugging
-    if [ "$debug" = true ]; then
+    if [ "$CI_DEBUG" = "true" ]; then
       echo "DEBUG: Contents of $image_digest_file:" >&2
       cat "$image_digest_file" >&2
     fi

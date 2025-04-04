@@ -6,6 +6,8 @@ env:
 
 on:
   push:
+    branches:
+      - ci/fix-build-err
     tags:
       - '**'
 
@@ -69,7 +71,7 @@ jobs:
       - products-shard
     strategy:
       matrix:
-        product: ${{fromJson(needs.products-shard.outputs.product_info)}}
+        product: ${{ fromJson(needs.products-shard.outputs.product_info) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -88,4 +90,4 @@ jobs:
           kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
           push: ${{ github.event_name == 'push' }}
           sign: ${{ github.ref_type == 'tag' }}
-          action_debug: "true"
+          action_debug: ${{ env.ACTIONS_RUNNER_DEBUG == 'true' && 'true' || 'false' }}
