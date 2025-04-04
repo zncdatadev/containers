@@ -61,6 +61,7 @@ runs:
         PRODUCT_VERSION: ${{ inputs.product_version }}
         PUSH: ${{ inputs.push }}
         SIGN: ${{ inputs.sign }}
+        CI_DEBUG: ${{ env.ACTIONS_RUNNER_DEBUG || 'false' }}
       run: |
         echo "::group::Build command"
         cmd=('.scripts/build.sh')
