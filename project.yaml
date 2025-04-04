@@ -2,15 +2,15 @@
 products:
   - kubedoop-base
   - vector
-  # devel
+  # # devel
   - java-base
   - java-devel
   - go-devel
-  # tools
+  # # tools
   - krb5
   - tools
   - testing-tools
-  # apps
+  # # apps
   - airflow
   - superset
   - dolphinscheduler

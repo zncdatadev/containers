@@ -29,6 +29,10 @@ inputs:
   registry_password:
     description: 'The registry password'
     required: false
+  action_debug:
+    description: 'Enable debug logging for the action'
+    required: false
+    default: 'false'
 
 
 runs:
@@ -42,7 +46,7 @@ runs:
       uses: docker/setup-buildx-action@v3
 
     - name: Setup Cosign
-      uses: ./.github/actions/setup-cosign
+      uses: sigstore/cosign-installer@main
 
     - name: Login to registry
       if: ${{ inputs.registry_username && inputs.registry_password }}
@@ -61,6 +65,7 @@ runs:
         PRODUCT_VERSION: ${{ inputs.product_version }}
         PUSH: ${{ inputs.push }}
         SIGN: ${{ inputs.sign }}
+        CI_DEBUG: ${{ inputs.action_debug == 'true' && 'true' || 'false' }}
       run: |
         echo "::group::Build command"
         cmd=('.scripts/build.sh')

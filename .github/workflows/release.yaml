@@ -69,7 +69,7 @@ jobs:
       - products-shard
     strategy:
       matrix:
-        product: ${{fromJson(needs.products-shard.outputs.product_info)}}
+        product: ${{ fromJson(needs.products-shard.outputs.product_info) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -88,3 +88,4 @@ jobs:
           kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
           push: ${{ github.event_name == 'push' }}
           sign: ${{ github.ref_type == 'tag' }}
+          action_debug: ${{ runner.debug == 1 && 'true' || 'false' }} # enable debug for the build-and-push action if runner.debug is set

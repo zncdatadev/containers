@@ -44,12 +44,14 @@ Options:
   -r,  --registry REGISTRY        Set the registry, default is 'quay.io/zncdatadev'
   -p,  --push                     Push the built image to the registry, if not set, load the image to local docker
   -s,  --sign                     Sign the image with cosign
+       --progress <plain|auto|tty>  Set the build progress output format. Default is 'auto'.
+                                   Use 'plain' for plain text output, useful for debugging.
 
   -h,  --help                     Show this message
 "
 
   local registry=$REGISTRY
-  local debug=false
+  local progress="" # Default progress mode for docker buildx bake
   local push=false
   local sign=false
   # Change target to array
@@ -72,7 +74,13 @@ Options:
       -s | --sign )
         sign=true
         ;;
-
+      --progress )
+        shift
+        # Validate the progress option
+        if [[ "$1" =~ ^(plain|auto|tty)$ ]]; then
+          progress=$1
+        fi
+        ;;
       * )
         # Handle non-option argument as target
         if [[ $1 != -* ]]; then
@@ -114,7 +122,7 @@ Options:
   local bakefile=$(get_bakefile "$platforms")
 
   # Update function call order of parameters
-  build_sign_image "$bakefile" $push $sign $debug "${products[*]}"
+  build_sign_image "$bakefile" $push $sign "$progress" "${products[*]}"
 }
 
 
@@ -144,8 +152,17 @@ function sign_image () {
   local image=$1
   local upload=$2
 
-  if [ $upload = true ]; then
-    cosign sign -y $image
+  # Verify that image is not null before signing
+  if [[ -z "$image" || "$image" == *"null"* ]]; then
+    echo "ERROR: Invalid image reference for signing: '$image'" >&2
+    return 1
+  fi
+
+  if [ "$upload" = true ]; then
+    echo "INFO: Signing image with OIDC token: $image" >&2
+    cosign sign --yes $image
+  else
+    echo "INFO: Image signing skipped (upload=false): $image" >&2
   fi
 }
 
@@ -155,7 +172,8 @@ function sign_image () {
 #  $1: str   bakefile, docker bake file content, JSON object
 #  $2: bool  push, if true, push image to registry, else load to local docker, default is false
 #  $3: bool  sign, if true, sign image with cosign, default is false
-#  $4: bool  debug, if true, print debug info, default is false
+#  $4: str   progress, if set to 'plain', will show the build progress in plain text.
+#             This is useful for debugging purposes. Default is empty, which uses the default progress format.
 #  $5: str   products, products to build, if empty, build all products.
 #             A version can be specified with the product name.
 #             eg: 'java-base hadoop:3.3.1'
@@ -165,8 +183,14 @@ function build_sign_image () {
   local bakefile=$1
   local push=$2
   local sign=$3
-  local debug=$4
+  local progress=$4
   local products=$5
+
+  # Ensure the bakefile is not empty
+  if [[ -z "$bakefile" ]]; then
+    echo "ERROR: Bakefile is empty. Cannot proceed with building the image." >&2
+    exit 1
+  fi
 
   local image_digest_file="docker-bake-digests.json"
   local cmd=("docker" "buildx" "bake")
@@ -177,9 +201,14 @@ function build_sign_image () {
     cmd+=("--load")
   fi
 
-  if [ "$debug" = true ]; then
+  # Allow setting the progress mode, default is empty which uses the default progress format
+  if [ -n "$progress" ]; then
+    cmd+=("--progress" "$progress")
+  elif [ "$CI_DEBUG" = "true" ]; then
+    # In debug mode, default to plain to see the output in CI logs
     cmd+=("--progress" "plain")
   fi
+
 
   cmd+=("--metadata-file" $image_digest_file)
   cmd+=("--file" "-")
@@ -206,18 +235,39 @@ function build_sign_image () {
   echo "INFO: Building image: ${cmd[*]}" >&2
   echo "$bakefile" | "${cmd[@]}"
 
-  echo "INFO: Signing images" >&2
-  if [ -f $image_digest_file ] && [ "$sign" = true ]; then
-    for key in $(jq -r 'keys[]' $image_digest_file); do
-      local image_digest=$(jq -r --arg key "$key" '.[$key]["containerimage.digest"]' $image_digest_file)
-      local image_name=$(jq -r --arg key "$key" '.[$key]["image.name"]' $image_digest_file)
-      if [ -n "$image_digest" ] && [ -n "$image_name" ]; then
+  echo "INFO: Build image completed." >&2
+
+  # Only attempt signing if requested and when pushing images
+  if [ -f "$image_digest_file" ] && [ "$sign" = true ] && [ "$push" = true ]; then
+    echo "INFO: Signing images from digest file: $image_digest_file" >&2
+
+    # First dump file content for debugging
+    if [ "$CI_DEBUG" = "true" ]; then
+      echo "DEBUG: Contents of $image_digest_file:" >&2
+      cat "$image_digest_file" >&2
+    fi
+
+    for key in $(jq -r 'keys[]' "$image_digest_file"); do
+      echo "INFO: Processing image entry for key: $key" >&2
+      local image_digest=$(jq -r --arg key "$key" '.[$key]["containerimage.digest"] // empty' "$image_digest_file")
+      local image_name=$(jq -r --arg key "$key" '.[$key]["image.name"] // empty' "$image_digest_file")
+
+      # More comprehensive checks
+      if [[ -n "$image_digest" && "$image_digest" != "null" && -n "$image_name" && "$image_name" != "null" ]]; then
         local digest_tag="${image_name}@${image_digest}"
-        echo "INFO: Signing image: $digest_tag" >&2
-        sign_image $digest_tag $push
+        echo "INFO: Preparing to sign image: $digest_tag" >&2
+        sign_image "$digest_tag" "$push"
+      else
+        echo "WARNING: Skipping invalid image entry for key '$key'. Name: '$image_name', Digest: '$image_digest'" >&2
       fi
     done
+  else
+    if [ "$sign" = true ]; then
+      echo "INFO: Image signing skipped (no digest file or push=false)" >&2
+    fi
   fi
+
+  echo "INFO: Build and sign process completed." >&2
 }
 
 
