@@ -51,7 +51,7 @@ Options:
 "
 
   local registry=$REGISTRY
-  local progress="auto" # Default progress mode for docker buildx bake
+  local progress="" # Default progress mode for docker buildx bake
   local push=false
   local sign=false
   # Change target to array
@@ -79,9 +79,6 @@ Options:
         # Validate the progress option
         if [[ "$1" =~ ^(plain|auto|tty)$ ]]; then
           progress=$1
-        else
-          echo "Error: Invalid progress format '$1'. Valid options are 'plain', 'auto', or 'tty'."
-          exit 1
         fi
         ;;
       * )
@@ -125,7 +122,7 @@ Options:
   local bakefile=$(get_bakefile "$platforms")
 
   # Update function call order of parameters
-  build_sign_image "$bakefile" $push $sign $progress "${products[*]}"
+  build_sign_image "$bakefile" $push $sign "$progress" "${products[*]}"
 }
 
 
@@ -189,6 +186,12 @@ function build_sign_image () {
   local progress=$4
   local products=$5
 
+  # Ensure the bakefile is not empty
+  if [[ -z "$bakefile" ]]; then
+    echo "ERROR: Bakefile is empty. Cannot proceed with building the image." >&2
+    exit 1
+  fi
+
   local image_digest_file="docker-bake-digests.json"
   local cmd=("docker" "buildx" "bake")
 
@@ -201,7 +204,11 @@ function build_sign_image () {
   # Allow setting the progress mode, default is empty which uses the default progress format
   if [ -n "$progress" ]; then
     cmd+=("--progress" "$progress")
+  elif [ "$CI_DEBUG" = "true" ]; then
+    # In debug mode, default to plain to see the output in CI logs
+    cmd+=("--progress" "plain")
   fi
+
 
   cmd+=("--metadata-file" $image_digest_file)
   cmd+=("--file" "-")
@@ -227,6 +234,8 @@ function build_sign_image () {
 
   echo "INFO: Building image: ${cmd[*]}" >&2
   echo "$bakefile" | "${cmd[@]}"
+
+  echo "INFO: Build image completed." >&2
 
   # Only attempt signing if requested and when pushing images
   if [ -f "$image_digest_file" ] && [ "$sign" = true ] && [ "$push" = true ]; then
