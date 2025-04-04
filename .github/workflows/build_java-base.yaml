@@ -67,3 +67,4 @@ jobs:
           product_version: ${{ matrix.version }}
           push: ${{ github.event_name == 'push' }}
           sign: ${{ github.ref_type == 'tag' }}
+          action_debug: ${{ runner.debug == 1 && 'true' || 'false' }} # enable debug for the build-and-push action if runner.debug is set

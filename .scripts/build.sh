@@ -51,7 +51,7 @@ Options:
 "
 
   local registry=$REGISTRY
-  local progress=false
+  local progress="auto" # Default progress mode for docker buildx bake
   local push=false
   local sign=false
   # Change target to array
