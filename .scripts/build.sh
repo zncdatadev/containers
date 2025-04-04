@@ -262,8 +262,12 @@ function build_sign_image () {
       fi
     done
   else
-    [ "$sign" = true ] && echo "INFO: Image signing skipped (no digest file or push=false)" >&2
+    if [ "$sign" = true ]; then
+      echo "INFO: Image signing skipped (no digest file or push=false)" >&2
+    fi
   fi
+
+  echo "INFO: Build and sign process completed." >&2
 }
 
 
