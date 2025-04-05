@@ -2,10 +2,12 @@ name: Release
 
 env:
   KUBEDOOP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
-  REGISTRY: quay.io/zncdatadev
+  REGISTRY: quay.io/huagang
 
 on:
   push:
+    branches:
+      - ci/test-release
     tags:
       - '**'
 
@@ -64,7 +66,7 @@ jobs:
   build:
     name: Build ${{ matrix.product.product_name }}-${{ matrix.product.product_version }}
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'zncdatadev' }}
+    # if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
       - products-shard
     strategy:
