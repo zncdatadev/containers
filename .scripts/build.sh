@@ -29,16 +29,8 @@ Build the image.
 Use docker buildx bake to build the image, and push the image to the registry.
 
 Examples:
-  Build all products:
-    ${cmd_name}
-  Build specified product:
-    ${cmd_name} java-base
-  Build specified products
-    ${cmd_name} java-base hadoop
   Build specified product and specified version:
     ${cmd_name} java-base:17 hadoop:3.3.1
-  Build and push the image:
-    ${cmd_name} --push hadoop
 
 Options:
   -r,  --registry REGISTRY        Set the registry, default is 'quay.io/zncdatadev'
