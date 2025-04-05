@@ -24,9 +24,12 @@ RUN <<EOF
 
 EOF
 
+WORKDIR /kubedoop/bin
+
 ENV PATH="/kubedoop/bin:${PATH}"
 
 RUN <<EOF
+    set -ex
     ARCH=$(uname -m)
     ARCH=${ARCH/x86_64/amd64}
     ARCH=${ARCH/aarch64/arm64}
@@ -37,18 +40,25 @@ RUN <<EOF
         -o /kubedoop/bin/jq
     chmod +x /kubedoop/bin/jq
 
+    # smoke test jq installation
+    jq --version || (echo "jq installation failed" && exit 1)
+
     # Download yq from https://github.com/mikefarah/yq/releases
     curl -sSfL \
         https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${ARCH} \
         -o /kubedoop/bin/yq
     chmod +x /kubedoop/bin/yq
 
+    # smoke test yq installation
+    yq --version || (echo "yq installation failed" && exit 1)
 
     # Download kubectl from https://dl.k8s.io/release
     curl -sSfL \
         https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl \
         -o /kubedoop/bin/kubectl
     chmod +x /kubedoop/bin/kubectl
+    # smoke test kubectl installation
+    kubectl version --client || (echo "kubectl installation failed" && exit 1)
 
     chown -R kubedoop:kubedoop /kubedoop
 EOF
