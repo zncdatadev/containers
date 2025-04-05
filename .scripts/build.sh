@@ -29,16 +29,8 @@ Build the image.
 Use docker buildx bake to build the image, and push the image to the registry.
 
 Examples:
-  Build all products:
-    ${cmd_name}
-  Build specified product:
-    ${cmd_name} java-base
-  Build specified products
-    ${cmd_name} java-base hadoop
   Build specified product and specified version:
     ${cmd_name} java-base:17 hadoop:3.3.1
-  Build and push the image:
-    ${cmd_name} --push hadoop
 
 Options:
   -r,  --registry REGISTRY        Set the registry, default is 'quay.io/zncdatadev'
@@ -235,7 +227,20 @@ function build_sign_image () {
   echo "INFO: Building image: ${cmd[*]}" >&2
   echo "$bakefile" | "${cmd[@]}"
 
-  echo "INFO: Build image completed." >&2
+  if [ "$push" = false ]; then
+    # When using --load, the image will be loaded into the local docker.
+    # We can check the loaded images to ensure it was successful.
+    echo "INFO: Loaded images into local docker. You can verify with 'docker images'." >&2
+  else
+    # When using --push, the image should be pushed to the registry.
+    if [ ! -f "$image_digest_file" ]; then
+      echo "ERROR: Metadata file '$image_digest_file' not found after pushing images." >&2
+      exit 1
+    fi
+
+    # Check if the push was successful by verifying the digest file exists
+    echo "INFO: Successfully pushed images to registry: $REGISTRY" >&2
+  fi
 
   # Only attempt signing if requested and when pushing images
   if [ -f "$image_digest_file" ] && [ "$sign" = true ] && [ "$push" = true ]; then
@@ -261,13 +266,9 @@ function build_sign_image () {
         echo "WARNING: Skipping invalid image entry for key '$key'. Name: '$image_name', Digest: '$image_digest'" >&2
       fi
     done
-  else
-    if [ "$sign" = true ]; then
-      echo "INFO: Image signing skipped (no digest file or push=false)" >&2
-    fi
-  fi
 
-  echo "INFO: Build and sign process completed." >&2
+    echo "INFO: Finished signing images." >&2
+  fi
 }
 
 
