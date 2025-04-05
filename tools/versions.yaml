@@ -1,6 +1,6 @@
 versions:
   - product: 1.0.0
     kubedoop-base: 1.0.0
-    kubectl-version: 1.31.1
-    jq-version: 1.7.1
-    yq-version: 4.44.3
+    kubectl: 1.31.1
+    jq: 1.7.1
+    yq: v4.44.3
