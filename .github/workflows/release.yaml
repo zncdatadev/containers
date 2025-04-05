@@ -6,8 +6,6 @@ env:
 
 on:
   push:
-    branches:
-      - ci/test-release
     tags:
       - '**'
 
