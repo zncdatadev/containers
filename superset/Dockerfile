@@ -32,12 +32,15 @@ EOF
 
 WORKDIR /kubedoop
 
+COPY kubedoop/requirements/${PRODUCT_VERSION}/ /tmp/requirements/
+
 RUN <<EOF
     set -ex
     python${PYTHON_VERSION} -m venv app
     source app/bin/activate
     pip install --upgrade --no-cache-dir pip setuptools wheel
     pip install --no-cache-dir \
+        -r /tmp/requirements/base.txt \
         apache-superset==${PRODUCT_VERSION} \
         psycopg2-binary \
         pydruid \
@@ -45,12 +48,11 @@ RUN <<EOF
         python-ldap \
         statsd \
         trino[sqlalchemy] \
-        tzdata
-
-    # if AUTHLIB_VERSION is set, install the specified version
-    if [ -n "${AUTHLIB_VERSION}" ]; then
-        pip install --no-cache-dir authlib==${AUTHLIB_VERSION}
-    fi
+        Flask_OIDC==2.2.0 \
+        Flask-OpenID==1.3.1 \
+        tzdata \
+        gunicorn==22.0.0 \
+        Authlib==${AUTHLIB_VERSION}
 
     # smoke test
     SUPERSET_SECRET_KEY=$(openssl rand -hex 32) FLASK_APP="superset.app:create_app()" /kubedoop/app/bin/superset version
