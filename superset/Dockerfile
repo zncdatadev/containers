@@ -48,7 +48,7 @@ RUN <<EOF
         python-ldap \
         statsd \
         trino[sqlalchemy] \
-        Flask_OIDC==2.2.0 \
+        Flask-OIDC==2.2.0 \
         Flask-OpenID==1.3.1 \
         tzdata \
         gunicorn==22.0.0 \
