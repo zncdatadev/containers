@@ -18,7 +18,7 @@ on:
       - java-base/**
       - java-devel/**
       - .github/actions/**
-      - .github/workflows/build_kubedoop-base.yaml
+      - .github/workflows/build_hive.yaml
   pull_request:
     branches:
       - main
@@ -29,7 +29,7 @@ on:
       - java-base/**
       - java-devel/**
       - .github/actions/**
-      - .github/workflows/build_kubedoop-base.yaml
+      - .github/workflows/build_hive.yaml
 
 
 jobs:
