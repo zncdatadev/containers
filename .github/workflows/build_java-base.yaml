@@ -13,6 +13,8 @@ on:
       - main
     paths:
       - java-base/**
+      - kubedoop-base/**
+      - vector/**
       - .github/actions/**
       - .github/workflows/build_java-base.yaml
   pull_request:
@@ -20,6 +22,8 @@ on:
       - main
     paths:
       - java-base/**
+      - kubedoop-base/**
+      - vector/**
       - .github/actions/**
       - .github/workflows/build_java-base.yaml
 
