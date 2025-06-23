@@ -12,14 +12,22 @@ on:
     branches:
       - main
     paths:
+      - hive/**
       - kubedoop-base/**
+      - vector/**
+      - java-base/**
+      - java-devel/**
       - .github/actions/**
       - .github/workflows/build_kubedoop-base.yaml
   pull_request:
     branches:
       - main
     paths:
+      - hive/**
       - kubedoop-base/**
+      - vector/**
+      - java-base/**
+      - java-devel/**
       - .github/actions/**
       - .github/workflows/build_kubedoop-base.yaml
 

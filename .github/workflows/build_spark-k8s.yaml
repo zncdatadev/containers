@@ -13,6 +13,10 @@ on:
       - main
     paths:
       - spark-k8s/**
+      - kubedoop-base/**
+      - vector/**
+      - java-base/**
+      - java-devel/**
       - .github/actions/**
       - .github/workflows/build_spark-k8s.yaml
   pull_request:
@@ -20,6 +24,10 @@ on:
       - main
     paths:
       - spark-k8s/**
+      - kubedoop-base/**
+      - vector/**
+      - java-base/**
+      - java-devel/**
       - .github/actions/**
       - .github/workflows/build_spark-k8s.yaml
 
