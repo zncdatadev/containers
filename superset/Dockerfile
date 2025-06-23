@@ -52,7 +52,7 @@ RUN <<EOF
         Flask-OpenID==1.3.1 \
         tzdata \
         gunicorn==22.0.0 \
-        Authlib==${AUTHLIB_VERSION}
+        authlib==${AUTHLIB_VERSION}
 
     # smoke test
     SUPERSET_SECRET_KEY=$(openssl rand -hex 32) FLASK_APP="superset.app:create_app()" /kubedoop/app/bin/superset version
