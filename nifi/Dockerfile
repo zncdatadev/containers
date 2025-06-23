@@ -6,8 +6,26 @@
 FROM zncdatadev/image/java-devel AS nifi-builder
 
 ARG PRODUCT_VERSION
+ARG MAVEN_VERSION=3.9.8
 
 WORKDIR /build
+
+# Setup maven
+RUN <<EOF
+    mkdir -p /kubedoop/maven
+    # Download maven binary from https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+    curl -sSfL \
+        https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+        | tar -zxf - --strip-components=1 -C /kubedoop/maven
+
+    # Create symlink for maven
+    ln -sf /kubedoop/maven/bin/mvn /usr/bin/mvn
+
+    # smoke test
+    mvn --version | grep "Apache Maven ${MAVEN_VERSION}" || exit 1
+EOF
+
+COPY kubedoop /build/
 
 # Build apache nifi from github tag
 RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<EOF
@@ -17,6 +35,8 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
     curl -sSfL \
         https://github.com/apache/nifi/archive/refs/tags/rel/nifi-${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
+
+    /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
 
     # Build apache nifi use mvnw
     ./mvnw \
