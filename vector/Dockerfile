@@ -7,6 +7,7 @@ FROM zncdatadev/image/kubedoop-base AS vector-builder
 
 ARG PRODUCT_VERSION
 ARG INOTIFY_TOOLS_VERSION
+ARG GOMPLATE_VERSION
 
 RUN <<EOF
     microdnf update
@@ -42,7 +43,7 @@ EOF
 # smoke test
 RUN test -f /build/vector/vector-${PRODUCT_VERSION}-1.*.rpm
 
-# bunld inotify-tools
+# build inotify-tools
 RUN <<EOF
     mkdir -p /build/inotify-tools
     pushd /build/inotify-tools
@@ -62,12 +63,27 @@ RUN <<EOF
     rm -rf /build/inotify-tools
 EOF
 
+# download gomplate
+RUN <<EOF
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+
+    curl -sSfL --proto '=https' --tlsv1.2 \
+        -o /usr/local/bin/gomplate \
+        https://github.com/hairyhenderson/gomplate/releases/download/${GOMPLATE_VERSION}/gomplate_${OS}-${ARCH}
+    chmod +x /usr/local/bin/gomplate
+
+    # smoke test
+    gomplate --version
+EOF
+
 
 ## stage: final
 FROM zncdatadev/image/kubedoop-base
 
 COPY --from=vector-builder /build/vector /tmp/vector
 COPY --from=vector-builder /usr/local/inotify-tools /usr/local/inotify-tools
+COPY --from=vector-builder /usr/local/bin/gomplate /usr/local/bin/gomplate
 
 # setup inotify-tools
 RUN ln -s /usr/local/inotify-tools/bin/inotifywait /usr/local/bin/inotifywait \
