@@ -15,7 +15,7 @@ on:
       - vector/**
       - kubedoop-base/**
       - .github/actions/**
-      - .github/workflows/build_trino.yaml
+      - .github/workflows/build_vector.yaml
   pull_request:
     branches:
       - main
@@ -23,7 +23,7 @@ on:
       - vector/**
       - kubedoop-base/**
       - .github/actions/**
-      - .github/workflows/build_trino.yaml
+      - .github/workflows/build_vector.yaml
 
 
 jobs:
