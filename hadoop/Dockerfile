@@ -30,7 +30,7 @@ RUN <<EOF
     ln -s /kubedoop/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH} /kubedoop/async-profiler
 EOF
 
-COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
+COPY kubedoop/jmx/config /kubedoop/jmx
 
 # setup jmx_exporter
 RUN <<EOF
