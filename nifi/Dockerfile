@@ -12,14 +12,15 @@ WORKDIR /build
 
 # Setup maven
 RUN <<EOF
-    mkdir -p /kubedoop/maven
+    set -euo pipefail
+    mkdir -p /build/maven
     # Download maven binary from https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
     curl -sSfL \
         https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
-        | tar -zxf - --strip-components=1 -C /kubedoop/maven
+        | tar -zxf - --strip-components=1 -C /build/maven
 
     # Create symlink for maven
-    ln -sf /kubedoop/maven/bin/mvn /usr/bin/mvn
+    ln -sf /build/maven/bin/mvn /usr/bin/mvn
 
     # smoke test
     mvn --version | grep "Apache Maven ${MAVEN_VERSION}" || exit 1
@@ -29,6 +30,7 @@ COPY kubedoop /build/
 
 # Build apache nifi from github tag
 RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<EOF
+    set -euo pipefail
     mkdir -p /build/nifi-src
     pushd /build/nifi-src
     # Download apache nifi source from https://github.com/apache/nifi/releases/tag/rel%2Fnifi-1.27.0
@@ -36,7 +38,7 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
         https://github.com/apache/nifi/archive/refs/tags/rel/nifi-${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
 
-    /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
+    /build/apply_patches.sh /build/patches/${PRODUCT_VERSION}
 
     # Build apache nifi use mvnw
     ./mvnw \
