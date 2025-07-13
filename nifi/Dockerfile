@@ -48,7 +48,7 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
         --no-transfer-progress \
         -Dmaven.javadoc.skip=true \
         -DskipTests \
-        --activate-profiles include-iceberg,include-hadoop-aws,include-hadoop-azure,include-hadoop-gc
+        --activate-profiles include-hadoop,include-hadoop-aws,include-hadoop-azure,include-hadoop-gcp
 
     # unzip nifi binary
     unzip -q \
