@@ -65,10 +65,6 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
     # cleanup source
     rm -rf /build/nifi-src
 
-    # This used to be located in /bin/stackable-bcrypt.jar. We create a softlink for /bin/stackable-bcrypt.jar in the main container for backwards compatibility.
-    curl 'https://repo.stackable.tech/repository/m2/tech/stackable/nifi/stackable-bcrypt/1.0-SNAPSHOT/stackable-bcrypt-1.0-20240508.153334-1-jar-with-dependencies.jar' \
-        -o /kubedoop/stackable-bcrypt.jar
-
 EOF
 
 
@@ -80,7 +76,8 @@ RUN <<EOF
     microdnf install \
         gettext \
         git \
-        python3-pip
+        python3-pip \
+        httpd-tools
 
     microdnf clean all
     rm -rf /var/cache/yum
