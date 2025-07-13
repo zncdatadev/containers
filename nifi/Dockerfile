@@ -65,11 +65,29 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
     # cleanup source
     rm -rf /build/nifi-src
 
+    # This used to be located in /bin/stackable-bcrypt.jar. We create a softlink for /bin/stackable-bcrypt.jar in the main container for backwards compatibility.
+    curl 'https://repo.stackable.tech/repository/m2/tech/stackable/nifi/stackable-bcrypt/1.0-SNAPSHOT/stackable-bcrypt-1.0-20240508.153334-1-jar-with-dependencies.jar' \
+        -o /kubedoop/stackable-bcrypt.jar
+
 EOF
 
 
 ## Final stage
 FROM zncdatadev/image/java-base
+
+RUN <<EOF
+    microdnf update
+    microdnf install \
+        gettext \
+        git \
+        python3-pip
+
+    microdnf clean all
+    rm -rf /var/cache/yum
+
+    pip install --no-cache-dir \
+        nipyapi==0.19.1
+EOF
 
 COPY --from=nifi-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
 
