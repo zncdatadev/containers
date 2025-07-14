@@ -31,6 +31,7 @@ COPY kubedoop /build/
 # Build apache nifi from github tag
 RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<EOF
     set -euo pipefail
+    set -x
     mkdir -p /build/nifi-src
     pushd /build/nifi-src
     # Download apache nifi source from https://github.com/apache/nifi/releases/tag/rel%2Fnifi-1.27.0
@@ -38,7 +39,9 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
         https://github.com/apache/nifi/archive/refs/tags/rel/nifi-${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
 
-    /build/apply_patches.sh /build/patches/${PRODUCT_VERSION}
+    if [ -f /build/apply_patches.sh ] && [ -d /build/patches/${PRODUCT_VERSION} ]; then
+        /build/apply_patches.sh /build/patches/${PRODUCT_VERSION}
+    fi
 
     # Build apache nifi use mvnw
     ./mvnw \
@@ -50,23 +53,33 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/root/.npm <<E
         -DskipTests \
         --activate-profiles include-hadoop,include-hadoop-aws,include-hadoop-azure,include-hadoop-gcp
 
-    # unzip nifi binary
-    unzip -q \
-        nifi-assembly/target/nifi-${PRODUCT_VERSION}-bin.zip \
-        -d /kubedoop
-
+    # check if nifi-assembly target directory exists
+    if [ ! -d nifi-assembly/target ]; then
+        echo "ERROR: nifi-assembly/target directory not found"
+        ls -la nifi-assembly/target || echo "nifi-assembly/target directory not found"
+        exit 1
+    fi
+    mv nifi-assembly/target/nifi-${PRODUCT_VERSION}-bin/nifi-${PRODUCT_VERSION} /kubedoop/
     ln -s /kubedoop/nifi-${PRODUCT_VERSION} /kubedoop/nifi
 
-    # Rm nifi doc
+    # Rm nifi docs
     rm -rf /kubedoop/nifi/docs
     popd
 
-    # smoke test
-    /kubedoop/nifi/bin/nifi.sh --help
+    # smoke test - 添加更详细的错误检查
+    if [ ! -f /kubedoop/nifi/bin/nifi.sh ]; then
+        echo "ERROR: nifi.sh not found"
+        ls -la /kubedoop/nifi/bin/ || echo "/kubedoop/nifi/bin/ directory not found"
+        exit 1
+    fi
+
+    /kubedoop/nifi/bin/nifi.sh --help || {
+        echo "ERROR: nifi.sh --help failed"
+        exit 1
+    }
 
     # cleanup source
     rm -rf /build/nifi-src
-
 EOF
 
 
