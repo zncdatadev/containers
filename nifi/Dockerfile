@@ -79,13 +79,13 @@ RUN <<EOF
         gettext \
         git \
         python3-pip \
-        httpd-tools
 
     microdnf clean all
     rm -rf /var/cache/yum
 
     pip install --no-cache-dir \
-        nipyapi==0.19.1
+        nipyapi==0.19.1 \
+        bcrypt
 EOF
 
 COPY --from=nifi-builder --chown=kubedoop:kubedoop /kubedoop/ /kubedoop/
