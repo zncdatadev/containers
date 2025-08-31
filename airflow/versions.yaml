@@ -4,10 +4,10 @@ versions:
     go-devel: 1.23.4
     git-sync: 4.4.1
     statsd-exporter: 0.28.0
-    vector: 0.47.1
+    vector: 0.47.0
   - product: 2.9.3
     python: 3.9
     go-devel: 1.23.4
     git-sync: 4.4.1
     statsd-exporter: 0.28.0
-    vector: 0.47.1
+    vector: 0.47.0
