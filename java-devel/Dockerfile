@@ -52,12 +52,19 @@ EOF
 
     # Due to the maven default dependency jdk17, so two versions of jdk are installed if the PRODUCT_VERSION is not 17.
     # Use alternatives to set the default Java version
+
+    # Determine Java path based on version
+    if [ "${PRODUCT_VERSION}" -ge "24" ]; then
+        EXPECTED_JAVA_PATH="/usr/lib/jvm/java-${PRODUCT_VERSION}-temurin-jdk"
+    else
+        EXPECTED_JAVA_PATH="/usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk"
+    fi
+
     # Check current java version and reset alternatives if needed
-    CURRENT_JAVA_VERSION=$(alternatives --display java | grep "link currently points to" | grep -oE "/usr/lib/jvm/temurin-[0-9]+-jdk")
-    EXPECTED_JAVA_PATH="/usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk"
+    CURRENT_JAVA_VERSION=$(alternatives --display java | grep "link currently points to" | grep -oE "/usr/lib/jvm/(temurin|java)-[0-9]+-.*jdk")
 
     if [ "$CURRENT_JAVA_VERSION" != "$EXPECTED_JAVA_PATH" ]; then
-        echo "Configuring Java alternatives for version ${PRODUCT_VERSION}"
+        echo "Configuring Java alternatives for version ${PRODUCT_VERSION} at path ${EXPECTED_JAVA_PATH}"
         # Install alternatives if not exists
         alternatives --install /usr/bin/java java ${EXPECTED_JAVA_PATH}/bin/java 1
         alternatives --install /usr/bin/javac javac ${EXPECTED_JAVA_PATH}/bin/javac 1
