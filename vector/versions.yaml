@@ -2,4 +2,4 @@ versions:
   - product: 0.47.0
     kubedoop-base: 1.0.0
     inotify-tools: 4.23.9.0
-    gomplate: 3.12.0
+    gomplate: 4.3.3
