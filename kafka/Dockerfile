@@ -16,16 +16,14 @@ COPY kubedoop/jmx/config /kubedoop/jmx
 
 RUN <<EOF
     set -e
-    # check JMX_EXPORTER_VERSION
-    if [ -n "${JMX_EXPORTER_VERSION}" ]; then
-        curl -sSfL \
-            https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
-            -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+    # Download JMX Exporter from github release
+    # https://github.com/prometheus/jmx_exporter/releases/download/1.4.0/jmx_prometheus_javaagent-1.4.0.jar
+    curl -sSfL \
+        https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+        -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
 
-        ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
-    else
-        echo "JMX_EXPORTER_VERSION is not set"
-    fi
+    ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
+
 EOF
 
 COPY kubedoop/ /build/
