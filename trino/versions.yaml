@@ -2,10 +2,10 @@ versions:
   - product: 455
     java-base: 22
     java-devel: 22
-    jmx-exporter: 1.0.1
+    jmx-exporter: 1.3.0
     storage-connector: 455
-  - product: 451
-    java-base: 22
-    java-devel: 22
-    jmx-exporter: 1.0.1
-    storage-connector: 451
+  - product: 476
+    java-base: 24
+    java-devel: 24
+    jmx-exporter: 1.3.0
+    storage-connector: 476
