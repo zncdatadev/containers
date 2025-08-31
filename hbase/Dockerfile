@@ -43,7 +43,7 @@ RUN <<EOF
         ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
 
         # copy jmx_exporter config
-        cp /build/jmx/config-${JMX_EXPORTER_VERSION}/* /kubedoop/jmx/
+        cp /build/jmx/config/* /kubedoop/jmx/
     else
         echo "JMX_EXPORTER_VERSION is not set"
     fi

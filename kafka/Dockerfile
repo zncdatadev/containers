@@ -12,7 +12,7 @@ ARG SCALA_VERSION
 WORKDIR /build
 
 # setup jmx_exporter
-COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
+COPY kubedoop/jmx/config /kubedoop/jmx
 
 RUN <<EOF
     set -e

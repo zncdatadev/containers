@@ -10,7 +10,7 @@ ARG JMX_EXPORTER_VERSION
 
 WORKDIR /build
 
-COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
+COPY kubedoop/jmx/config /kubedoop/jmx
 
 # setup jmx_exporter
 RUN <<EOF
