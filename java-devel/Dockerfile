@@ -56,10 +56,19 @@ EOF
     alternatives --set javac /usr/lib/jvm/temurin-${PRODUCT_VERSION}-jdk/bin/javac
 
     # smoke test
+    JAVA_VERSION_OUTPUT=$(java -version 2>&1)
     if [ "${PRODUCT_VERSION}" != "8" ]; then
-        java -version 2>&1 | grep -q "openjdk version \"${PRODUCT_VERSION}\." || (echo "Java version mismatch" && exit 1)
+        echo "$JAVA_VERSION_OUTPUT" | grep -q "openjdk version \"${PRODUCT_VERSION}\." || {
+            echo "ERROR: Expected Java ${PRODUCT_VERSION}, but got:"
+            echo "$JAVA_VERSION_OUTPUT"
+            exit 1
+        }
     else
-        java -version 2>&1 | grep -q "openjdk version \"1\.${PRODUCT_VERSION}\." || (echo "Java version mismatch" && exit 1)
+        echo "$JAVA_VERSION_OUTPUT" | grep -q "openjdk version \"1\.${PRODUCT_VERSION}\." || {
+            echo "ERROR: Expected Java 1.${PRODUCT_VERSION}, but got:"
+            echo "$JAVA_VERSION_OUTPUT"
+            exit 1
+        }
     fi
 EOT
 
