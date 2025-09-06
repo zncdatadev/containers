@@ -96,7 +96,7 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     rm -rf /build/trino-src
 
     # smoke test
-    /kubedoop/trino-server/bin/launcher status || [ $? -eq 3 ]
+    /kubedoop/trino-server-470/bin/trino-cli --version
 EOF
 
 COPY --from=storage-connector-builder --chown=kubedoop:kubedoop /build/trino-storage-src/target/trino-storage-${STORAGE_CONNECTOR_VERSION} /kubedoop/trino-server/plugin/trino-storage-${STORAGE_CONNECTOR_VERSION}
