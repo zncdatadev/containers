@@ -157,7 +157,7 @@ ARG HBASE_OPERATOR_TOOLS_VERSION
 ARG HBASE_THIRDPARTY_VERSION
 
 WORKDIR /build
-COPY /kubedoop/patches/hbase-operator-tools /build/patches
+COPY /kubedoop/patches /build/patches
 # setup hbase-operator-tools
 RUN <<EOF
     mkdir -p /build/hbase-operator-tools-src
