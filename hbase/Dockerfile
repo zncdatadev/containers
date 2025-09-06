@@ -14,7 +14,6 @@ ARG OAUTH2_PROXY_VERSION
 
 # setup async-profiler
 RUN <<EOF
-    set -ex
     ARCH=$(uname -m)
     ARCH="${ARCH/x86_64/x64}"
     ARCH="${ARCH/amd64/x64}"
@@ -22,25 +21,41 @@ RUN <<EOF
 
     # build async-profiler
     # https://github.com/async-profiler/async-profiler/releases/download/v3.0/async-profiler-3.0-linux-x64.tar.gz
-    curl -sSfL \
-        https://github.com/async-profiler/async-profiler/releases/download/v${ASYNC_PROFILER_VERSION}/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz \
-        | tar -zxf - -C /kubedoop
+    ASYNC_PROFILER_DIR="/kubedoop/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}"
+    SOURCE_URL="https://github.com/async-profiler/async-profiler/releases/download/v${ASYNC_PROFILER_VERSION}/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH}.tar.gz"
+    echo "Downloading async-profiler from: ${SOURCE_URL}"
+    curl -sSfL "${SOURCE_URL}" | tar -zxf - -C /kubedoop
 
-    ln -s /kubedoop/async-profiler-${ASYNC_PROFILER_VERSION}-linux-${ARCH} /kubedoop/async-profiler
+
+    # Verify installation and create symlink
+    if [ ! -f "${ASYNC_PROFILER_DIR}/build/libasyncProfiler.so" ]; then
+        echo "ERROR: async-profiler library not found in ${ASYNC_PROFILER_DIR}"
+        ls -la "${ASYNC_PROFILER_DIR}/build/" || echo "build directory not found"
+        exit 1
+    fi
+    echo "Successfully installed async-profiler to: ${ASYNC_PROFILER_DIR}"
+    ln -sf "${ASYNC_PROFILER_DIR}" /kubedoop/async-profiler
 EOF
 
 # setup jmx_exporter
 WORKDIR /kubedoop/jmx
 COPY kubedoop/jmx /build/jmx
 RUN <<EOF
-    set -ex
     # check JMX_EXPORTER_VERSION
     if [ -n "${JMX_EXPORTER_VERSION}" ]; then
-        curl -sSfL \
-            https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
-            -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+        JMX_JAR="/kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
+        SOURCE_URL="https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
+        echo "Downloading jmx_exporter from: ${SOURCE_URL}"
+        curl -sSfL "${SOURCE_URL}" -o ${JMX_JAR}
 
-        ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
+        # Verify installation and create symlink
+        if [ ! -f "${JMX_JAR}" ]; then
+            echo "ERROR: jmx_exporter jar not found at ${JMX_JAR}"
+            exit 1
+        fi
+
+        echo "Successfully installed jmx_exporter to: ${JMX_JAR}"
+        ln -s ${JMX_JAR} /kubedoop/jmx/jmx_prometheus_javaagent.jar
 
         # copy jmx_exporter config
         cp /build/jmx/config/* /kubedoop/jmx/
@@ -58,9 +73,9 @@ RUN <<EOF
     mkdir /kubedoop/oauth2-proxy
     cd /kubedoop/oauth2-proxy
 
-    curl -sSfL \
-        https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz \
-        | tar xzf - --strip-components=1
+    SOURCE_URL="https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAUTH2_PROXY_VERSION}/oauth2-proxy-v${OAUTH2_PROXY_VERSION}.linux-${ARCH}.tar.gz"
+    echo "Downloading oauth2-proxy from: ${SOURCE_URL}"
+    curl -sSfL "${SOURCE_URL}" | tar xzf - --strip-components=1
 
     # smoke test
     /kubedoop/oauth2-proxy/oauth2-proxy --version
@@ -69,13 +84,22 @@ EOF
 WORKDIR /build
 COPY /kubedoop/patches /build/patches
 RUN <<EOF
-    set -ex
     mkdir -p /build/hbase-src
     pushd /build/hbase-src
-    curl -sSfL \
-        https://github.com/apache/hbase/archive/refs/tags/rel/${PRODUCT_VERSION}.tar.gz \
-        | tar xzf - --strip-components=1
-    /build/patches/apply_patches.sh /build/patches/${PRODUCT_VERSION}
+
+    PATCHES_PATH=/build/patches
+
+    SOURCE_URL="https://github.com/apache/hbase/archive/refs/tags/rel/${PRODUCT_VERSION}.tar.gz"
+
+    # Download and extract source
+    echo "Downloading HBase from: ${SOURCE_URL}"
+    curl -sSfL "${SOURCE_URL}" | tar xzf - --strip-components=1
+
+    # Apply patches if exists
+    PATCH_DIR="${PATCHES_PATH}/${PATCH_PATH}"
+    if [ -d "${PATCH_DIR}" ]; then
+        ${PATCHES_PATH}/apply_patches.sh ${PATCH_DIR}
+    fi
 
     mvn \
         --no-transfer-progress \
@@ -88,8 +112,28 @@ RUN <<EOF
         -Dcheckstyle.skip=true \
         -Prelease
 
-    tar -xzf hbase-assembly/target/hbase-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
-    ln -s /kubedoop/hbase-${PRODUCT_VERSION} /kubedoop/hbase
+    # Install HBase binary
+    HBASE_BINARY="hbase-assembly/target/hbase-${PRODUCT_VERSION}-bin.tar.gz"
+    HBASE_HOME="/kubedoop/hbase-${PRODUCT_VERSION}"
+
+    if [ ! -f "${HBASE_BINARY}" ]; then
+        echo "ERROR: HBase binary not found at ${HBASE_BINARY}"
+        ls -la hbase-assembly/target/
+        exit 1
+    fi
+
+    tar -xzf "${HBASE_BINARY}" -C /kubedoop || {
+        echo "ERROR: Failed to extract HBase binary"
+        exit 1
+    }
+
+    if [ ! -d "${HBASE_HOME}" ]; then
+        echo "ERROR: HBase directory not found at ${HBASE_HOME}"
+        ls -la /kubedoop/
+        exit 1
+    fi
+
+    ln -sf "${HBASE_HOME}" /kubedoop/hbase
     popd
 
     # cleanup source
@@ -113,27 +157,38 @@ ARG HBASE_OPERATOR_TOOLS_VERSION
 ARG HBASE_THIRDPARTY_VERSION
 
 WORKDIR /build
-
+COPY /kubedoop/patches/hbase-operator-tools /build/patches
 # setup hbase-operator-tools
 RUN <<EOF
-    set -ex
     mkdir -p /build/hbase-operator-tools-src
     pushd /build/hbase-operator-tools-src
 
-    # if HBASE_OPERATOR_TOOLS_VERSION contains '-', it is a snapshot version, we need to
-    # split it. the first part is version, the second part is the commit hash
-    # use the commit hash to download the source code.
+    PATCHES_PATH=/build/patches
+
+    # Parse version and sha if needed
+    PATCH_PATH="${HBASE_OPERATOR_TOOLS_VERSION}"
     if [[ ${HBASE_OPERATOR_TOOLS_VERSION} == *-* ]]; then
-        version=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 1)
-        sha=$(echo ${HBASE_OPERATOR_TOOLS_VERSION} | cut -d '-' -f 2)
+        version=${HBASE_OPERATOR_TOOLS_VERSION%%-*}
+        sha=${HBASE_OPERATOR_TOOLS_VERSION#*-}
+        PATCH_PATH="${version}-${sha}"
         HBASE_OPERATOR_TOOLS_VERSION="${version}-SNAPSHOT"
-        curl -sSfL \
-            https://github.com/apache/hbase-operator-tools/archive/${sha}.tar.gz \
-            | tar xzf - --strip-components=1
+
+        # Download from specific commit
+        SOURCE_URL="https://github.com/apache/hbase-operator-tools/archive/${sha}.tar.gz"
     else
-        curl -sSfL \
-            https://github.com/apache/hbase-operator-tools/archive/refs/tags/rel/${HBASE_OPERATOR_TOOLS_VERSION}.tar.gz \
-            | tar xzf - --strip-components=1
+        # Download from release tag
+        SOURCE_URL="https://github.com/apache/hbase-operator-tools/archive/refs/tags/rel/${HBASE_OPERATOR_TOOLS_VERSION}.tar.gz"
+    fi
+
+    # Download and extract source
+    echo "Downloading hbase-operator-tools from: ${SOURCE_URL}"
+    curl -sSfL "${SOURCE_URL}" | tar xzf - --strip-components=1
+
+    # Apply patches if exists
+    PATCHES_DIR="${PATCHES_PATH}/hbase-operator-tools/${PATCH_PATH}"
+    if [ -d "${PATCHES_DIR}" ]; then
+        echo "Applying patches from: ${PATCHES_DIR}"
+        ${PATCHES_PATH}/apply_patches.sh "${PATCHES_DIR}" || exit 1
     fi
 
     # build hbase-operator-tools
@@ -144,8 +199,28 @@ RUN <<EOF
         -DskipTests \
         package assembly:single
 
-    tar -xzf hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz -C /kubedoop
-    ln -s /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
+    HBASE_OPERATOR_TOOLS_BINARY="hbase-operator-tools-assembly/target/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}-bin.tar.gz"
+    HBASE_OPERATOR_TOOLS_HOME="/kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION}"
+
+    # Check if the binary exists
+    if [ ! -f "${HBASE_OPERATOR_TOOLS_BINARY}" ]; then
+        echo "ERROR: HBase Operator Tools binary not found at ${HBASE_OPERATOR_TOOLS_BINARY}"
+        ls -la /kubedoop/
+        exit 1
+    fi
+
+    tar -xzf "${HBASE_OPERATOR_TOOLS_BINARY}" -C /kubedoop || {
+        echo "ERROR: Failed to extract HBase Operator Tools binary"
+        exit 1
+    }
+
+    if [ ! -d "${HBASE_OPERATOR_TOOLS_HOME}" ]; then
+        echo "ERROR: HBase Operator Tools directory not found at ${HBASE_OPERATOR_TOOLS_HOME}"
+        ls -la /kubedoop/
+        exit 1
+    fi
+
+    ln -sf /kubedoop/hbase-operator-tools-${HBASE_OPERATOR_TOOLS_VERSION} /kubedoop/hbase-operator-tools
     popd
 
     # cleanup source

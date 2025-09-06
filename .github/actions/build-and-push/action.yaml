@@ -90,7 +90,6 @@ runs:
         echo "${cmd[@]}"
         echo "::endgroup::"
 
-
         echo "::group::Build and Publish"
         "${cmd[@]}"
         echo "::endgroup::"

@@ -53,16 +53,50 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
         https://github.com/trinodb/trino/archive/refs/tags/${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
 
-    ./mvnw --no-transfer-progress package -DskipTests -Dmaven.gitcommitid.skip=true --projects="!docs,!core/trino-server-rpm"
+    # Build trino with error checking
+    echo "Starting Trino build..."
+    if ! ./mvnw --batch-mode --show-version \
+        package \
+        -DskipTests \
+        -Dmaven.gitcommitid.skip=true \
+        --projects='!docs,!core/trino-server-rpm' \
+        -e ; then
+        echo "ERROR: Trino build failed"
+        exit 1
+    fi
+    echo "Trino build completed successfully"
 
-    tar -xzf core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz -C /kubedoop
-    ln -s /kubedoop/trino-server-${PRODUCT_VERSION} /kubedoop/trino-server
+    TRINO_SERVER_BINARY="core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz"
+    TRINO_SERVER_HOME="/kubedoop/trino-server-${PRODUCT_VERSION}"
+
+    if [ ! -f "${TRINO_SERVER_BINARY}" ]; then
+        echo "Error: Trino server binary not found: ${TRINO_SERVER_BINARY}"
+        ls -alh core/trino-server/target/
+        exit 1
+    fi
+
+    tar -xzf core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz -C /kubedoop || {
+        echo "Error: Failed to extract Trino server binary"
+        exit 1
+    }
+
+    # create symlink
+    if [ ! -d "${TRINO_SERVER_HOME}" ]; then
+        echo "Error: Trino server home directory not found: ${TRINO_SERVER_HOME}"
+        ls -la /kubedoop/
+        exit 1
+    fi
+
+    ln -sf /kubedoop/trino-server-${PRODUCT_VERSION} /kubedoop/trino-server
 
     cp client/trino-cli/target/trino-cli-${PRODUCT_VERSION}-executable.jar /kubedoop/trino-server/bin/trino-cli
     popd
 
     # cleanup source
     rm -rf /build/trino-src
+
+    # smoke test
+    /kubedoop/trino-server/bin/launcher status || [ $? -eq 3 ]
 EOF
 
 COPY --from=storage-connector-builder --chown=kubedoop:kubedoop /build/trino-storage-src/target/trino-storage-${STORAGE_CONNECTOR_VERSION} /kubedoop/trino-server/plugin/trino-storage-${STORAGE_CONNECTOR_VERSION}
@@ -98,8 +132,5 @@ ENV PATH="${TRINO_HOME}/bin:${PATH}"
 
 WORKDIR /kubedoop/trino-server
 USER kubedoop
-
-# smoke test
-RUN launcher status || [ $? -eq 3 ]
 
 CMD ["launcher", "run"]
