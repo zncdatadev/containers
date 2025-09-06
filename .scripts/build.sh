@@ -90,14 +90,13 @@ Options:
   # Set registry
   export REGISTRY=$registry
 
-  # Print all specified targets
-  if [ ${#targets[@]} -gt 0 ]; then
-    echo "INFO: Specified targets: ${targets[*]}"
+  # Print all specified products
+  if [ ${#products[@]} -gt 0 ]; then
+    echo "INFO: Specified products: ${products[*]}" >&2
   fi
 
   # Check system requirements if signing is requested
   system_requirements $sign
-
 
   # Note:
   # If push is not true, we use single-architecture to build the image.
@@ -109,6 +108,10 @@ Options:
   if [ "$push" = false ]; then
     platforms='["linux/'$(uname -m)'"]'
   fi
+
+  # Fill in product versions
+  products=($(fill_products_version "${products[@]}"))
+  echo "INFO: Specified products with versions: ${products[*]}" >&2
 
   # Get the bakefile configuration
   local bakefile=$(get_bakefile "$platforms")
@@ -137,6 +140,41 @@ function system_requirements () {
   fi
 }
 
+# 从 products 补全版本号。
+# product 的值可能是 "java-base:17" 或 "hadoop"，
+# 如果有具体版本号，不用做处理；如果没有，需要到对应目录中读取 `<product>/versions.yaml` 中的所有 product 版本号，拼接到产品后面
+# Arguments:
+#   $1: str   products, the product name
+# Returns:
+#   str      filled_products, the product name with version
+function fill_products_version () {
+  local products=$1
+  local filled_products=()
+
+  for product in $products; do
+    if [[ "$product" =~ : ]]; then
+      # If product has a specific version, no need to process
+      filled_products+=("$product")
+    else
+      # If no specific version, read from versions.yaml
+      local version_file="$product/versions.yaml"
+      if [[ -f "$version_file" ]]; then
+        local versions=$(yq eval '.versions[].product' "$version_file")
+        if [ -n "$versions" ]; then
+          for version in $versions; do
+            filled_products+=("$product:$version")
+          done
+        else
+          echo "WARNING: No product versions found in '$version_file'" >&2
+        fi
+      else
+        echo "WARNING: Version file not found for product '$product' in '$version_file'" >&2
+      fi
+    fi
+  done
+
+  echo "${filled_products[@]}"
+}
 
 # https://github.com/sigstore/cosign/issues/587
 # Use Cosign for keyless image signing
