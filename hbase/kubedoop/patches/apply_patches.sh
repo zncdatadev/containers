@@ -70,15 +70,24 @@ function apply_pathes () {
   local pathes=$2
 
   for patch in $(ls $pathes/*.patch); do
-    echo "Apply patch: $patch"
-    patch -p1 -d $src < $patch || {
-      echo "Apply patch failed: $patch"
+    echo "Applying patch: $patch"
+    echo "Target directory: $src"
+
+    # 尝试检查补丁状态
+    if patch --dry-run -p1 -R -d $src < $patch >/dev/null 2>&1; then
+      echo "Patch appears to be already applied, skipping: $patch"
+      continue
+    fi
+
+    # 强制应用补丁
+    patch -f -p1 -d $src < $patch || {
+      echo "Failed to apply patch: $patch"
+      echo "Patch output:"
+      patch --dry-run -p1 -d $src < $patch
       exit 1
     }
-    # git apply --directory=$src $patch || {
-    #   echo "Apply patch failed: $patch"
-    #   exit 1
-    # }
+
+    echo "Successfully applied patch: $patch"
   done
 
 }

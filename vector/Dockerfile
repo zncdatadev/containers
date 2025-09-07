@@ -70,7 +70,7 @@ RUN <<EOF
 
     curl -sSfL --proto '=https' --tlsv1.2 \
         -o /usr/local/bin/gomplate \
-        https://github.com/hairyhenderson/gomplate/releases/download/${GOMPLATE_VERSION}/gomplate_${OS}-${ARCH}
+        https://github.com/hairyhenderson/gomplate/releases/download/v${GOMPLATE_VERSION}/gomplate_${OS}-${ARCH}
     chmod +x /usr/local/bin/gomplate
 
     # smoke test

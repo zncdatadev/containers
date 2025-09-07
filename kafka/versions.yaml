@@ -1,13 +1,19 @@
 versions:
+  - product: 3.9.0
+    java-base: 21
+    java-devel: 21
+    scala: 2.13
+    kcat: 1.7.0
+    jmx-exporter: 1.1.0
   - product: 3.8.0
     java-base: 21
     java-devel: 21
     scala: 2.13
     kcat: 1.7.0
-    jmx-exporter: 1.0.1
-  - product: 3.7.1
+    jmx-exporter: 1.1.0
+  - product: 3.7.2
     java-base: 21
     java-devel: 21
     scala: 2.13
     kcat: 1.7.0
-    jmx-exporter: 1.0.1
+    jmx-exporter: 1.1.0

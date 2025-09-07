@@ -9,3 +9,5 @@ versions:
     kubedoop-base: 1.0.0
   - product: 22
     kubedoop-base: 1.0.0
+  - product: 23
+    kubedoop-base: 1.0.0

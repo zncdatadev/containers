@@ -51,8 +51,10 @@ RUN <<EOF
         Flask-OIDC==2.2.0 \
         Flask-OpenID==1.3.1 \
         tzdata \
-        gunicorn==22.0.0 \
         authlib==${AUTHLIB_VERSION}
+    pip install --upgrade --no-cache-dir \
+        gunicorn==22.0.0 \
+        python-json-logger
 
     # smoke test
     SUPERSET_SECRET_KEY=$(openssl rand -hex 32) FLASK_APP="superset.app:create_app()" /kubedoop/app/bin/superset version

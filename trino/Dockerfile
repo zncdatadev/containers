@@ -33,13 +33,13 @@ ARG JMX_EXPORTER_VERSION
 WORKDIR /build
 
 
-COPY kubedoop/jmx/config-${JMX_EXPORTER_VERSION} /kubedoop/jmx
+COPY kubedoop/jmx/config /kubedoop/jmx
 
 # setup jmx_exporter
 RUN <<EOF
     curl -sSfL \
-    https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
-    -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
+        https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+        -o /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar
 
     ln -s /kubedoop/jmx/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /kubedoop/jmx/jmx_prometheus_javaagent.jar
 EOF
@@ -53,16 +53,72 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
         https://github.com/trinodb/trino/archive/refs/tags/${PRODUCT_VERSION}.tar.gz \
         | tar xzf - --strip-components=1
 
-    ./mvnw --no-transfer-progress package -DskipTests -Dmaven.gitcommitid.skip=true --projects="!docs,!core/trino-server-rpm"
+    # Build trino with error checking
+    echo "Starting Trino build..."
+    if ! ./mvnw --batch-mode \
+        --no-transfer-progress \
+        package \
+        -DskipTests \
+        -Dmaven.gitcommitid.skip=true \
+        --projects='!docs,!core/trino-server-rpm' \
+        -e ; then
+        echo "ERROR: Trino build failed"
+        exit 1
+    fi
+    echo "Trino build completed successfully"
 
-    tar -xzf core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz -C /kubedoop
-    ln -s /kubedoop/trino-server-${PRODUCT_VERSION} /kubedoop/trino-server
+    TRINO_SERVER_BINARY="core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz"
+    TRINO_SERVER_HOME="/kubedoop/trino-server-${PRODUCT_VERSION}"
+
+    if [ ! -f "${TRINO_SERVER_BINARY}" ]; then
+        echo "Error: Trino server binary not found: ${TRINO_SERVER_BINARY}"
+        ls -alh core/trino-server/target/
+        exit 1
+    fi
+
+    tar -xzvf core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz -C /kubedoop || {
+        echo "Error: Failed to extract Trino server binary"
+        exit 1
+    }
+
+    # create symlink
+    if [ ! -d "${TRINO_SERVER_HOME}" ]; then
+        echo "Error: Trino server home directory not found: ${TRINO_SERVER_HOME}"
+        ls -la /kubedoop/
+        exit 1
+    fi
+
+    ln -sf /kubedoop/trino-server-${PRODUCT_VERSION} /kubedoop/trino-server
 
     cp client/trino-cli/target/trino-cli-${PRODUCT_VERSION}-executable.jar /kubedoop/trino-server/bin/trino-cli
     popd
 
     # cleanup source
     rm -rf /build/trino-src
+
+    # smoke test
+    echo "Running Trino launcher smoke test..."
+    LAUNCHER="${TRINO_SERVER_HOME}/bin/launcher"
+
+    if [ ! -f "$LAUNCHER" ]; then
+        echo "ERROR: Trino launcher not found at: $LAUNCHER"
+        ls -la "${TRINO_SERVER_HOME}/bin/" || echo "bin directory not found"
+        exit 1
+    fi
+
+    # 运行状态检查
+    echo "Checking Trino launcher status..."
+    status_output=$("$LAUNCHER" status 2>&1)
+    exit_code=$?
+
+    if [ $exit_code -eq 3 ]; then
+        echo "SUCCESS: Trino launcher status check passed (server is not running, as expected)"
+    else
+        echo "ERROR: Unexpected launcher status. Exit code: $exit_code"
+        echo "Status output:"
+        echo "$status_output"
+        exit 1
+    fi
 EOF
 
 COPY --from=storage-connector-builder --chown=kubedoop:kubedoop /build/trino-storage-src/target/trino-storage-${STORAGE_CONNECTOR_VERSION} /kubedoop/trino-server/plugin/trino-storage-${STORAGE_CONNECTOR_VERSION}
@@ -98,8 +154,5 @@ ENV PATH="${TRINO_HOME}/bin:${PATH}"
 
 WORKDIR /kubedoop/trino-server
 USER kubedoop
-
-# smoke test
-RUN launcher status || [ $? -eq 3 ]
 
 CMD ["launcher", "run"]
