@@ -97,12 +97,28 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     rm -rf /build/trino-src
 
     # smoke test
-    /kubedoop/trino-server-470/bin/trino-cli --version || {
-        echo "ERROR: trino-cli --version failed"
-        ls -alh /kubedoop/trino-server-470/
-        ls -alh /kubedoop/trino-server-470/bin/
+    echo "Running Trino launcher smoke test..."
+    LAUNCHER="${TRINO_SERVER_HOME}/bin/launcher"
+
+    if [ ! -f "$LAUNCHER" ]; then
+        echo "ERROR: Trino launcher not found at: $LAUNCHER"
+        ls -la "${TRINO_SERVER_HOME}/bin/" || echo "bin directory not found"
         exit 1
-    }
+    fi
+
+    # 运行状态检查
+    echo "Checking Trino launcher status..."
+    status_output=$("$LAUNCHER" status 2>&1)
+    exit_code=$?
+
+    if [ $exit_code -eq 3 ]; then
+        echo "SUCCESS: Trino launcher status check passed (server is not running, as expected)"
+    else
+        echo "ERROR: Unexpected launcher status. Exit code: $exit_code"
+        echo "Status output:"
+        echo "$status_output"
+        exit 1
+    fi
 EOF
 
 COPY --from=storage-connector-builder --chown=kubedoop:kubedoop /build/trino-storage-src/target/trino-storage-${STORAGE_CONNECTOR_VERSION} /kubedoop/trino-server/plugin/trino-storage-${STORAGE_CONNECTOR_VERSION}
