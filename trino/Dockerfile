@@ -55,7 +55,8 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
 
     # Build trino with error checking
     echo "Starting Trino build..."
-    if ! ./mvnw --batch-mode --show-version \
+    if ! ./mvnw --batch-mode \
+        --no-transfer-progress \
         package \
         -DskipTests \
         -Dmaven.gitcommitid.skip=true \
@@ -75,7 +76,7 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
         exit 1
     fi
 
-    tar -xzf core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz -C /kubedoop || {
+    tar -xzvf core/trino-server/target/trino-server-${PRODUCT_VERSION}.tar.gz -C /kubedoop || {
         echo "Error: Failed to extract Trino server binary"
         exit 1
     }
@@ -96,7 +97,12 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     rm -rf /build/trino-src
 
     # smoke test
-    /kubedoop/trino-server-470/bin/trino-cli --version
+    /kubedoop/trino-server-470/bin/trino-cli --version || {
+        echo "ERROR: trino-cli --version failed"
+        ls -alh /kubedoop/trino-server-470/
+        ls -alh /kubedoop/trino-server-470/bin/
+        exit 1
+    }
 EOF
 
 COPY --from=storage-connector-builder --chown=kubedoop:kubedoop /build/trino-storage-src/target/trino-storage-${STORAGE_CONNECTOR_VERSION} /kubedoop/trino-server/plugin/trino-storage-${STORAGE_CONNECTOR_VERSION}
