@@ -38,9 +38,12 @@ RUN <<EOF
     set -ex
     python${PYTHON_VERSION} -m venv app
     source app/bin/activate
-    pip install --upgrade --no-cache-dir pip setuptools wheel
+    pip install --upgrade --no-cache-dir pip setuptools==75.2.0
+    # remove gevent pin to allow latest version
+    sed -i '/^gevent==.*$/d' /tmp/requirements/base.txt
     pip install --no-cache-dir \
-        -r /tmp/requirements/base.txt \
+        --upgrade \
+        --constraint /tmp/requirements/base.txt \
         apache-superset==${PRODUCT_VERSION} \
         psycopg2-binary \
         pydruid \

@@ -24,7 +24,7 @@ RUN <<EOF
         python${PYTHON_VERSION}-devel \
         python${PYTHON_VERSION}-pip \
         python${PYTHON_VERSION}-setuptools \
-        python${PYTHON_VERSION}-wheel \
+        python${PYTHON_VERSION}-wheel
 
     microdnf clean all
     rm -rf /var/cache/yum
@@ -32,21 +32,26 @@ EOF
 
 WORKDIR /kubedoop
 
+COPY kubedoop/requirements/${PRODUCT_VERSION}/ /tmp/requirements/
+
 RUN <<EOF
+    set -ex
     python${PYTHON_VERSION} -m venv app
     source app/bin/activate
     pip install --upgrade --no-cache-dir pip setuptools wheel
 
     AIRFLOW_EXTRAS=async,amazon,celery,cncf.kubernetes,docker,dask,elasticsearch,ftp,grpc,hashicorp,http,ldap,google,google_auth,microsoft.azure,odbc,pandas,postgres,redis,sendgrid,sftp,slack,ssh,statsd,virtualenv,trino
-    CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${PRODUCT_VERSION}/constraints-${PYTHON_VERSION}.txt"
-    pip install --no-cache-dir apache-airflow[${AIRFLOW_EXTRAS}]==${PRODUCT_VERSION} --constraint ${CONSTRAINT_URL}
+    pip install --no-cache-dir apache-airflow[${AIRFLOW_EXTRAS}]==${PRODUCT_VERSION} --constraint /tmp/requirements/constraints.txt
 
-    pip install --no-cache-dir s3fs Flask_OIDC==2.2.0 Flask-OpenID==1.3.1
+    pip install --no-cache-dir s3fs==2024.9.0 Flask_OIDC==2.2.0 Flask-OpenID==1.3.1
 
+    ls -alh /kubedoop/app/bin
+    /kubedoop/app/bin/pip --version
+    /kubedoop/app/bin/pip list
+
+    # smoke test
+    /kubedoop/app/bin/airflow version | grep -q ${PRODUCT_VERSION}
 EOF
-
-# smoke test
-RUN /kubedoop/app/bin/airflow version | grep -q ${PRODUCT_VERSION}
 
 
 ## stage: statsd exporter
@@ -87,10 +92,10 @@ RUN <<EOF
     # cleanup cache
     go clean -modcache
     rm -rf /root/.cache/go-build
-EOF
 
-# smoke test
-RUN /kubedoop/bin/statsd-exporter --version
+    # smoke test
+    /kubedoop/bin/statsd-exporter --version
+EOF
 
 
 # stage: git-sync-builder
@@ -125,10 +130,10 @@ RUN <<EOF
     # cleanup cache
     go clean -modcache
     rm -rf /root/.cache/go-build
-EOF
 
-# smoke test
-RUN /kubedoop/bin/git-sync --version
+    # smoke test
+    /kubedoop/bin/git-sync --version
+EOF
 
 
 # stage: final
@@ -163,7 +168,6 @@ COPY kubedoop/bin/entrypoint.sh /kubedoop/bin/entrypoint.sh
 COPY --from=airflow-builder --chown=kubedoop:kubedoop /kubedoop /kubedoop
 COPY --from=statsd-exporter-builder --chown=kubedoop:kubedoop /kubedoop/bin/statsd-exporter /kubedoop/bin/statsd-exporter
 COPY --from=git-sync-builder --chown=kubedoop:kubedoop /kubedoop/bin/git-sync /kubedoop/bin/git-sync
-
 
 ENV VIRTUAL_ENV=/kubedoop/app
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}" \
