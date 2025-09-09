@@ -32,7 +32,6 @@ ARG JMX_EXPORTER_VERSION
 
 WORKDIR /build
 
-
 COPY kubedoop/jmx/config /kubedoop/jmx
 
 # setup jmx_exporter
@@ -96,9 +95,25 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     # cleanup source
     rm -rf /build/trino-src
 
+    # smoke test - check if trino-cli works
+    /kubedoop/trino-server/bin/trino-cli --version || {
+        echo "ERROR: Trino CLI smoke test failed"
+        ls -alh /kubedoop/trino-server/bin/
+        exit 1
+    }
+    echo "Trino CLI smoke test passed"
+EOF
+
+# smoke test - enhanced with status check and error handling
+RUN <<EOF
+    microdnf update
+    # trino launcher needs python
+    microdnf install python
+    microdnf clean all
+
     # smoke test
     echo "Running Trino launcher smoke test..."
-    LAUNCHER="${TRINO_SERVER_HOME}/bin/launcher"
+    LAUNCHER="/kubedoop/trino-server-${PRODUCT_VERSION}/bin/launcher"
 
     if [ ! -f "$LAUNCHER" ]; then
         echo "ERROR: Trino launcher not found at: $LAUNCHER"
