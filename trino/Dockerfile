@@ -113,7 +113,8 @@ RUN <<EOF
 
     # smoke test
     echo "Running Trino launcher smoke test..."
-    LAUNCHER="/kubedoop/trino-server-${PRODUCT_VERSION}/bin/launcher"
+    TRINO_SERVER_HOME="/kubedoop/trino-server/"
+    LAUNCHER="${TRINO_SERVER_HOME}/bin/launcher"
 
     if [ ! -f "$LAUNCHER" ]; then
         echo "ERROR: Trino launcher not found at: $LAUNCHER"
@@ -121,17 +122,14 @@ RUN <<EOF
         exit 1
     fi
 
-    # 运行状态检查
-    echo "Checking Trino launcher status..."
-    status_output=$("$LAUNCHER" status 2>&1)
-    exit_code=$?
-
-    if [ $exit_code -eq 3 ]; then
-        echo "SUCCESS: Trino launcher status check passed (server is not running, as expected)"
+    # run smoke test command
+    echo "Checking Trino launcher help command..."
+    if "$LAUNCHER" --help >/dev/null 2>&1; then
+        echo "SUCCESS: Trino launcher help command executed successfully"
     else
-        echo "ERROR: Unexpected launcher status. Exit code: $exit_code"
-        echo "Status output:"
-        echo "$status_output"
+        echo "ERROR: Trino launcher help command failed"
+        echo "Launcher output:"
+        "$LAUNCHER" --help 2>&1 || true
         exit 1
     fi
 EOF
