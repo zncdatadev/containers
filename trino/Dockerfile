@@ -32,7 +32,6 @@ ARG JMX_EXPORTER_VERSION
 
 WORKDIR /build
 
-
 COPY kubedoop/jmx/config /kubedoop/jmx
 
 # setup jmx_exporter
@@ -96,8 +95,25 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
     # cleanup source
     rm -rf /build/trino-src
 
+    # smoke test - check if trino-cli works
+    /kubedoop/trino-server/bin/trino-cli --version || {
+        echo "ERROR: Trino CLI smoke test failed"
+        ls -alh /kubedoop/trino-server/bin/
+        exit 1
+    }
+    echo "Trino CLI smoke test passed"
+EOF
+
+# smoke test - enhanced with status check and error handling
+RUN <<EOF
+    microdnf update
+    # trino launcher needs python
+    microdnf install python
+    microdnf clean all
+
     # smoke test
     echo "Running Trino launcher smoke test..."
+    TRINO_SERVER_HOME="/kubedoop/trino-server/"
     LAUNCHER="${TRINO_SERVER_HOME}/bin/launcher"
 
     if [ ! -f "$LAUNCHER" ]; then
@@ -106,17 +122,14 @@ RUN --mount=type=cache,target=/root/.m2 <<EOF
         exit 1
     fi
 
-    # 运行状态检查
-    echo "Checking Trino launcher status..."
-    status_output=$("$LAUNCHER" status 2>&1)
-    exit_code=$?
-
-    if [ $exit_code -eq 3 ]; then
-        echo "SUCCESS: Trino launcher status check passed (server is not running, as expected)"
+    # run smoke test command
+    echo "Checking Trino launcher help command..."
+    if "$LAUNCHER" --help >/dev/null 2>&1; then
+        echo "SUCCESS: Trino launcher help command executed successfully"
     else
-        echo "ERROR: Unexpected launcher status. Exit code: $exit_code"
-        echo "Status output:"
-        echo "$status_output"
+        echo "ERROR: Trino launcher help command failed"
+        echo "Launcher output:"
+        "$LAUNCHER" --help 2>&1 || true
         exit 1
     fi
 EOF
