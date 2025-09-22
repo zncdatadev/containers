@@ -3,7 +3,7 @@
 
 # registry.redhat.io/ubi9/ubi-minimal:9.6-1755695350
 # https://catalog.redhat.com/en/software/containers/ubi9/ubi-minimal/615bd9b4075b022acc111bf5?image=68a5d252653f4281018c6e90#get-this-image
-FROM registry.redhat.io/ubi9/ubi-minimal@sha256:2f06ae0e6d3d9c4f610d32c480338eef474867f435d8d28625f2985e8acde6e8
+FROM registry.access.redhat.com/ubi9/ubi-minimal@sha256:2f06ae0e6d3d9c4f610d32c480338eef474867f435d8d28625f2985e8acde6e8
 
 COPY kubedoop/dnf.conf /etc/dnf/dnf.conf
 
