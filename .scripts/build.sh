@@ -10,6 +10,10 @@ CACHE_REGISTRY=${CACHE_REGISTRY:-$REGISTRY}
 KUBEDOOP_VERSION=${KUBEDOOP_VERSION:-"0.0.0-dev"}
 KUBEDOOP_TAG="kubedoop${KUBEDOOP_VERSION}"
 
+# Allowed platforms for build (comma-separated). Can be overridden via env.
+# Keep this in sync with supported Docker platforms in the project.
+ALLOW_PLATFORM=${ALLOW_PLATFORM:-"linux/amd64,linux/arm64"}
+
 PATH=$PATH:$(pwd)/bin
 
 
@@ -33,19 +37,25 @@ Examples:
     ${cmd_name} java-base:17 hadoop:3.3.1
 
 Options:
-  -r,  --registry REGISTRY        Set the registry, default is 'quay.io/zncdatadev'
-  -p,  --push                     Push the built image to the registry, if not set, load the image to local docker
-  -s,  --sign                     Sign the image with cosign
-       --progress <plain|auto|tty>  Set the build progress output format. Default is 'auto'.
-                                   Use 'plain' for plain text output, useful for debugging.
-
-  -h,  --help                     Show this message
+  -r,   --registry REGISTRY       Set the registry, default is 'quay.io/zncdatadev'
+        --platform PLATFORM       Set the build platform(s). If not set, use current system arch.
+                                  Multiple platforms can be specified, separated by comma.
+                                    Example: 'linux/amd64,linux/arm64'
+  -p,   --push                    Push the built image to the registry, if not set, load the image to local docker
+  -s,   --sign                    Sign the image with cosign
+        --progress PROGRESS       Set the build progress output format. Default is 'auto'.
+                                  Use 'plain' for plain text output, useful for debugging.
+        --arch-suffix             Use architecture suffix for image tags when pushing to registry.
+                                  This is useful when building multi-arch images.
+                                  Note: this option is ignored if --platform specifies multiple platforms.
+  -h,   --help                    Show this message
 "
 
   local registry=$REGISTRY
   local progress="" # Default progress mode for docker buildx bake
   local push=false
   local sign=false
+  local platform_input="" # Raw --platform string from CLI
   # Change target to array
   local -a products=()
 
@@ -55,6 +65,10 @@ Options:
       -r | --registry )
         shift
         registry=$1
+        ;;
+      --platform )
+        shift
+        platform_input=$1
         ;;
       -h | --help )
         echo "$usage"
@@ -98,16 +112,20 @@ Options:
   # Check system requirements if signing is requested
   system_requirements $sign
 
-  # Note:
-  # If push is not true, we use single-architecture to build the image.
-  # The docker version in Ubuntu 24.04 of the current GitHub runner does not
-  # support multi-architecture image building with the --load parameter.
-  # Moreover, if push is false, we do not need to build multi-architecture images,
-  # just load the current system architecture image into docker with the --load parameter.
-  local platforms='["linux/amd64", "linux/arm64"]'
-  if [ "$push" = false ]; then
-    platforms='["linux/'$(uname -m)'"]'
+  # Resolve platforms: if --platform provided, use it; otherwise default to current system architecture
+  local platforms=""
+  if [ -n "$platform_input" ]; then
+    # If not pushing and user requested multiple platforms, fall back to single-arch due to --load limitation
+    if [ "$push" = false ] && [[ "$platform_input" == *","* ]]; then
+      echo "WARNING: --platform specifies multiple platforms but --push is not set.\n         Falling back to current system architecture for --load builds." >&2
+      platforms="$(current_platform_json)"
+    else
+      platforms="$(platforms_to_json "$platform_input")"
+    fi
+  else
+    platforms="$(current_platform_json)"
   fi
+  echo "INFO: Build platforms: $platforms" >&2
 
   # Fill in product versions
   products=($(fill_products_version "${products[@]}"))
@@ -121,6 +139,11 @@ Options:
 }
 
 
+# Check system requirements
+# Arguments:
+#   $1: bool  sign, if true, check cosign is installed
+# Returns:
+#   None, exit if requirements not met
 function system_requirements () {
   local sign=$1
 
@@ -140,9 +163,12 @@ function system_requirements () {
   fi
 }
 
-# 从 products 补全版本号。
-# product 的值可能是 "java-base:17" 或 "hadoop"，
-# 如果有具体版本号，不用做处理；如果没有，需要到对应目录中读取 `<product>/versions.yaml` 中的所有 product 版本号，拼接到产品后面
+
+# Fill in product versions from products.
+# The value of product may be "java-base:17" or "hadoop".
+# If a specific version is present, no processing is needed;
+# if not, read all product versions from the corresponding `<product>/versions.yaml` file
+# in the directory and append them to the product name.
 # Arguments:
 #   $1: str   products, the product name
 # Returns:
@@ -175,6 +201,7 @@ function fill_products_version () {
 
   echo "${filled_products[@]}"
 }
+
 
 # https://github.com/sigstore/cosign/issues/587
 # Use Cosign for keyless image signing
@@ -310,7 +337,8 @@ function build_sign_image () {
 }
 
 
-# Get docker bake file using project.yaml and versions.yaml in product path
+# Construct docker bake file using project.yaml and versions.yaml in product path.
+# Docker bake file reference: https://docs.docker.com/build/bake/reference/
 # The bake file is a JSON object
 # Arguments:
 #   $1: str, platforms, platforms for bakefile. eg: '["linux/amd64", "linux/arm64"]'
@@ -322,7 +350,8 @@ function get_bakefile () {
 
   # if platforms is empty, set default value
   if [ -z "$platforms" ]; then
-    platforms='["linux/'$(uname -m)'"]'
+    echo "ERROR: platforms is empty" >&2
+    exit 1
   fi
 
   local current_sha=$(git rev-parse HEAD)
@@ -344,8 +373,9 @@ function get_bakefile () {
 
       local versions=$(yq eval '.versions' -o=json $versions_file)
       local targets=$(jq -n '{}')
-      for version in $(echo "$versions" | jq -c '.[]'); do
 
+      # Iterate over versions to construct targets and groups
+      for version in $(echo "$versions" | jq -c '.[]'); do
         # Construct bakefile target object
         local target=$(jq -n '{}')
 
@@ -355,12 +385,15 @@ function get_bakefile () {
         # Add target to product groups
         product_groups=$(echo "$product_groups" | jq --arg name "$target_name" '. + [$name]')
 
+        # Construct tags object
         local tags=$(jq -n --arg tag "$REGISTRY/$product_name:$product_version-$KUBEDOOP_TAG" '[$tag]')
+        target=$(echo "$target" | jq --arg k "tags" --argjson v "$tags" '. + {($k): $v}')
 
         # Construct contexts object
         local contexts=$(jq -n '{}')
+        target=$(echo "$target" | jq --arg k "context" --arg v "$product_name" '. + {($k): $v}')
 
-        # Construct args object
+        # Construct args and contexts object
         local args=$(jq -n '{}')
         for dependency in $(echo "$version" | jq -r 'keys[]'); do
           # get value by dependency key
@@ -379,17 +412,10 @@ function get_bakefile () {
           # append dependency to 'args'
           args=$(echo "$args" | jq --arg k "$transformed_key" --arg v "$value" '. + {($k): $v}')
         done
-
         target=$(echo "$target" | jq --arg k "args" --argjson v "$args" '. + {($k): $v}')
-        target=$(echo "$target" | jq --arg k "platforms" --argjson v "$platforms" '. + {($k): $v}')
-        target=$(echo "$target" | jq --arg k "tags" --argjson v "$tags" '. + {($k): $v}')
-        target=$(echo "$target" | jq --arg k "context" --arg v "$product_name" '. + {($k): $v}')
-        target=$(echo "$target" | jq --arg k "dockerfile" --arg v "Dockerfile" '. + {($k): $v}')
-        # If contexts is not empty, add to target
-        if [ "$contexts" != "{}" ]; then
-          target=$(echo "$target" | jq --arg k "contexts" --argjson v "$contexts" '. + {($k): $v}')
-        fi
+        target=$(echo "$target" | jq --arg k "contexts" --argjson v "$contexts" '. + {($k): $v}')
 
+        # Add cache-from and cache-to for registry caching
         # https://docs.docker.com/build/cache/backends/registry/
         local cache_from="type=registry,mode=max,ref=$CACHE_REGISTRY/cache:$product_name-$product_version"
         target=$(echo "$target" | jq --arg k "cache-from" --arg v "$cache_from" '. + {($k): [$v]}')
@@ -398,6 +424,7 @@ function get_bakefile () {
 
         local datetime=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+        # Construct labels object
         local labels=$(jq -n '{}')
         labels=$(echo "$labels" | jq --arg k "org.opencontainers.image.title" --arg v "$product_name" '. + {($k): $v}')
         labels=$(echo "$labels" | jq --arg k "org.opencontainers.image.version" --arg v "$product_version" '. + {($k): $v}')
@@ -405,11 +432,15 @@ function get_bakefile () {
         labels=$(echo "$labels" | jq --arg k "org.opencontainers.image.revision" --arg v "$current_sha" '. + {($k): $v}')
         target=$(echo "$target" | jq --argjson v "$labels" '. + {labels: $v}')
 
+        # Construct annotations object
         local annotations=$(jq -n '[]')
         annotations=$(echo "$annotations" | jq --arg k "org.opencontainers.image.created=$datetime" '. + [$k]')
         annotations=$(echo "$annotations" | jq --arg k "org.opencontainers.image.revision=$current_sha" '. + [$k]')
         target=$(echo "$target" | jq --argjson v "$annotations" '. + {annotations: $v}')
 
+        # Add platforms and dockerfile to target
+        target=$(echo "$target" | jq --arg k "platforms" --argjson v "$platforms" '. + {($k): $v}')
+        target=$(echo "$target" | jq --arg k "dockerfile" --arg v "Dockerfile" '. + {($k): $v}')
         # Add target to targets
         targets=$(echo "$targets" | jq --arg k "$target_name" --argjson v "$target" '. + {($k): $v}')
 
@@ -431,6 +462,65 @@ function get_bakefile () {
   jq -r '.' <<< $bakefile > ./bakefile.json
 
   echo $(jq -c '.' <<< $bakefile)
+}
+
+# -------------------- helpers --------------------
+# Convert a comma-separated platform list to JSON array accepted by bake
+# Arguments:
+#   $1: str, platforms, comma-separated platform list, eg:
+#  - linux/amd64,linux/arm64
+#  - linux/arm64
+# Returns:
+#   JSON: platforms, JSON array of platforms, eg:
+#  - ["linux/amd64","linux/arm64"]
+function platforms_to_json () {
+  local platform_input="$1"
+  if [ -z "$platform_input" ]; then
+    echo '[]'
+    return 0
+  fi
+
+  local result='[]'
+  IFS=',' read -r -a platform_array <<< "$platform_input"
+  IFS=',' read -r -a allowed_arr <<< "$ALLOW_PLATFORM"
+  for p in "${platform_array[@]}"; do
+    p=$(echo "$p" | xargs) # trim spaces
+    local ok=false
+    for ap in "${allowed_arr[@]}"; do
+      ap=$(echo "$ap" | xargs)
+      if [ "$p" = "$ap" ]; then
+        ok=true
+        break
+      fi
+    done
+    if [ "$ok" != true ]; then
+      echo "ERROR: Unsupported platform value: '$p'. Allowed: $ALLOW_PLATFORM" >&2
+      exit 1
+    fi
+    result=$(echo "$result" | jq --arg v "$p" '. + [$v]')
+  done
+  echo $(jq -c '.' <<< "$result")
+}
+
+
+# Get current system architecture as JSON array with one element
+function current_platform_json () {
+  local arch=$(uname -m)
+  case "$arch" in
+    x86_64|amd64)
+      local def='linux/amd64' ;;
+    aarch64|arm64)
+      local def='linux/arm64' ;;
+    *)
+      echo "ERROR: Unsupported local architecture: $arch" >&2
+      exit 1 ;;
+  esac
+  # Ensure default platform is in ALLOW_PLATFORM
+  if ! (echo "$ALLOW_PLATFORM" | tr ',' '\n' | grep -qx "$def"); then
+    echo "ERROR: Default platform '$def' (from arch '$arch') is not in ALLOW_PLATFORM: $ALLOW_PLATFORM" >&2
+    exit 1
+  fi
+  echo "[\"$def\"]"
 }
 
 
