@@ -7,10 +7,11 @@ env:
   REGISTRY: quay.io/zncdatadev
 
 on:
-  # workflow_dispatch:
   push:
     branches:
       - main
+    tags:
+        - '\d+.\d+.\d+*'
     paths:
       - krb5/**
       - .github/actions/**
