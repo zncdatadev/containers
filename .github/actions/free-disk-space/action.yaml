@@ -22,24 +22,37 @@ runs:
         echo "INFO: Remove Android SDK"
         sudo rm -rf /usr/local/lib/android || true
 
-        echo "INFO: Remove apt cache"
-        sudo apt-get remove -y --fix-missing \
-          '^aspnetcore-.*' \
-          '^dotnet-.*' \
-          '^llvm-.*' \
-          'php.*' \
-          '^mongodb-.*' \
-          '^mysql-.*' \
-          azure-cli \
-          google-cloud-sdk \
-          google-cloud-cli \
-          google-chrome-stable \
-          firefox \
-          powershell \
-          mono-devel \
-          libgl1-mesa-dri
-        sudo apt-get autoremove -y
-        sudo apt-get clean -y
+        echo "INFO: Remove apt packages individually"
+        # Define packages to remove
+        packages=(
+          '^aspnetcore-.*'
+          '^dotnet-.*'
+          '^llvm-.*'
+          'php.*'
+          '^mongodb-.*'
+          '^mysql-.*'
+          'azure-cli'
+          'google-cloud-sdk'
+          'google-cloud-cli'
+          'google-chrome-stable'
+          'firefox'
+          'powershell'
+          'mono-devel'
+          'libgl1-mesa-dri'
+        )
+
+        # Remove packages one by one with detailed logging
+        for package in "${packages[@]}"; do
+          echo "  Attempting to remove package: $package"
+          if sudo apt-get remove -y --fix-missing "$package" 2>/dev/null; then
+            echo "  ✓ Successfully removed: $package"
+          else
+            echo "  ⚠ Package not found or failed to remove: $package"
+          fi
+        done
+
+        sudo apt-get autoremove -y || true
+        sudo apt-get clean -y || true
 
         echo "INFO: Remove .NET runtime"
         sudo rm -rf /usr/share/dotnet || true
