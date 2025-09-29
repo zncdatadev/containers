@@ -70,6 +70,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Display OS Information
+        run: |
+          echo "Running on $(uname -a)"
+          echo "Architecture: $(arch)"
+          echo "CPU Information:"
+          lscpu
+          echo "Memory Information:"
+          free -h
+          echo "Disk Usage:"
+          df -h
+
       - name: Free disk space
         uses: ./.github/actions/free-disk-space
 
