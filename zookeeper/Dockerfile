@@ -24,13 +24,38 @@ EOF
 RUN --mount=type=cache,target=/root/.m2 <<EOF
     mkdir -p /build/zookeeper-src
     pushd /build/zookeeper-src
-    curl -sSfL \
-        https://github.com/apache/zookeeper/archive/refs/tags/release-${PRODUCT_VERSION}.tar.gz \
-        | tar xzf - --strip-components=1
+
+    SOURCE_URL="https://github.com/apache/zookeeper/archive/refs/tags/release-${PRODUCT_VERSION}.tar.gz"
+    echo "Downloading zookeeper from: ${SOURCE_URL}"
+    curl -sSfL $SOURCE_URL | tar xzf - --strip-components=1
+
     mvn --batch-mode --no-transfer-progress -pl "!zookeeper-client/zookeeper-client-c" clean install checkstyle:check spotbugs:check -DskipTests -Pfull-build
-    tar -xzf zookeeper-assembly/target/apache-zookeeper-${PRODUCT_VERSION}-bin.tar.gz -C /kubedoop
-    mv /kubedoop/apache-zookeeper-${PRODUCT_VERSION}-bin /kubedoop/apache-zookeeper-${PRODUCT_VERSION}
-    ln -s /kubedoop/apache-zookeeper-${PRODUCT_VERSION} /kubedoop/zookeeper
+
+    # install zookeeper binary
+    ZOOKEEPER_BINARY="zookeeper-assembly/target/apache-zookeeper-${PRODUCT_VERSION}-bin.tar.gz"
+    ZOOKEEPER_HOME="/kubedoop/apache-zookeeper-${PRODUCT_VERSION}"
+
+    if [ ! -f "${ZOOKEEPER_BINARY}" ]; then
+        echo "Error: Zookeeper binary not found at ${ZOOKEEPER_BINARY}"
+        ls -la $(dirname ${ZOOKEEPER_BINARY})
+        exit 1
+    fi
+
+    # extract and setup zookeeper
+    tar -xzf ${ZOOKEEPER_BINARY} -C /kubedoop || {
+        echo "Error: Failed to extract Zookeeper binary"
+        exit 1
+    }
+
+    # checkout extracted folder
+    if [ ! -d "${ZOOKEEPER_HOME}-bin" ]; then
+        echo "Error: Extracted Zookeeper directory not found at ${ZOOKEEPER_HOME}-bin"
+        ls -la /kubedoop
+        exit 1
+    fi
+
+    mv ${ZOOKEEPER_HOME}-bin ${ZOOKEEPER_HOME}
+    ln -sf ${ZOOKEEPER_HOME} /kubedoop/zookeeper
     popd
 
     # smoke test
