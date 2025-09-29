@@ -7,11 +7,11 @@ env:
   REGISTRY: quay.io/zncdatadev
 
 on:
-  # workflow_dispatch:
   push:
     branches:
       - main
-      - fix/hbase-build
+    tags:
+        - '\d+.\d+.\d+*'
     paths:
       - hbase/**
       - kubedoop-base/**
