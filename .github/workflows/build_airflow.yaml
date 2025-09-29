@@ -66,6 +66,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Show os info
+        run: |
+          uname -a
+          arch
+          lscpu
+          free -h
+          df -h
+
       - name: Free disk space
         uses: ./.github/actions/free-disk-space
 
