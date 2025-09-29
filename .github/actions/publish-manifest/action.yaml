@@ -1,0 +1,156 @@
+name: Publish multi-platform manifest
+description: Create, push and optionally sign multi-platform container manifests
+
+inputs:
+  registry:
+    description: 'Container registry URL'
+    required: true
+    default: 'quay.io/zncdatadev'
+  registry_username:
+    description: 'Registry username for authentication'
+    required: false
+  registry_password:
+    description: 'Registry password for authentication'
+    required: false
+  product_name:
+    description: 'Product name for the container image'
+    required: true
+  product_version:
+    description: 'Product version for the container image'
+    required: true
+  kubedoop_version:
+    description: 'Kubedoop version suffix'
+    required: true
+    default: '0.0.0-dev'
+  platforms:
+    description: 'Comma-separated list of platforms to combine (e.g., "amd64,arm64")'
+    required: false
+    default: 'amd64,arm64'
+  sign:
+    description: 'Whether to sign the manifest with cosign'
+    required: false
+    default: 'false'
+  cosign_version:
+    description: 'Cosign version to use'
+    required: false
+    default: 'v2.2.4'
+  action_debug:
+    description: 'Enable debug logging'
+    required: false
+    default: 'false'
+
+outputs:
+  image_tag:
+    description: 'The final multi-platform image tag'
+    value: ${{ steps.manifest.outputs.image_tag }}
+  image_ref:
+    description: 'The image reference with digest'
+    value: ${{ steps.manifest.outputs.image_ref }}
+  manifest_digest:
+    description: 'The manifest digest'
+    value: ${{ steps.manifest.outputs.manifest_digest }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Setup Cosign
+      if: ${{ inputs.sign == 'true' }}
+      uses: sigstore/cosign-installer@main
+      with:
+        cosign-release: ${{ inputs.cosign_version }}
+
+    - name: Login to registry
+      if: ${{ inputs.registry_username && inputs.registry_password }}
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry_username }}
+        password: ${{ inputs.registry_password }}
+
+    - name: Create and push multi-platform manifest
+      id: manifest
+      shell: bash
+      env:
+        REGISTRY: ${{ inputs.registry }}
+        PRODUCT_NAME: ${{ inputs.product_name }}
+        PRODUCT_VERSION: ${{ inputs.product_version }}
+        KUBEDOOP_VERSION: ${{ inputs.kubedoop_version }}
+        PLATFORMS: ${{ inputs.platforms }}
+        DEBUG: ${{ inputs.action_debug }}
+      run: |
+        set -e
+
+        IMAGE_BASE="${REGISTRY}/${PRODUCT_NAME}:${PRODUCT_VERSION}-kubedoop${KUBEDOOP_VERSION}"
+
+        if [ "$DEBUG" = "true" ]; then
+          echo "::group::Debug Information"
+          echo "Registry: ${REGISTRY}"
+          echo "Product: ${PRODUCT_NAME}"
+          echo "Version: ${PRODUCT_VERSION}"
+          echo "Kubedoop: ${KUBEDOOP_VERSION}"
+          echo "Platforms: ${PLATFORMS}"
+          echo "Base tag: ${IMAGE_BASE}"
+          echo "::endgroup::"
+        fi
+
+        echo "Creating multi-platform manifest for: ${IMAGE_BASE}"
+
+        # Build the command with platform-specific tags
+        cmd=("docker" "buildx" "imagetools" "create" "--tag" "${IMAGE_BASE}")
+
+        # Add platform-specific images
+        IFS=',' read -ra PLATFORM_ARRAY <<< "$PLATFORMS"
+        for platform in "${PLATFORM_ARRAY[@]}"; do
+          platform=$(echo "$platform" | xargs) # trim whitespace
+          cmd+=("${IMAGE_BASE}-${platform}")
+        done
+
+        if [ "$DEBUG" = "true" ]; then
+          echo "::group::Manifest Creation Command"
+          echo "${cmd[@]}"
+          echo "::endgroup::"
+        fi
+
+        # Execute the command
+        echo "::group::Creating manifest"
+        "${cmd[@]}"
+        echo "::endgroup::"
+
+        # Get the manifest digest for signing
+        echo "::group::Getting manifest digest"
+        MANIFEST_DIGEST=$(docker buildx imagetools inspect "${IMAGE_BASE}" --format '{{.Manifest.Digest}}')
+        echo "Manifest digest: ${MANIFEST_DIGEST}"
+        echo "::endgroup::"
+
+        # Export for next steps and outputs
+        echo "image_ref=${IMAGE_BASE}@${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
+        echo "image_tag=${IMAGE_BASE}" >> $GITHUB_OUTPUT
+        echo "manifest_digest=${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
+
+    - name: Sign multi-platform manifest with Cosign
+      if: ${{ inputs.sign == 'true' }}
+      shell: bash
+      env:
+        COSIGN_EXPERIMENTAL: 1
+        IMAGE_REF: ${{ steps.manifest.outputs.image_ref }}
+        IMAGE_TAG: ${{ steps.manifest.outputs.image_tag }}
+        DEBUG: ${{ inputs.action_debug }}
+      run: |
+        set -e
+
+        echo "::group::Signing manifest"
+        echo "Signing multi-platform manifest: ${IMAGE_REF}"
+
+        if [ "$DEBUG" = "true" ]; then
+          echo "Image reference: ${IMAGE_REF}"
+          echo "Image tag: ${IMAGE_TAG}"
+        fi
+
+        # Sign the manifest using keyless signing with OIDC
+        cosign sign --yes "${IMAGE_REF}"
+
+        echo "Successfully signed manifest: ${IMAGE_TAG}"
+        echo "::endgroup::"

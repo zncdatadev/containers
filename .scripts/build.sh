@@ -56,6 +56,7 @@ Options:
   local push=false
   local sign=false
   local platform_input="" # Raw --platform string from CLI
+  local arch_suffix=false # Use architecture suffix for image tags
   # Change target to array
   local -a products=()
 
@@ -86,6 +87,9 @@ Options:
         if [[ "$1" =~ ^(plain|auto|tty)$ ]]; then
           progress=$1
         fi
+        ;;
+      --arch-suffix )
+        arch_suffix=true
         ;;
       * )
         # Handle non-option argument as target
@@ -132,7 +136,7 @@ Options:
   echo "INFO: Specified products with versions: ${products[*]}" >&2
 
   # Get the bakefile configuration
-  local bakefile=$(get_bakefile "$platforms")
+  local bakefile=$(get_bakefile "$platforms" "$arch_suffix")
 
   # Update function call order of parameters
   build_sign_image "$bakefile" $push $sign "$progress" "${products[*]}"
@@ -342,11 +346,13 @@ function build_sign_image () {
 # The bake file is a JSON object
 # Arguments:
 #   $1: str, platforms, platforms for bakefile. eg: '["linux/amd64", "linux/arm64"]'
+#   $2: bool, arch_suffix, whether to add architecture suffix to tags for single-platform builds
 # Returns:
 #   JSON: bake file JSON object
 #
 function get_bakefile () {
   local platforms=$1
+  local arch_suffix=$2
 
   # if platforms is empty, set default value
   if [ -z "$platforms" ]; then
@@ -386,7 +392,19 @@ function get_bakefile () {
         product_groups=$(echo "$product_groups" | jq --arg name "$target_name" '. + [$name]')
 
         # Construct tags object
-        local tags=$(jq -n --arg tag "$REGISTRY/$product_name:$product_version-$KUBEDOOP_TAG" '[$tag]')
+        local base_tag="$REGISTRY/$product_name:$product_version-$KUBEDOOP_TAG"
+
+        # Add architecture suffix if requested and building single platform
+        if [ "$arch_suffix" = true ]; then
+          local platform_count=$(echo "$platforms" | jq 'length')
+          if [ "$platform_count" -eq 1 ]; then
+            local single_platform=$(echo "$platforms" | jq -r '.[0]')
+            local arch_part=$(echo "$single_platform" | cut -d'/' -f2)
+            base_tag="${base_tag}-${arch_part}"
+          fi
+        fi
+
+        local tags=$(jq -n --arg tag "$base_tag" '[$tag]')
         target=$(echo "$target" | jq --arg k "tags" --argjson v "$tags" '. + {($k): $v}')
 
         # Construct contexts object

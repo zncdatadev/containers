@@ -32,6 +32,7 @@ on:
       - .github/workflows/build_zookeeper.yaml
 
 
+
 jobs:
   product-shard:
     runs-on: ubuntu-latest
@@ -47,16 +48,21 @@ jobs:
     outputs:
       versions: ${{ steps.product-shard.outputs.versions }}
 
-  # build job only runs on push
-  build:
-    name: Build on ${{ matrix.version }}
+  build-image:
+    name: Build ${{ matrix.version }} on ${{ matrix.arch }}
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'zncdatadev' }}
+    if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
     needs:
       - product-shard
     strategy:
       matrix:
         version: ${{fromJson(needs.product-shard.outputs.versions)}}
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+          - arch: arm64
+            platform: linux/arm64
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -73,6 +79,36 @@ jobs:
           kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
           product_name: ${{ env.PRODUCT_NAME }}
           product_version: ${{ matrix.version }}
+          platform: ${{ matrix.platform }}
+          arch_suffix: true
           push: ${{ github.event_name == 'push' }}
           sign: ${{ github.ref_type == 'tag' }}
-          action_debug: ${{ runner.debug == 1 && 'true' || 'false' }} # enable debug for the build-and-push action if runner.debug is set
+          action_debug: 'false' # enable debug for the build-and-push action if needed
+
+
+  build-manifest:
+    name: Create multi-platform manifest for ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
+    needs:
+      - product-shard
+      - build-image
+    strategy:
+      matrix:
+        version: ${{fromJson(needs.product-shard.outputs.versions)}}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Publish multi-platform manifest
+        uses: ./.github/actions/publish-manifest
+        with:
+          registry: ${{ env.REGISTRY }}
+          registry_username: ${{ secrets.QUAY_USERNAME }}
+          registry_password: ${{ secrets.QUAY_PASSWORD }}
+          product_name: ${{ env.PRODUCT_NAME }}
+          product_version: ${{ matrix.version }}
+          kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
+          platforms: 'amd64,arm64'
+          sign: ${{ github.ref_type == 'tag' }}
+          action_debug: 'false'
