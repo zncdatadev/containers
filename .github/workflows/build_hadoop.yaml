@@ -4,7 +4,7 @@ name: Build hadoop
 env:
   PRODUCT_NAME: hadoop
   KUBEDOOP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
-  REGISTRY: quay.io/zncdatadev
+  REGISTRY: quay.io/huagang
 
 on:
   # workflow_dispatch:
@@ -51,7 +51,7 @@ jobs:
   build-image:
     name: Build ${{ matrix.version }} on ${{ matrix.arch }}
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
+    # if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
     needs:
       - product-shard
     strategy:
@@ -89,7 +89,7 @@ jobs:
   build-manifest:
     name: Create multi-platform manifest for ${{ matrix.version }}
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
+    # if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
     needs:
       - product-shard
       - build-image
