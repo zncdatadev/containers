@@ -51,7 +51,7 @@ jobs:
 
   build-image:
     name: Build ${{ matrix.version }} on ${{ matrix.arch }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     # if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
     needs:
       - product-shard
@@ -62,8 +62,10 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
+            runner: ubuntu-latest
           - arch: arm64
             platform: linux/arm64
+            runner: ubuntu-latest-arm64
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
