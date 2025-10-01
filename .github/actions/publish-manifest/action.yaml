@@ -121,7 +121,7 @@ runs:
 
         # Get the manifest digest for signing
         echo "::group::Getting manifest digest"
-        MANIFEST_DIGEST=$(docker buildx imagetools inspect "${IMAGE_BASE}" --format '{{.Manifest.Digest}}')
+        MANIFEST_DIGEST=$(docker buildx imagetools inspect "${IMAGE_BASE}" --format '{{ println .Manifest.Digest }}')
         echo "Manifest digest: ${MANIFEST_DIGEST}"
         echo "::endgroup::"
 
@@ -130,7 +130,7 @@ runs:
         echo "image_tag=${IMAGE_BASE}" >> $GITHUB_OUTPUT
         echo "manifest_digest=${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
 
-    - name: Sign multi-platform manifest with Cosign
+    - name: Sign manifest with Cosign
       if: ${{ inputs.sign == 'true' }}
       shell: bash
       env:
