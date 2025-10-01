@@ -33,7 +33,6 @@ on:
       - .github/workflows/build_zookeeper.yaml
 
 
-
 # Enable oidc token permission for image sign tool cosign.
 permissions:
   contents: read  # for checking out the code
@@ -57,7 +56,7 @@ jobs:
 
   build-image:
     name: Build ${{ matrix.version }} on ${{ matrix.arch }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
       - product-shard
@@ -68,11 +67,24 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
+            runner: ubuntu-latest
           - arch: arm64
             platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Display OS Information
+        run: |
+          echo "Running on $(uname -a)"
+          echo "Architecture: $(arch)"
+          echo "CPU Information:"
+          lscpu
+          echo "Memory Information:"
+          free -h
+          echo "Disk Usage:"
+          df -h
 
       - name: Free disk space
         uses: ./.github/actions/free-disk-space

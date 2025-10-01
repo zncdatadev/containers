@@ -33,7 +33,6 @@ on:
       - .github/workflows/build_hadoop.yaml
 
 
-
 # Enable oidc token permission for image sign tool cosign.
 permissions:
   contents: read  # for checking out the code
