@@ -1,8 +1,8 @@
-name: Build kubedoop-base
+name: Build hive
 
 
 env:
-  PRODUCT_NAME: kubedoop-base
+  PRODUCT_NAME: hive
   KUBEDOOP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
   REGISTRY: quay.io/zncdatadev
 
