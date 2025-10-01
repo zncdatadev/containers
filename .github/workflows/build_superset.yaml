@@ -84,7 +84,7 @@ jobs:
 
 
   build-manifest:
-    name: Create multi-platform manifest for ${{ matrix.version }}
+    name: Create manifest for ${{ matrix.version }}
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
     needs:
@@ -97,7 +97,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Publish multi-platform manifest
+      - name: Publish manifest
         uses: ./.github/actions/publish-manifest
         with:
           registry: ${{ env.REGISTRY }}

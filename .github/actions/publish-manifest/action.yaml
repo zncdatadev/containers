@@ -1,4 +1,4 @@
-name: Publish multi-platform manifest
+name: Publish manifest
 description: Create, push and optionally sign multi-platform container manifests
 
 inputs:
