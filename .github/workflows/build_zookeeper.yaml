@@ -7,10 +7,11 @@ env:
   REGISTRY: quay.io/zncdatadev
 
 on:
-  # workflow_dispatch:
   push:
     branches:
       - main
+    tags:
+        - '\d+.\d+.\d+*'
     paths:
       - zookeeper/**
       - kubedoop-base/**
@@ -32,6 +33,12 @@ on:
       - .github/workflows/build_zookeeper.yaml
 
 
+# Enable oidc token permission for image sign tool cosign.
+permissions:
+  contents: read  # for checking out the code
+  id-token: write # required for OIDC if used in the build-and-push action
+
+
 jobs:
   product-shard:
     runs-on: ubuntu-latest
@@ -47,19 +54,37 @@ jobs:
     outputs:
       versions: ${{ steps.product-shard.outputs.versions }}
 
-  # build job only runs on push
-  build:
-    name: Build on ${{ matrix.version }}
-    runs-on: ubuntu-latest
+  build-image:
+    name: Build ${{ matrix.version }} on ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
     if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
       - product-shard
     strategy:
       matrix:
         version: ${{fromJson(needs.product-shard.outputs.versions)}}
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Display OS Information
+        run: |
+          echo "Running on $(uname -a)"
+          echo "Architecture: $(arch)"
+          echo "CPU Information:"
+          lscpu
+          echo "Memory Information:"
+          free -h
+          echo "Disk Usage:"
+          df -h
 
       - name: Free disk space
         uses: ./.github/actions/free-disk-space
@@ -73,6 +98,36 @@ jobs:
           kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
           product_name: ${{ env.PRODUCT_NAME }}
           product_version: ${{ matrix.version }}
+          platform: ${{ matrix.platform }}
+          arch_suffix: true
           push: ${{ github.event_name == 'push' }}
           sign: ${{ github.ref_type == 'tag' }}
-          action_debug: ${{ runner.debug == 1 && 'true' || 'false' }} # enable debug for the build-and-push action if runner.debug is set
+          action_debug: 'false' # enable debug for the build-and-push action if needed
+
+
+  build-manifest:
+    name: Create manifest for ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
+    needs:
+      - product-shard
+      - build-image
+    strategy:
+      matrix:
+        version: ${{fromJson(needs.product-shard.outputs.versions)}}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Publish manifest
+        uses: ./.github/actions/publish-manifest
+        with:
+          registry: ${{ env.REGISTRY }}
+          registry_username: ${{ secrets.QUAY_USERNAME }}
+          registry_password: ${{ secrets.QUAY_PASSWORD }}
+          product_name: ${{ env.PRODUCT_NAME }}
+          product_version: ${{ matrix.version }}
+          kubedoop_version: ${{ env.KUBEDOOP_VERSION }}
+          platforms: 'amd64,arm64'
+          sign: ${{ github.ref_type == 'tag' }}
+          action_debug: 'false'

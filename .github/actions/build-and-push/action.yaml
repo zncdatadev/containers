@@ -33,6 +33,13 @@ inputs:
     description: 'Enable debug logging for the action'
     required: false
     default: 'false'
+  platform:
+    description: 'The build platform (e.g., linux/amd64, linux/arm64)'
+    required: false
+  arch_suffix:
+    description: 'Use architecture suffix for image tags'
+    required: false
+    default: 'false'
 
 
 runs:
@@ -65,6 +72,8 @@ runs:
         PRODUCT_VERSION: ${{ inputs.product_version }}
         PUSH: ${{ inputs.push }}
         SIGN: ${{ inputs.sign }}
+        PLATFORM: ${{ inputs.platform }}
+        ARCH_SUFFIX: ${{ inputs.arch_suffix }}
         CI_DEBUG: ${{ inputs.action_debug == 'true' && 'true' || 'false' }}
       run: |
         echo "::group::Build command"
@@ -78,6 +87,14 @@ runs:
         fi
 
         cmd+=("$PRODUCT")
+
+        if [ -n "$PLATFORM" ]; then
+          cmd+=("--platform" "$PLATFORM")
+        fi
+
+        if [ "$ARCH_SUFFIX" = "true" ]; then
+          cmd+=("--arch-suffix")
+        fi
 
         if [ "$PUSH" = "true" ]; then
           cmd+=("--push")
