@@ -121,7 +121,7 @@ Options:
   if [ -n "$platform_input" ]; then
     # If not pushing and user requested multiple platforms, fall back to single-arch due to --load limitation
     if [ "$push" = false ] && [[ "$platform_input" == *","* ]]; then
-      echo "WARNING: --platform specifies multiple platforms but --push is not set.\n         Falling back to current system architecture for --load builds." >&2
+      echo -e "WARNING: --platform specifies multiple platforms but --push is not set.\n         Falling back to current system architecture for --load builds." >&2
       platforms="$(current_platform_json)"
     else
       platforms="$(platforms_to_json "$platform_input")"
