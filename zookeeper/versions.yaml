@@ -1,4 +1,8 @@
 versions:
+  - product: 3.9.2
+    java-base: 17
+    java-devel: 11
+    jmx-exporter: 1.3.0
   - product: 3.9.3
     java-base: 17
     java-devel: 11
