@@ -4,7 +4,7 @@ name: Build kubedoop-base
 env:
   PRODUCT_NAME: kubedoop-base
   KUBEDOOP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
-  REGISTRY: quay.io/zncdatadev
+  REGISTRY: quay.io/huagang
 
 on:
   push:
@@ -49,7 +49,7 @@ jobs:
   build-image:
     name: Build ${{ matrix.version }} on ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
-    if: ${{ github.repository_owner == 'zncdatadev' }}
+    # if: ${{ github.repository_owner == 'zncdatadev' }}
     needs:
       - product-shard
     strategy:
@@ -100,7 +100,7 @@ jobs:
   build-manifest:
     name: Create manifest for ${{ matrix.version }}
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
+    # if: ${{ github.repository_owner == 'zncdatadev' && github.event_name == 'push' }}
     needs:
       - product-shard
       - build-image
