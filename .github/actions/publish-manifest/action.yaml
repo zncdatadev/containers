@@ -105,7 +105,7 @@ runs:
         IFS=',' read -ra PLATFORM_ARRAY <<< "$PLATFORMS"
         for platform in "${PLATFORM_ARRAY[@]}"; do
           platform=$(echo "$platform" | xargs) # trim whitespace
-          cmd+=("${IMAGE_BASE}-${platform}")
+          cmd+=("${IMAGE_NAME}-${platform}")
         done
 
         if [ "$DEBUG" = "true" ]; then
@@ -121,13 +121,13 @@ runs:
 
         # Get the manifest digest for signing
         echo "::group::Getting manifest digest"
-        MANIFEST_DIGEST=$(docker buildx imagetools inspect "${IMAGE_BASE}" --format '{{ println .Manifest.Digest }}')
+        MANIFEST_DIGEST=$(docker buildx imagetools inspect "${IMAGE_NAME}" --format '{{ println .Manifest.Digest }}')
         echo "Manifest digest: ${MANIFEST_DIGEST}"
         echo "::endgroup::"
 
         # Export for next steps and outputs
-        echo "image_ref=${IMAGE_BASE}@${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
-        echo "image_tag=${IMAGE_BASE}" >> $GITHUB_OUTPUT
+        echo "image_ref=${IMAGE_NAME}@${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
+        echo "image_tag=${IMAGE_NAME}" >> $GITHUB_OUTPUT
         echo "manifest_digest=${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
 
     - name: Sign manifest with Cosign
