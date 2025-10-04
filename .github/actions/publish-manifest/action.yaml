@@ -81,7 +81,7 @@ runs:
         PLATFORMS: ${{ inputs.platforms }}
         DEBUG: ${{ inputs.action_debug }}
       run: |
-        set -ex
+        set -e
 
         IMAGE_NAME="${REGISTRY}/${PRODUCT_NAME}:${PRODUCT_VERSION}-kubedoop${KUBEDOOP_VERSION}"
 
@@ -117,6 +117,8 @@ runs:
         # Execute the command
         echo "::group::Creating manifest"
         "${cmd[@]}"
+        echo "Pushing manifest to registry"
+        docker manifest push "${IMAGE_NAME}"
         echo "::endgroup::"
 
         # Get the manifest digest for signing
