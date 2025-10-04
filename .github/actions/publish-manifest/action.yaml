@@ -83,23 +83,23 @@ runs:
       run: |
         set -e
 
-        IMAGE_BASE="${REGISTRY}/${PRODUCT_NAME}:${PRODUCT_VERSION}-kubedoop${KUBEDOOP_VERSION}"
+        IMAGE_NAME="${REGISTRY}/${PRODUCT_NAME}:${PRODUCT_VERSION}-kubedoop${KUBEDOOP_VERSION}"
 
         if [ "$DEBUG" = "true" ]; then
           echo "::group::Debug Information"
           echo "Registry: ${REGISTRY}"
-          echo "Product: ${PRODUCT_NAME}"
-          echo "Version: ${PRODUCT_VERSION}"
-          echo "Kubedoop: ${KUBEDOOP_VERSION}"
+          echo "Product Name: ${PRODUCT_NAME}"
+          echo "Product Version: ${PRODUCT_VERSION}"
+          echo "Kubedoop Version: ${KUBEDOOP_VERSION}"
           echo "Platforms: ${PLATFORMS}"
-          echo "Base tag: ${IMAGE_BASE}"
+          echo "Image Name: ${IMAGE_NAME}"
           echo "::endgroup::"
         fi
 
-        echo "Creating multi-platform manifest for: ${IMAGE_BASE}"
+        echo "Creating multi-platform manifest for: ${IMAGE_NAME}"
 
         # Build the command with platform-specific tags
-        cmd=("docker" "buildx" "imagetools" "create" "--tag" "${IMAGE_BASE}")
+        cmd=("docker" "manifest" "create" "${IMAGE_NAME}")
 
         # Add platform-specific images
         IFS=',' read -ra PLATFORM_ARRAY <<< "$PLATFORMS"

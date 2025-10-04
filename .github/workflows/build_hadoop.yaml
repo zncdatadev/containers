@@ -90,6 +90,7 @@ jobs:
         uses: ./.github/actions/free-disk-space
 
       - name: Run build
+        id: build
         uses: ./.github/actions/build-and-push
         with:
           registry: ${{ env.REGISTRY }}
