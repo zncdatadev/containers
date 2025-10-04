@@ -81,7 +81,7 @@ runs:
         PLATFORMS: ${{ inputs.platforms }}
         DEBUG: ${{ inputs.action_debug }}
       run: |
-        set -e
+        set -ex
 
         IMAGE_NAME="${REGISTRY}/${PRODUCT_NAME}:${PRODUCT_VERSION}-kubedoop${KUBEDOOP_VERSION}"
 
