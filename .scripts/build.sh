@@ -42,7 +42,6 @@ Options:
                                   Multiple platforms can be specified, separated by comma.
                                     Example: 'linux/amd64,linux/arm64'
   -p,   --push                    Push the built image to the registry, if not set, load the image to local docker
-  -s,   --sign                    Sign the image with cosign
         --progress PROGRESS       Set the build progress output format. Default is 'auto'.
                                   Use 'plain' for plain text output, useful for debugging.
         --arch-suffix             Use architecture suffix for image tags when pushing to registry.
@@ -54,7 +53,6 @@ Options:
   local registry=$REGISTRY
   local progress="" # Default progress mode for docker buildx bake
   local push=false
-  local sign=false
   local platform_input="" # Raw --platform string from CLI
   local arch_suffix=false # Use architecture suffix for image tags
   # Change target to array
@@ -77,9 +75,6 @@ Options:
         ;;
       -p | --push )
         push=true
-        ;;
-      -s | --sign )
-        sign=true
         ;;
       --progress )
         shift
@@ -113,8 +108,8 @@ Options:
     echo "INFO: Specified products: ${products[*]}" >&2
   fi
 
-  # Check system requirements if signing is requested
-  system_requirements $sign
+  # Check system requirements
+  system_requirements
 
   # Resolve platforms: if --platform provided, use it; otherwise default to current system architecture
   local platforms=""
@@ -139,17 +134,16 @@ Options:
   local bakefile=$(get_bakefile "$platforms" "$arch_suffix")
 
   # Update function call order of parameters
-  build_sign_image "$bakefile" $push $sign "$progress" "${products[*]}"
+  build_image "$bakefile" $push "$progress" "${products[*]}"
 }
 
 
 # Check system requirements
 # Arguments:
-#   $1: bool  sign, if true, check cosign is installed
+#   None
 # Returns:
 #   None, exit if requirements not met
 function system_requirements () {
-  local sign=$1
 
   if ! command -v jq > /dev/null; then
     echo "jq is required. Please install it refer to <https://stedolan.github.io/jq/download/>" >&2
@@ -158,11 +152,6 @@ function system_requirements () {
 
   if ! command -v yq > /dev/null; then
     echo "yq is required. Please install it refer to <https://mikefarah.gitbook.io/yq/>" >&2
-    exit 1
-  fi
-
-  if [ "$sign" = true ] && ! command -v cosign > /dev/null; then
-    echo "cosign is required, Please install it refer to <https://docs.sigstore.dev/cosign/system_config/installation/>" >&2
     exit 1
   fi
 }
@@ -207,45 +196,23 @@ function fill_products_version () {
 }
 
 
-# https://github.com/sigstore/cosign/issues/587
-# Use Cosign for keyless image signing
-function sign_image () {
-  local image=$1
-  local upload=$2
-
-  # Verify that image is not null before signing
-  if [[ -z "$image" || "$image" == *"null"* ]]; then
-    echo "ERROR: Invalid image reference for signing: '$image'" >&2
-    return 1
-  fi
-
-  if [ "$upload" = true ]; then
-    echo "INFO: Signing image with OIDC token: $image" >&2
-    cosign sign --yes $image
-  else
-    echo "INFO: Image signing skipped (upload=false): $image" >&2
-  fi
-}
-
 
 # Build image with docker bake
 # Arguments:
 #  $1: str   bakefile, docker bake file content, JSON object
 #  $2: bool  push, if true, push image to registry, else load to local docker, default is false
-#  $3: bool  sign, if true, sign image with cosign, default is false
-#  $4: str   progress, if set to 'plain', will show the build progress in plain text.
+#  $3: str   progress, if set to 'plain', will show the build progress in plain text.
 #             This is useful for debugging purposes. Default is empty, which uses the default progress format.
-#  $5: str   products, products to build, if empty, build all products.
+#  $4: str   products, products to build, if empty, build all products.
 #             A version can be specified with the product name.
 #             eg: 'java-base hadoop:3.3.1'
 # Returns:
 #  None
-function build_sign_image () {
+function build_image () {
   local bakefile=$1
   local push=$2
-  local sign=$3
-  local progress=$4
-  local products=$5
+  local progress=$3
+  local products=$4
 
   # Ensure the bakefile is not empty
   if [[ -z "$bakefile" ]]; then
@@ -311,33 +278,6 @@ function build_sign_image () {
     echo "INFO: Successfully pushed images to registry: $REGISTRY" >&2
   fi
 
-  # Only attempt signing if requested and when pushing images
-  if [ -f "$image_digest_file" ] && [ "$sign" = true ] && [ "$push" = true ]; then
-    echo "INFO: Signing images from digest file: $image_digest_file" >&2
-
-    # First dump file content for debugging
-    if [ "$CI_DEBUG" = "true" ]; then
-      echo "DEBUG: Contents of $image_digest_file:" >&2
-      cat "$image_digest_file" >&2
-    fi
-
-    for key in $(jq -r 'keys[]' "$image_digest_file"); do
-      echo "INFO: Processing image entry for key: $key" >&2
-      local image_digest=$(jq -r --arg key "$key" '.[$key]["containerimage.digest"] // empty' "$image_digest_file")
-      local image_name=$(jq -r --arg key "$key" '.[$key]["image.name"] // empty' "$image_digest_file")
-
-      # More comprehensive checks
-      if [[ -n "$image_digest" && "$image_digest" != "null" && -n "$image_name" && "$image_name" != "null" ]]; then
-        local digest_tag="${image_name}@${image_digest}"
-        echo "INFO: Preparing to sign image: $digest_tag" >&2
-        sign_image "$digest_tag" "$push"
-      else
-        echo "WARNING: Skipping invalid image entry for key '$key'. Name: '$image_name', Digest: '$image_digest'" >&2
-      fi
-    done
-
-    echo "INFO: Finished signing images." >&2
-  fi
 }
 
 
