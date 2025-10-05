@@ -18,11 +18,13 @@ inputs:
     required: false
     default: '0.0.0-dev'
   push:
-    description: Push the image to registry after build.
+    description: 'Push the image to registry after build'
     required: false
+    default: 'false'
   sign:
-    description: Sign the image after build.
+    description: 'Sign the image after build (requires push to be true)'
     required: false
+    default: 'false'
   registry_username:
     description: 'The registry username'
     required: false
@@ -40,6 +42,19 @@ inputs:
     description: 'Use architecture suffix for image tags'
     required: false
     default: 'false'
+  push_by_digest:
+    description: 'Push images by digest reference instead of tag'
+    required: false
+    default: 'false'
+
+
+outputs:
+  pushed-images:
+    description: 'Comma-separated list of pushed image references'
+    value: ${{ steps.build-and-push.outputs.pushed-images }}
+  push-count:
+    description: 'Number of images successfully pushed'
+    value: ${{ steps.build-and-push.outputs.push-count }}
 
 
 runs:
@@ -64,6 +79,7 @@ runs:
         password: ${{ inputs.registry_password }}
 
     - name: Build and push
+      id: build-and-push
       shell: bash
       env:
         REGISTRY: ${{ inputs.registry }}
@@ -74,6 +90,7 @@ runs:
         SIGN: ${{ inputs.sign }}
         PLATFORM: ${{ inputs.platform }}
         ARCH_SUFFIX: ${{ inputs.arch_suffix }}
+        PUSH_BY_DIGEST: ${{ inputs.push_by_digest }}
         CI_DEBUG: ${{ inputs.action_debug == 'true' && 'true' || 'false' }}
       run: |
         echo "::group::Build command"
@@ -96,17 +113,109 @@ runs:
           cmd+=("--arch-suffix")
         fi
 
-        if [ "$PUSH" = "true" ]; then
-          cmd+=("--push")
-        fi
-
-        if [ "$SIGN" = "true" ]; then
-          cmd+=("--sign")
-        fi
-
-        echo "${cmd[@]}"
+        # Build will only load images locally, push and sign are handled separately
+        echo "Build command: ${cmd[@]}"
         echo "::endgroup::"
 
-        echo "::group::Build and Publish"
+
+        echo "::group::Build to local"
         "${cmd[@]}"
         echo "::endgroup::"
+
+
+        # Check if docker-bake-digests.json exists after build
+        if [ ! -f "docker-bake-digests.json" ]; then
+          echo "Error: docker-bake-digests.json not found after build"
+          exit 1
+        fi
+
+        # Early exit if push is disabled
+        if [ "$PUSH" != "true" ]; then
+          echo "Push is disabled, build completed successfully"
+          echo "pushed-images=" >> "$GITHUB_OUTPUT"
+          echo "push-count=0" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "::group::Extract and push image information"
+        echo "Found docker-bake-digests.json, extracting image information..."
+        .scripts/extract-image-info.sh > /tmp/images_to_push.json
+        echo "::endgroup::"
+
+
+        echo "::group::Push and sign images"
+
+        # Initialize counters and output arrays
+        push_count=0
+        sign_count=0
+        pushed_images_array=()
+
+        # Process each image from the JSON file
+        while IFS= read -r image_info; do
+          # Extract information from JSON object
+          target=$(echo "$image_info" | jq -r '.target')
+          image_name=$(echo "$image_info" | jq -r '.image')
+          image_digest_ref=$(echo "$image_info" | jq -r '.image_digest')
+          platform=$(echo "$image_info" | jq -r '.platform')
+
+          echo "Processing target: $target ($platform)"
+
+          # Determine what to push based on push mode
+          if [ "$PUSH_BY_DIGEST" = "true" ]; then
+            push_ref="$image_digest_ref"
+            echo "Push mode: digest - using $push_ref"
+          else
+            push_ref="$image_name"
+            echo "Push mode: tag - using $push_ref"
+          fi
+
+          # Push the image
+          echo "Pushing: $push_ref"
+          if docker push "$push_ref"; then
+            echo "Successfully pushed: $push_ref"
+            push_count=$((push_count + 1))
+            pushed_images_array+=("$push_ref")
+
+            # Sign the image if requested and not in digest-only mode
+            if [ "$SIGN" = "true" ] && [ "$PUSH_BY_DIGEST" != "true" ]; then
+              echo "Signing image: $push_ref"
+
+              sign_ref="$push_ref"
+
+              if cosign sign --yes "$sign_ref"; then
+                echo "Successfully signed: $sign_ref"
+                sign_count=$((sign_count + 1))
+              else
+                echo "Failed to sign: $sign_ref"
+                # Continue with other images even if signing fails
+              fi
+            elif [ "$SIGN" = "true" ] && [ "$PUSH_BY_DIGEST" = "true" ]; then
+              echo "Skipping signature for digest-only push (no tag image)"
+            fi
+          else
+            echo "Failed to push: $push_ref"
+            exit 1
+          fi
+
+        done < <(jq -c '.[]' /tmp/images_to_push.json)
+
+
+        # Create comma-separated output string
+        IFS=',' ; PUSHED_IMAGES="${pushed_images_array[*]}"
+        IFS=' ' # Reset IFS
+
+        # Display summary
+        echo "Push summary:"
+        echo "  - Images pushed: $push_count"
+        if [ "$SIGN" = "true" ] && [ "$PUSH_BY_DIGEST" != "true" ]; then
+          echo "  - Images signed: $sign_count"
+        fi
+        echo "  - Pushed images: $PUSHED_IMAGES"
+
+        echo "::endgroup::"
+
+        # Output results for subsequent steps
+        echo "pushed-images=${PUSHED_IMAGES}" >> "$GITHUB_OUTPUT"
+        echo "push-count=${push_count}" >> "$GITHUB_OUTPUT"
+
+        echo "::notice title=Push Summary::Successfully pushed ${push_count} images"

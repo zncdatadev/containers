@@ -83,29 +83,29 @@ runs:
       run: |
         set -e
 
-        IMAGE_BASE="${REGISTRY}/${PRODUCT_NAME}:${PRODUCT_VERSION}-kubedoop${KUBEDOOP_VERSION}"
+        IMAGE_NAME="${REGISTRY}/${PRODUCT_NAME}:${PRODUCT_VERSION}-kubedoop${KUBEDOOP_VERSION}"
 
         if [ "$DEBUG" = "true" ]; then
           echo "::group::Debug Information"
           echo "Registry: ${REGISTRY}"
-          echo "Product: ${PRODUCT_NAME}"
-          echo "Version: ${PRODUCT_VERSION}"
-          echo "Kubedoop: ${KUBEDOOP_VERSION}"
+          echo "Product Name: ${PRODUCT_NAME}"
+          echo "Product Version: ${PRODUCT_VERSION}"
+          echo "Kubedoop Version: ${KUBEDOOP_VERSION}"
           echo "Platforms: ${PLATFORMS}"
-          echo "Base tag: ${IMAGE_BASE}"
+          echo "Image Name: ${IMAGE_NAME}"
           echo "::endgroup::"
         fi
 
-        echo "Creating multi-platform manifest for: ${IMAGE_BASE}"
+        echo "Creating multi-platform manifest for: ${IMAGE_NAME}"
 
         # Build the command with platform-specific tags
-        cmd=("docker" "buildx" "imagetools" "create" "--tag" "${IMAGE_BASE}")
+        cmd=("docker" "manifest" "create" "${IMAGE_NAME}")
 
         # Add platform-specific images
         IFS=',' read -ra PLATFORM_ARRAY <<< "$PLATFORMS"
         for platform in "${PLATFORM_ARRAY[@]}"; do
           platform=$(echo "$platform" | xargs) # trim whitespace
-          cmd+=("${IMAGE_BASE}-${platform}")
+          cmd+=("${IMAGE_NAME}-${platform}")
         done
 
         if [ "$DEBUG" = "true" ]; then
@@ -117,17 +117,19 @@ runs:
         # Execute the command
         echo "::group::Creating manifest"
         "${cmd[@]}"
+        echo "Pushing manifest to registry"
+        docker manifest push "${IMAGE_NAME}"
         echo "::endgroup::"
 
         # Get the manifest digest for signing
         echo "::group::Getting manifest digest"
-        MANIFEST_DIGEST=$(docker buildx imagetools inspect "${IMAGE_BASE}" --format '{{ println .Manifest.Digest }}')
+        MANIFEST_DIGEST=$(docker buildx imagetools inspect "${IMAGE_NAME}" --format '{{ println .Manifest.Digest }}')
         echo "Manifest digest: ${MANIFEST_DIGEST}"
         echo "::endgroup::"
 
         # Export for next steps and outputs
-        echo "image_ref=${IMAGE_BASE}@${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
-        echo "image_tag=${IMAGE_BASE}" >> $GITHUB_OUTPUT
+        echo "image_ref=${IMAGE_NAME}@${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
+        echo "image_tag=${IMAGE_NAME}" >> $GITHUB_OUTPUT
         echo "manifest_digest=${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
 
     - name: Sign manifest with Cosign
