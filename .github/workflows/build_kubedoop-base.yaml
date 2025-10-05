@@ -14,14 +14,12 @@ on:
         - '\d+.\d+.\d+*'
     paths:
       - kubedoop-base/**
-      - .github/actions/**
       - .github/workflows/build_kubedoop-base.yaml
   pull_request:
     branches:
       - main
     paths:
       - kubedoop-base/**
-      - .github/actions/**
       - .github/workflows/build_kubedoop-base.yaml
 
 

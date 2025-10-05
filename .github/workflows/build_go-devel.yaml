@@ -15,7 +15,6 @@ on:
     paths:
       - go-devel/**
       - kubedoop-base/**
-      - .github/actions/**
       - .github/workflows/build_go-devel.yaml
   pull_request:
     branches:
@@ -23,7 +22,6 @@ on:
     paths:
       - go-devel/**
       - kubedoop-base/**
-      - .github/actions/**
       - .github/workflows/build_go-devel.yaml
 
 

@@ -15,7 +15,6 @@ on:
     paths:
       - tools/**
       - kubedoop-base/**
-      - .github/actions/**
       - .github/workflows/build_tools.yaml
   pull_request:
     branches:
@@ -23,7 +22,6 @@ on:
     paths:
       - tools/**
       - kubedoop-base/**
-      - .github/actions/**
       - .github/workflows/build_tools.yaml
 
 

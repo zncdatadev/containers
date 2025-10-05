@@ -2,6 +2,7 @@
 products:
   - kubedoop-base
   - vector
+  - helloworld
   # # devel
   - java-base
   - java-devel

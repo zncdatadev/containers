@@ -14,14 +14,12 @@ on:
         - '\d+.\d+.\d+*'
     paths:
       - krb5/**
-      - .github/actions/**
       - .github/workflows/build_krb5.yaml
   pull_request:
     branches:
       - main
     paths:
       - krb5/**
-      - .github/actions/**
       - .github/workflows/build_krb5.yaml
 
 

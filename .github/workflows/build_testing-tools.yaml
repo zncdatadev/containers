@@ -14,14 +14,12 @@ on:
         - '\d+.\d+.\d+*'
     paths:
       - testing-tools/**
-      - .github/actions/**
       - .github/workflows/build_testing-tools.yaml
   pull_request:
     branches:
       - main
     paths:
       - testing-tools/**
-      - .github/actions/**
       - .github/workflows/build_testing-tools.yaml
 
 

@@ -16,7 +16,6 @@ on:
       - superset/**
       - kubedoop-base/**
       - vector/**
-      - .github/actions/**
       - .github/workflows/build_superset.yaml
   pull_request:
     branches:
@@ -25,7 +24,6 @@ on:
       - superset/**
       - kubedoop-base/**
       - vector/**
-      - .github/actions/**
       - .github/workflows/build_superset.yaml
 
 
