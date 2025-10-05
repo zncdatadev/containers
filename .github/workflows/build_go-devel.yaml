@@ -15,6 +15,7 @@ on:
     paths:
       - go-devel/**
       - kubedoop-base/**
+      - .scripts/**
       - .github/actions/**
       - .github/workflows/build_go-devel.yaml
   pull_request:
@@ -23,6 +24,7 @@ on:
     paths:
       - go-devel/**
       - kubedoop-base/**
+      - .scripts/**
       - .github/actions/**
       - .github/workflows/build_go-devel.yaml
 
