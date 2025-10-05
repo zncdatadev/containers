@@ -223,20 +223,19 @@ function extract_json_format() {
   local digest_file="$1"
 
   jq '
-    to_entries | map({
+    to_entries |
+    # Filter out entries without image.name (intermediate/process images)
+    map(select(.value["image.name"] != null and .value["image.name"] != "")) |
+    map({
       target: .key,
-      image: (.value["image.name"] // null),
+      image: .value["image.name"],
       name_only: (
-        (.value["image.name"] // null) |
-        if . != null and . != "" then
-          split(":")[0]
-        else
-          null
-        end
+        .value["image.name"] |
+        split(":")[0]
       ),
       tag_only: (
-        (.value["image.name"] // null) |
-        if . != null and . != "" and contains(":") then
+        .value["image.name"] |
+        if contains(":") then
           split(":")[1]
         else
           null
@@ -244,9 +243,9 @@ function extract_json_format() {
       ),
       digest: (.value["containerimage.digest"] // null),
       image_digest: (
-        (.value["image.name"] // null) as $image_name |
+        .value["image.name"] as $image_name |
         (.value["containerimage.digest"] // null) as $digest |
-        if $image_name != null and $digest != null and $image_name != "" and $digest != "" then
+        if $digest != null and $digest != "" then
           ($image_name | split(":")[0]) + "@" + $digest
         else
           null
@@ -280,7 +279,9 @@ function extract_image_full() {
 
   jq -r '
     to_entries[] |
-    .value["image.name"] // empty
+    # Only process entries with image.name (skip intermediate images)
+    select(.value["image.name"] != null and .value["image.name"] != "") |
+    .value["image.name"]
   ' "$digest_file"
 }
 
@@ -300,12 +301,9 @@ function extract_names_only() {
 
   jq -r '
     to_entries[] |
-    (.value["image.name"] // empty) |
-    if . != "" then
-      split(":")[0]
-    else
-      empty
-    end
+    # Only process entries with image.name (skip intermediate images)
+    select(.value["image.name"] != null and .value["image.name"] != "") |
+    .value["image.name"] | split(":")[0]
   ' "$digest_file"
 }
 
@@ -325,8 +323,10 @@ function extract_tags_only() {
 
   jq -r '
     to_entries[] |
-    (.value["image.name"] // empty) |
-    if . != "" and contains(":") then
+    # Only process entries with image.name (skip intermediate images)
+    select(.value["image.name"] != null and .value["image.name"] != "") |
+    .value["image.name"] |
+    if contains(":") then
       split(":")[1]
     else
       empty
@@ -350,10 +350,12 @@ function extract_image_digest() {
 
   jq -r '
     to_entries[] |
+    # Only process entries with image.name (skip intermediate images)
+    select(.value["image.name"] != null and .value["image.name"] != "") |
     . as $entry |
-    (.value["image.name"] // empty) as $image_name |
+    .value["image.name"] as $image_name |
     (.value["containerimage.digest"] // empty) as $digest |
-    if $image_name != "" and $digest != "" then
+    if $digest != "" then
       ($image_name | split(":")[0]) + "@" + $digest
     else
       empty
@@ -377,6 +379,8 @@ function extract_digests_only() {
 
   jq -r '
     to_entries[] |
+    # Only process entries with image.name (skip intermediate images)
+    select(.value["image.name"] != null and .value["image.name"] != "") |
     .value["containerimage.digest"] // empty
   ' "$digest_file"
 }
