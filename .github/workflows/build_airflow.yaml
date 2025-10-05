@@ -17,8 +17,6 @@ on:
       - airflow/**
       - kubedoop-base/**
       - vector/**
-      - .scripts/**
-      - .github/actions/**
       - .github/workflows/build_airflow.yaml
   pull_request:
     branches:
@@ -27,8 +25,6 @@ on:
       - airflow/**
       - kubedoop-base/**
       - vector/**
-      - .scripts/**
-      - .github/actions/**
       - .github/workflows/build_airflow.yaml
 
 
