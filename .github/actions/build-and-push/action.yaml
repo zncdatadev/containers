@@ -180,9 +180,7 @@ runs:
             if [ "$SIGN" = "true" ] && [ "$PUSH_BY_DIGEST" != "true" ]; then
               echo "Signing image: $push_ref"
 
-              # Use digest reference for signing (more secure)
-              sign_ref="$image_digest_ref"
-              echo "Signing with digest reference: $sign_ref"
+              sign_ref="$push_ref"
 
               if cosign sign --yes "$sign_ref"; then
                 echo "Successfully signed: $sign_ref"
