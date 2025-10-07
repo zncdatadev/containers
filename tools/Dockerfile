@@ -17,7 +17,6 @@ RUN <<EOF
         iputils \
         openssl \
         tar \
-        wget \
         zip
 
     microdnf clean all
