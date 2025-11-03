@@ -3,4 +3,4 @@ versions:
     kubedoop-base: 1.0.0
     kubectl: 1.31.1
     jq: 1.7.1
-    yq: v4.44.3
+    yq: 4.44.2
