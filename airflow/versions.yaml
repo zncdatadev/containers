@@ -1,13 +1,25 @@
 versions:
-  - product: 2.10.4
-    python: "3.12"
+  - product: 3.0.1
+    python: 3.12
     go-devel: 1.23.4
-    git-sync: 4.4.0
+    git-sync: 4.4.1
+    statsd-exporter: 0.28.0
+    vector: 0.47.0
+  - product: 2.10.5
+    python: 3.12
+    go-devel: 1.23.4
+    git-sync: 4.4.1
+    statsd-exporter: 0.28.0
+    vector: 0.47.0
+  - product: 2.10.4
+    python: 3.12
+    go-devel: 1.23.4
+    git-sync: 4.4.1
     statsd-exporter: 0.28.0
     vector: 0.47.0
   - product: 2.9.3
-    python: "3.12"
+    python: 3.9
     go-devel: 1.23.4
-    git-sync: 4.4.0
+    git-sync: 4.4.1
     statsd-exporter: 0.28.0
     vector: 0.47.0
