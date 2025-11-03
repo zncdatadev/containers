@@ -6,10 +6,10 @@ This repository contains the Dockerfiles for the ZNCDataDev containers.
 |      |      |      |      |
 | ---: | ---: | ---: | ---: |
 | [![Build airflow]][build_airflow.yaml] | [![Build dolphinscheduler]][build_dolphinscheduler.yaml] | [![Build go-devel]][build_go-devel.yaml] | [![Build hadoop]][build_hadoop.yaml] |
-| [![Build hbase]][build_hbase.yaml] | [![Build hive]][build_hive.yaml] | [![Build java-base]][build_java-base.yaml] | [![Build java-devel]][build_java-devel.yaml] |
-| [![Build kafka]][build_kafka.yaml] | [![Build krb5]][build_krb5.yaml] | [![Build kubedoop-base]][build_kubedoop-base.yaml] | [![Build nifi]][build_nifi.yaml] |
-| [![Build spark-k8s]][build_spark-k8s.yaml] | [![Build superset]][build_superset.yaml] | [![Build testing-tools]][build_testing-tools.yaml] | [![Build tools]][build_tools.yaml] |
-| [![Build trino]][build_trino.yaml] | [![Build zookeeper]][build_zookeeper.yaml] | | |
+| [![Build hbase]][build_hbase.yaml] | [![Build helloworld]][build_helloworld.yaml] | [![Build hive]][build_hive.yaml] | [![Build java-base]][build_java-base.yaml] |
+| [![Build java-devel]][build_java-devel.yaml] | [![Build kafka]][build_kafka.yaml] | [![Build krb5]][build_krb5.yaml] | [![Build kubedoop-base]][build_kubedoop-base.yaml] |
+| [![Build nifi]][build_nifi.yaml] | [![Build spark-k8s]][build_spark-k8s.yaml] | [![Build superset]][build_superset.yaml] | [![Build testing-tools]][build_testing-tools.yaml] |
+| [![Build tools]][build_tools.yaml] | [![Build trino]][build_trino.yaml] | [![Build vector]][build_vector.yaml] | [![Build zookeeper]][build_zookeeper.yaml] |
 
 <!-- end:bages -->
 
@@ -66,6 +66,8 @@ export KUBEDOOP_VERSION=0.1.0
 [build_hadoop.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_hadoop.yaml
 [Build hbase]: https://github.com/zncdatadev/containers/actions/workflows/build_hbase.yaml/badge.svg
 [build_hbase.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_hbase.yaml
+[Build helloworld]: https://github.com/zncdatadev/containers/actions/workflows/build_helloworld.yaml/badge.svg
+[build_helloworld.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_helloworld.yaml
 [Build hive]: https://github.com/zncdatadev/containers/actions/workflows/build_hive.yaml/badge.svg
 [build_hive.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_hive.yaml
 [Build java-base]: https://github.com/zncdatadev/containers/actions/workflows/build_java-base.yaml/badge.svg
@@ -90,6 +92,8 @@ export KUBEDOOP_VERSION=0.1.0
 [build_tools.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_tools.yaml
 [Build trino]: https://github.com/zncdatadev/containers/actions/workflows/build_trino.yaml/badge.svg
 [build_trino.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_trino.yaml
+[Build vector]: https://github.com/zncdatadev/containers/actions/workflows/build_vector.yaml/badge.svg
+[build_vector.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_vector.yaml
 [Build zookeeper]: https://github.com/zncdatadev/containers/actions/workflows/build_zookeeper.yaml/badge.svg
 [build_zookeeper.yaml]: https://github.com/zncdatadev/containers/actions/workflows/build_zookeeper.yaml
 
