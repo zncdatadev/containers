@@ -46,7 +46,7 @@ RUN <<EOF
 
     # Download yq from https://github.com/mikefarah/yq/releases
     curl -sSfL \
-        https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${ARCH} \
+        https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_${ARCH} \
         -o /kubedoop/bin/yq
     chmod +x /kubedoop/bin/yq
 
