@@ -11,3 +11,5 @@ versions:
     vector: 0.47.0
   - product: 23
     vector: 0.47.0
+  - product: 24
+    vector: 0.47.0
