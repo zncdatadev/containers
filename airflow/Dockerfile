@@ -40,7 +40,9 @@ RUN <<EOF
     source app/bin/activate
     pip install --upgrade --no-cache-dir pip setuptools wheel
 
-    AIRFLOW_EXTRAS=async,amazon,celery,cncf.kubernetes,docker,dask,elasticsearch,ftp,grpc,hashicorp,http,ldap,google,google_auth,microsoft.azure,odbc,pandas,postgres,redis,sendgrid,sftp,slack,ssh,statsd,virtualenv,trino
+    # join extras from `airflow-extras.txt` into a comma-separated list
+    AIRFLOW_EXTRAS=$(tr '\n' ',' < /tmp/requirements/airflow-extras.txt | sed 's/,$//')
+
     pip install --no-cache-dir apache-airflow[${AIRFLOW_EXTRAS}]==${PRODUCT_VERSION} --constraint /tmp/requirements/constraints.txt
 
     pip install --no-cache-dir s3fs==2024.9.0 Flask_OIDC==2.2.0 Flask-OpenID==1.3.1
